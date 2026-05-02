@@ -1,0 +1,54 @@
+{
+  "name": "orbital",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "infra"
+  ],
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "start": "npm start -w @orbital/orchestrator",
+    "restore": "node scripts/restore.mjs",
+    "reset": "node scripts/reset.mjs",
+    "hygiene": "node scripts/hygiene-sweep.mjs",
+    "spawn-smoke": "node scripts/spawn-smoke.mjs",
+    "dev": "concurrently -n orchestrator,ui -c blue,magenta \"npm:dev -w @orbital/orchestrator\" \"npm:dev -w @orbital/ui\"",
+    "build": "npm run build -w @orbital/types && npm run build -w @orbital/orchestrator && npm run build -w @orbital/ui",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run --dir packages/orchestrator/test/integration",
+    "test:e2e": "vitest run --dir packages/orchestrator/test/e2e",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "migrate": "npm run migrate -w @orbital/orchestrator",
+    "migrate:generate": "npm run migrate:generate -w @orbital/orchestrator",
+    "typecheck": "tsc -b --noEmit",
+    "hub:invite": "tsx packages/orchestrator/src/cli/orbital-invite.ts",
+    "hub:join": "tsx packages/orchestrator/src/cli/orbital-join.ts",
+    "infra:synth": "npm run synth -w @orbital/infra --",
+    "infra:diff": "npm run diff -w @orbital/infra --",
+    "infra:test": "npm run test -w @orbital/infra"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@typescript-eslint/eslint-plugin": "^8.20.0",
+    "@typescript-eslint/parser": "^8.20.0",
+    "concurrently": "^9.1.0",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.37.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "prettier": "^3.4.0",
+    "prettier-plugin-tailwindcss": "^0.6.0",
+    "typescript": "^5.7.0",
+    "undici": "^8.2.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

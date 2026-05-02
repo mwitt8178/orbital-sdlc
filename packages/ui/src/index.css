@@ -1,0 +1,111 @@
+@import 'tailwindcss';
+
+/* ============================================================
+   Orbital design tokens — extracted from the HTML mock
+   ============================================================ */
+@theme {
+  /* Typography */
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    sans-serif;
+  --font-mono:
+    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Brand — indigo→violet gradient (from mock logo + active states) */
+  --color-brand-50: oklch(96.7% 0.014 286);
+  --color-brand-100: oklch(93.5% 0.034 287);
+  --color-brand-200: oklch(87% 0.065 290);
+  --color-brand-300: oklch(78% 0.107 290);
+  --color-brand-400: oklch(67% 0.157 290);
+  --color-brand-500: oklch(58% 0.21 290);
+  --color-brand-600: oklch(52% 0.225 290);
+  --color-brand-700: oklch(46% 0.215 290);
+  --color-brand-800: oklch(38% 0.18 290);
+  --color-brand-900: oklch(30% 0.13 290);
+
+  /* Sprint progress / agent state mapping (locked from mock) */
+  --color-state-done: oklch(70% 0.17 152); /* emerald-500 */
+  --color-state-review: oklch(60% 0.21 295); /* violet-500 */
+  --color-state-blocked: oklch(80% 0.16 80); /* amber-400 */
+  --color-state-pending: oklch(85% 0.01 250); /* slate-300 */
+  --color-state-working: oklch(58% 0.18 252); /* blue-500 */
+
+  /* Layout sizing */
+  --spacing-sidebar: 14rem; /* w-56 */
+  --spacing-topbar: 3.5rem; /* matches mock header height */
+
+  /* Radii */
+  --radius-card: 0.5rem;
+  --radius-pill: 9999px;
+
+  /* Shadow tokens */
+  --shadow-card: 0 1px 2px 0 oklch(0% 0 0 / 0.05);
+}
+
+/* ============================================================
+   Global resets / typography
+   ============================================================ */
+html,
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   Mock animations
+   ============================================================ */
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes stream-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-pulse-dot {
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
+@utility animate-stream-in {
+  animation: stream-in 0.35s ease-out;
+}
+
+/* ============================================================
+   Thin scrollbar (matches mock)
+   ============================================================ */
+@utility scrollbar-thin {
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: oklch(80% 0.014 250);
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: oklch(65% 0.022 250);
+  }
+}
+
+/* ============================================================
+   Custom variants
+   ============================================================ */
+@variant hocus (&:hover, &:focus-visible);

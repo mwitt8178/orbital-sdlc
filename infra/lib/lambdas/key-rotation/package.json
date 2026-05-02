@@ -1,0 +1,12 @@
+{
+  "name": "orbital-key-rotation",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lambda that rotates the hub master Ed25519 keypair every 90 days.",
+  "main": "index.js",
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.750.0",
+    "@noble/ed25519": "^2.2.0",
+    "@noble/hashes": "^1.6.0"
+  }
+}

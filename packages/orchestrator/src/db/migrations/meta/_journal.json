@@ -1,0 +1,258 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1746072000000,
+      "tag": "0001_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1746075000000,
+      "tag": "0002_capabilities",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1746100000000,
+      "tag": "0003_personas",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1746103000000,
+      "tag": "0004_routing",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1746200000000,
+      "tag": "0005_workers",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1746210000000,
+      "tag": "0006_orchestration",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1746220000000,
+      "tag": "0007_comms",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1746300000000,
+      "tag": "0008_determinism",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1746400000000,
+      "tag": "0009_vision",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1746410000000,
+      "tag": "0010_backlog",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1746500000000,
+      "tag": "0011_uat",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1746510000000,
+      "tag": "0012_retros",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1746600000000,
+      "tag": "0013_audit_export",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1746700000000,
+      "tag": "0014_idempotency",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1746710000000,
+      "tag": "0015_projects",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1746800000000,
+      "tag": "0016_hygiene_statuses",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1746810000000,
+      "tag": "0017_ceremony_triggers",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1746820000000,
+      "tag": "0018_auto_decompose_metadata",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1746900000000,
+      "tag": "0019_hygiene_aggressive",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1746920000000,
+      "tag": "0020_board_mapping",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1746950000000,
+      "tag": "0021_ac_check_evidence",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1746980000000,
+      "tag": "0022_github_pr",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1746990000000,
+      "tag": "0023_project_memory",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1747000000000,
+      "tag": "0024_provider_health",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1747010000000,
+      "tag": "0025_github_project_config",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1747020000000,
+      "tag": "0026_ci_evidence",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1747030000000,
+      "tag": "0027_replay_capture",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1747040000000,
+      "tag": "0028_cost_budgets",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1747050000000,
+      "tag": "0029_code_reviews",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1747060000000,
+      "tag": "0030_defect_iteration",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1747065000000,
+      "tag": "0031_defect_nullable_session",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1747070000000,
+      "tag": "0032_channel_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1747080000000,
+      "tag": "0033_hub_tenant_scope",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1747090000000,
+      "tag": "0034_known_installs",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1746576000000,
+      "tag": "0035_local_outbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1747100000000,
+      "tag": "0036_tenant_kms_arn",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: orbital
+          POSTGRES_PASSWORD: orbital_dev_password
+          POSTGRES_DB: orbital
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U orbital -d orbital"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://orbital:orbital_dev_password@localhost:5432/orbital
+      ORBITAL_TEST_KEYCHAIN: '1'
+      NODE_ENV: test
+      LOG_LEVEL: silent
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      # Round 7-05 leak-check — block PRs that introduce sensitive literals
+      # or unsafe `as LocalOnly` casts. Runs BEFORE build so failures fail
+      # fast.
+      - name: Local-only leak check
+        run: npx tsx scripts/ci-leak-check.ts
+      - run: npm run build
+      - run: npm run migrate
+      - run: npm test

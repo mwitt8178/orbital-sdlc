@@ -1,0 +1,94 @@
+# Dockerfile.hub — Production-grade multi-stage image for the Orbital Hub service.
+#
+# Round 7-07 — Hub Deployment + Operations (extends Round 7-01 scaffold)
+# [Engineer-Sr · Sonnet · run-round7-07-hub-deploy-ops]
+#
+# Build:
+#   docker build -f Dockerfile.hub -t orbital-hub:latest .
+#   docker build -f Dockerfile.hub --build-arg VERSION=$(git describe --tags) -t orbital-hub:latest .
+#
+# Run (standalone):
+#   docker run --rm \
+#     -e DATABASE_URL=postgres://... \
+#     -e ORBITAL_MODE=hub \
+#     -e ORBITAL_HUB_MASTER_KEY=<64-hex-chars> \
+#     -p 4000:4000 \
+#     orbital-hub:latest
+
+# ---------------------------------------------------------------------------
+# Stage 1: deps — install ALL deps (including dev) for build
+# ---------------------------------------------------------------------------
+FROM node:22-alpine AS deps
+
+WORKDIR /build
+
+# Layer-cache: package manifests change rarely
+COPY package.json package-lock.json ./
+COPY tsconfig.base.json tsconfig.json ./
+COPY packages/orchestrator/package.json ./packages/orchestrator/
+
+RUN npm ci --ignore-scripts
+
+# ---------------------------------------------------------------------------
+# Stage 2: build — compile TypeScript
+# ---------------------------------------------------------------------------
+FROM deps AS builder
+
+# Copy orchestrator source only (not ui — hub image is API-only)
+COPY packages/orchestrator/src ./packages/orchestrator/src
+COPY packages/orchestrator/tsconfig.json ./packages/orchestrator/
+
+RUN npm run build --workspace=packages/orchestrator
+
+# ---------------------------------------------------------------------------
+# Stage 3: prod-deps — prune dev deps for a lean runtime layer
+# ---------------------------------------------------------------------------
+FROM deps AS prod-deps
+
+RUN npm prune --omit=dev
+
+# ---------------------------------------------------------------------------
+# Stage 4: runtime — minimal final image
+# ---------------------------------------------------------------------------
+FROM node:22-alpine AS runtime
+
+# Security: non-root user.
+# Per security-serverless skill: principle of least privilege.
+RUN addgroup -S orbital && adduser -S -G orbital orbital
+
+WORKDIR /app
+
+# Copy production node_modules (pruned) from prod-deps stage
+COPY --from=prod-deps --chown=orbital:orbital /build/node_modules ./node_modules
+
+# Copy compiled JS from builder
+COPY --from=builder --chown=orbital:orbital /build/packages/orchestrator/dist ./packages/orchestrator/dist
+COPY --from=builder --chown=orbital:orbital /build/packages/orchestrator/package.json ./packages/orchestrator/package.json
+
+# Drizzle SQL migrations — hub runs them on startup via runMigrations()
+COPY --chown=orbital:orbital packages/orchestrator/src/db/migrations ./packages/orchestrator/src/db/migrations
+
+# Secrets directory (populated by docker secrets or volume mount)
+RUN mkdir -p /run/secrets && chown orbital:orbital /run/secrets
+
+# Drop to non-root before any process runs
+USER orbital
+
+# Expose tRPC / Fastify port
+EXPOSE 4000
+
+# Liveness probe: GET /health must return 200 within 5s
+# start-period 30s: allow migrations to complete before first check
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
+  CMD wget -qO- http://localhost:${ORBITAL_PORT:-4000}/health || exit 1
+
+# ---- runtime defaults (all can be overridden by env) ----
+ENV NODE_ENV=production
+ENV ORBITAL_MODE=hub
+ENV ORBITAL_PORT=4000
+ENV LOG_LEVEL=warn
+
+# tini not available in alpine by default; use node directly with --init
+# to reap zombie processes
+ENTRYPOINT ["node", "--enable-source-maps"]
+CMD ["packages/orchestrator/dist/index.js"]

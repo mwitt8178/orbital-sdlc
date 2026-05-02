@@ -1,0 +1,1353 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AuroraConstruct — snapshot mwitt template matches snapshot 1`] = `
+{
+  "Outputs": {
+    "AuroraClusterEndpoint1C7B34FE": {
+      "Description": "Orbital mwitt Aurora cluster writer endpoint",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-AuroraEndpoint",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "AuroraClusterD4EFE71C",
+          "Endpoint.Address",
+        ],
+      },
+    },
+    "AuroraClusterReaderEndpoint12CD68CF": {
+      "Description": "Orbital mwitt Aurora cluster reader endpoint",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-AuroraReaderEndpoint",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "AuroraClusterD4EFE71C",
+          "ReadEndpoint.Address",
+        ],
+      },
+    },
+    "AuroraDatabaseNameF2B31FDF": {
+      "Description": "Orbital mwitt Aurora default database name",
+      "Value": "orbital_hub",
+    },
+    "AuroraMasterSecretArn4B4FE9E7": {
+      "Description": "Orbital mwitt Aurora master credentials secret ARN",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-AuroraMasterSecretArn",
+      },
+      "Value": {
+        "Ref": "AuroraMasterSecret5A1F091C",
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "AuroraAuroraSgF83104E3": {
+      "Properties": {
+        "GroupDescription": "Orbital mwitt — Aurora cluster SG. Accepts connections from RDS Proxy only.",
+        "GroupName": "orbital-mwitt-aurora",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "255.255.255.255/32",
+            "Description": "Disallow all traffic",
+            "FromPort": 252,
+            "IpProtocol": "icmp",
+            "ToPort": 86,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "aurora",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "AuroraAuroraSgfromTestStackmwittProxySgRef44E39DC9543212920617": {
+      "Properties": {
+        "Description": "RDS Proxy → Aurora Postgres",
+        "FromPort": 5432,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "AuroraAuroraSgF83104E3",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "ProxySgRef2F9D92CB",
+            "GroupId",
+          ],
+        },
+        "ToPort": 5432,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "AuroraClusterD4EFE71C": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "BackupRetentionPeriod": 7,
+        "CopyTagsToSnapshot": true,
+        "DBClusterIdentifier": "orbital-mwitt",
+        "DBClusterParameterGroupName": {
+          "Ref": "AuroraParamGroup6AD2798A",
+        },
+        "DBSubnetGroupName": {
+          "Ref": "AuroraSubnetGroup4804F2F0",
+        },
+        "DatabaseName": "orbital_hub",
+        "EnableCloudwatchLogsExports": [
+          "postgresql",
+        ],
+        "EnableIAMDatabaseAuthentication": true,
+        "Engine": "aurora-postgresql",
+        "EngineVersion": "16.4",
+        "MasterUserPassword": {
+          "Fn::Join": [
+            "",
+            [
+              "{{resolve:secretsmanager:",
+              {
+                "Ref": "AuroraMasterSecret5A1F091C",
+              },
+              ":SecretString:password::}}",
+            ],
+          ],
+        },
+        "MasterUsername": {
+          "Fn::Join": [
+            "",
+            [
+              "{{resolve:secretsmanager:",
+              {
+                "Ref": "AuroraMasterSecret5A1F091C",
+              },
+              ":SecretString:username::}}",
+            ],
+          ],
+        },
+        "Port": 5432,
+        "PreferredBackupWindow": "03:00-04:00",
+        "PreferredMaintenanceWindow": "sun:04:00-sun:05:00",
+        "ServerlessV2ScalingConfiguration": {
+          "MaxCapacity": 4,
+          "MinCapacity": 0.5,
+        },
+        "StorageEncrypted": true,
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "aurora",
+          },
+        ],
+        "VpcSecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "AuroraAuroraSgF83104E3",
+              "GroupId",
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBCluster",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AuroraClusterLogRetentionpostgresql00781A70": {
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "",
+            [
+              "/aws/rds/cluster/",
+              {
+                "Ref": "AuroraClusterD4EFE71C",
+              },
+              "/postgresql",
+            ],
+          ],
+        },
+        "RetentionInDays": 30,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::LogRetention",
+    },
+    "AuroraClusterWriter398336D3": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "TestVpcisolatedSubnet1RouteTableAssociationB18A00D7",
+        "TestVpcisolatedSubnet2RouteTableAssociation2BB4538E",
+      ],
+      "Properties": {
+        "DBClusterIdentifier": {
+          "Ref": "AuroraClusterD4EFE71C",
+        },
+        "DBInstanceClass": "db.serverless",
+        "EnablePerformanceInsights": true,
+        "Engine": "aurora-postgresql",
+        "PerformanceInsightsRetentionPeriod": 7,
+        "PromotionTier": 0,
+        "PubliclyAccessible": false,
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "aurora",
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBInstance",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AuroraMasterSecret5A1F091C": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Generated by the CDK for stack: ",
+              {
+                "Ref": "AWS::StackName",
+              },
+            ],
+          ],
+        },
+        "GenerateSecretString": {
+          "ExcludeCharacters": " %+~\`#$&*()|[]{}:;<>?!'/@"\\",
+          "GenerateStringKey": "password",
+          "PasswordLength": 30,
+          "SecretStringTemplate": "{"username":"orbital_admin"}",
+        },
+        "Name": "/orbital/mwitt/aurora/master-credentials",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "aurora",
+          },
+        ],
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AuroraMasterSecretAttachmentE179E27C": {
+      "Properties": {
+        "SecretId": {
+          "Ref": "AuroraMasterSecret5A1F091C",
+        },
+        "TargetId": {
+          "Ref": "AuroraClusterD4EFE71C",
+        },
+        "TargetType": "AWS::RDS::DBCluster",
+      },
+      "Type": "AWS::SecretsManager::SecretTargetAttachment",
+    },
+    "AuroraParamGroup6AD2798A": {
+      "Properties": {
+        "Description": "Orbital mwitt Aurora Postgres 16 cluster parameter group",
+        "Family": "aurora-postgresql16",
+        "Parameters": {
+          "log_connections": "1",
+          "log_disconnections": "1",
+          "log_min_duration_statement": "500",
+          "pgvector.enabled": "on",
+          "shared_preload_libraries": "pg_stat_statements,pgaudit",
+        },
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "aurora",
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBClusterParameterGroup",
+    },
+    "AuroraSubnetGroup4804F2F0": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "DBSubnetGroupDescription": "Orbital mwitt Aurora isolated subnet group",
+        "SubnetIds": [
+          {
+            "Ref": "TestVpcisolatedSubnet1Subnet2860A680",
+          },
+          {
+            "Ref": "TestVpcisolatedSubnet2SubnetA6454F0B",
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "aurora",
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBSubnetGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A": {
+      "DependsOn": [
+        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d.zip",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:PutRetentionPolicy",
+                "logs:DeleteRetentionPolicy",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+        "Roles": [
+          {
+            "Ref": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ProxySgRef2F9D92CB": {
+      "Properties": {
+        "GroupDescription": "Test proxy SG",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "255.255.255.255/32",
+            "Description": "Disallow all traffic",
+            "FromPort": 252,
+            "IpProtocol": "icmp",
+            "ToPort": 86,
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "TestVpcE77CE678": {
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsHostnames": true,
+        "EnableDnsSupport": true,
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestStack-mwitt/TestVpc",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::VPC",
+    },
+    "TestVpcIGW9DD53F70": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestStack-mwitt/TestVpc",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::InternetGateway",
+    },
+    "TestVpcVPCGWF1827B84": {
+      "Properties": {
+        "InternetGatewayId": {
+          "Ref": "TestVpcIGW9DD53F70",
+        },
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+    },
+    "TestVpcisolatedSubnet1RouteTable93EFC1F5": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestStack-mwitt/TestVpc/isolatedSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "TestVpcisolatedSubnet1RouteTableAssociationB18A00D7": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "TestVpcisolatedSubnet1RouteTable93EFC1F5",
+        },
+        "SubnetId": {
+          "Ref": "TestVpcisolatedSubnet1Subnet2860A680",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "TestVpcisolatedSubnet1Subnet2860A680": {
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "CidrBlock": "10.0.2.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "isolated",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Isolated",
+          },
+          {
+            "Key": "Name",
+            "Value": "TestStack-mwitt/TestVpc/isolatedSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "TestVpcisolatedSubnet2RouteTable7EBE60D9": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestStack-mwitt/TestVpc/isolatedSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "TestVpcisolatedSubnet2RouteTableAssociation2BB4538E": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "TestVpcisolatedSubnet2RouteTable7EBE60D9",
+        },
+        "SubnetId": {
+          "Ref": "TestVpcisolatedSubnet2SubnetA6454F0B",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "TestVpcisolatedSubnet2SubnetA6454F0B": {
+      "Properties": {
+        "AvailabilityZone": "dummy1b",
+        "CidrBlock": "10.0.3.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "isolated",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Isolated",
+          },
+          {
+            "Key": "Name",
+            "Value": "TestStack-mwitt/TestVpc/isolatedSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "TestVpcprivateSubnet1RouteTableAssociationD9192E40": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "TestVpcprivateSubnet1RouteTableF370C70F",
+        },
+        "SubnetId": {
+          "Ref": "TestVpcprivateSubnet1Subnet6E9D0483",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "TestVpcprivateSubnet1RouteTableF370C70F": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestStack-mwitt/TestVpc/privateSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "TestVpcprivateSubnet1Subnet6E9D0483": {
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "CidrBlock": "10.0.0.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "private",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private",
+          },
+          {
+            "Key": "Name",
+            "Value": "TestStack-mwitt/TestVpc/privateSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "TestVpcprivateSubnet2RouteTable43EBB202": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestStack-mwitt/TestVpc/privateSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "TestVpcprivateSubnet2RouteTableAssociation6E00A0A0": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "TestVpcprivateSubnet2RouteTable43EBB202",
+        },
+        "SubnetId": {
+          "Ref": "TestVpcprivateSubnet2SubnetB8BE3628",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "TestVpcprivateSubnet2SubnetB8BE3628": {
+      "Properties": {
+        "AvailabilityZone": "dummy1b",
+        "CidrBlock": "10.0.1.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "private",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private",
+          },
+          {
+            "Key": "Name",
+            "Value": "TestStack-mwitt/TestVpc/privateSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`AuroraConstruct — snapshot prod template matches snapshot 1`] = `
+{
+  "Outputs": {
+    "AuroraClusterEndpoint1C7B34FE": {
+      "Description": "Orbital prod Aurora cluster writer endpoint",
+      "Export": {
+        "Name": "OrbitalHub-prod-AuroraEndpoint",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "AuroraClusterD4EFE71C",
+          "Endpoint.Address",
+        ],
+      },
+    },
+    "AuroraClusterReaderEndpoint12CD68CF": {
+      "Description": "Orbital prod Aurora cluster reader endpoint",
+      "Export": {
+        "Name": "OrbitalHub-prod-AuroraReaderEndpoint",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "AuroraClusterD4EFE71C",
+          "ReadEndpoint.Address",
+        ],
+      },
+    },
+    "AuroraDatabaseNameF2B31FDF": {
+      "Description": "Orbital prod Aurora default database name",
+      "Value": "orbital_hub",
+    },
+    "AuroraMasterSecretArn4B4FE9E7": {
+      "Description": "Orbital prod Aurora master credentials secret ARN",
+      "Export": {
+        "Name": "OrbitalHub-prod-AuroraMasterSecretArn",
+      },
+      "Value": {
+        "Ref": "AuroraMasterSecret5A1F091C",
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "AuroraAuroraSgF83104E3": {
+      "Properties": {
+        "GroupDescription": "Orbital prod — Aurora cluster SG. Accepts connections from RDS Proxy only.",
+        "GroupName": "orbital-prod-aurora",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "255.255.255.255/32",
+            "Description": "Disallow all traffic",
+            "FromPort": 252,
+            "IpProtocol": "icmp",
+            "ToPort": 86,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "aurora",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "AuroraAuroraSgfromTestStackprodProxySgRef926D1D5B543229E9C5E9": {
+      "Properties": {
+        "Description": "RDS Proxy → Aurora Postgres",
+        "FromPort": 5432,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "AuroraAuroraSgF83104E3",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "ProxySgRef2F9D92CB",
+            "GroupId",
+          ],
+        },
+        "ToPort": 5432,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "AuroraClusterD4EFE71C": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "BackupRetentionPeriod": 35,
+        "CopyTagsToSnapshot": true,
+        "DBClusterIdentifier": "orbital-prod",
+        "DBClusterParameterGroupName": {
+          "Ref": "AuroraParamGroup6AD2798A",
+        },
+        "DBSubnetGroupName": {
+          "Ref": "AuroraSubnetGroup4804F2F0",
+        },
+        "DatabaseName": "orbital_hub",
+        "DeletionProtection": true,
+        "EnableCloudwatchLogsExports": [
+          "postgresql",
+        ],
+        "EnableIAMDatabaseAuthentication": true,
+        "Engine": "aurora-postgresql",
+        "EngineVersion": "16.4",
+        "MasterUserPassword": {
+          "Fn::Join": [
+            "",
+            [
+              "{{resolve:secretsmanager:",
+              {
+                "Ref": "AuroraMasterSecret5A1F091C",
+              },
+              ":SecretString:password::}}",
+            ],
+          ],
+        },
+        "MasterUsername": {
+          "Fn::Join": [
+            "",
+            [
+              "{{resolve:secretsmanager:",
+              {
+                "Ref": "AuroraMasterSecret5A1F091C",
+              },
+              ":SecretString:username::}}",
+            ],
+          ],
+        },
+        "Port": 5432,
+        "PreferredBackupWindow": "03:00-04:00",
+        "PreferredMaintenanceWindow": "sun:04:00-sun:05:00",
+        "ServerlessV2ScalingConfiguration": {
+          "MaxCapacity": 16,
+          "MinCapacity": 1,
+        },
+        "StorageEncrypted": true,
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "aurora",
+          },
+        ],
+        "VpcSecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "AuroraAuroraSgF83104E3",
+              "GroupId",
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBCluster",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "AuroraClusterLogRetentionpostgresql00781A70": {
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "",
+            [
+              "/aws/rds/cluster/",
+              {
+                "Ref": "AuroraClusterD4EFE71C",
+              },
+              "/postgresql",
+            ],
+          ],
+        },
+        "RetentionInDays": 30,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::LogRetention",
+    },
+    "AuroraClusterReaderDE322A60": {
+      "DeletionPolicy": "Retain",
+      "DependsOn": [
+        "AuroraClusterWriter398336D3",
+        "TestVpcisolatedSubnet1RouteTableAssociationB18A00D7",
+        "TestVpcisolatedSubnet2RouteTableAssociation2BB4538E",
+      ],
+      "Properties": {
+        "DBClusterIdentifier": {
+          "Ref": "AuroraClusterD4EFE71C",
+        },
+        "DBInstanceClass": "db.serverless",
+        "EnablePerformanceInsights": true,
+        "Engine": "aurora-postgresql",
+        "PerformanceInsightsRetentionPeriod": 7,
+        "PromotionTier": 1,
+        "PubliclyAccessible": false,
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "aurora",
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBInstance",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "AuroraClusterWriter398336D3": {
+      "DeletionPolicy": "Retain",
+      "DependsOn": [
+        "TestVpcisolatedSubnet1RouteTableAssociationB18A00D7",
+        "TestVpcisolatedSubnet2RouteTableAssociation2BB4538E",
+      ],
+      "Properties": {
+        "DBClusterIdentifier": {
+          "Ref": "AuroraClusterD4EFE71C",
+        },
+        "DBInstanceClass": "db.serverless",
+        "EnablePerformanceInsights": true,
+        "Engine": "aurora-postgresql",
+        "PerformanceInsightsRetentionPeriod": 7,
+        "PromotionTier": 0,
+        "PubliclyAccessible": false,
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "aurora",
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBInstance",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "AuroraMasterSecret5A1F091C": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Generated by the CDK for stack: ",
+              {
+                "Ref": "AWS::StackName",
+              },
+            ],
+          ],
+        },
+        "GenerateSecretString": {
+          "ExcludeCharacters": " %+~\`#$&*()|[]{}:;<>?!'/@"\\",
+          "GenerateStringKey": "password",
+          "PasswordLength": 30,
+          "SecretStringTemplate": "{"username":"orbital_admin"}",
+        },
+        "Name": "/orbital/prod/aurora/master-credentials",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "aurora",
+          },
+        ],
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AuroraMasterSecretAttachmentE179E27C": {
+      "Properties": {
+        "SecretId": {
+          "Ref": "AuroraMasterSecret5A1F091C",
+        },
+        "TargetId": {
+          "Ref": "AuroraClusterD4EFE71C",
+        },
+        "TargetType": "AWS::RDS::DBCluster",
+      },
+      "Type": "AWS::SecretsManager::SecretTargetAttachment",
+    },
+    "AuroraParamGroup6AD2798A": {
+      "Properties": {
+        "Description": "Orbital prod Aurora Postgres 16 cluster parameter group",
+        "Family": "aurora-postgresql16",
+        "Parameters": {
+          "log_connections": "1",
+          "log_disconnections": "1",
+          "log_min_duration_statement": "500",
+          "pgvector.enabled": "on",
+          "shared_preload_libraries": "pg_stat_statements,pgaudit",
+        },
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "aurora",
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBClusterParameterGroup",
+    },
+    "AuroraSubnetGroup4804F2F0": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "DBSubnetGroupDescription": "Orbital prod Aurora isolated subnet group",
+        "SubnetIds": [
+          {
+            "Ref": "TestVpcisolatedSubnet1Subnet2860A680",
+          },
+          {
+            "Ref": "TestVpcisolatedSubnet2SubnetA6454F0B",
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "aurora",
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBSubnetGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A": {
+      "DependsOn": [
+        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d.zip",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:PutRetentionPolicy",
+                "logs:DeleteRetentionPolicy",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+        "Roles": [
+          {
+            "Ref": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ProxySgRef2F9D92CB": {
+      "Properties": {
+        "GroupDescription": "Test proxy SG",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "255.255.255.255/32",
+            "Description": "Disallow all traffic",
+            "FromPort": 252,
+            "IpProtocol": "icmp",
+            "ToPort": 86,
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "TestVpcE77CE678": {
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsHostnames": true,
+        "EnableDnsSupport": true,
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestStack-prod/TestVpc",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::VPC",
+    },
+    "TestVpcIGW9DD53F70": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestStack-prod/TestVpc",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::InternetGateway",
+    },
+    "TestVpcVPCGWF1827B84": {
+      "Properties": {
+        "InternetGatewayId": {
+          "Ref": "TestVpcIGW9DD53F70",
+        },
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+    },
+    "TestVpcisolatedSubnet1RouteTable93EFC1F5": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestStack-prod/TestVpc/isolatedSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "TestVpcisolatedSubnet1RouteTableAssociationB18A00D7": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "TestVpcisolatedSubnet1RouteTable93EFC1F5",
+        },
+        "SubnetId": {
+          "Ref": "TestVpcisolatedSubnet1Subnet2860A680",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "TestVpcisolatedSubnet1Subnet2860A680": {
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "CidrBlock": "10.0.2.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "isolated",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Isolated",
+          },
+          {
+            "Key": "Name",
+            "Value": "TestStack-prod/TestVpc/isolatedSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "TestVpcisolatedSubnet2RouteTable7EBE60D9": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestStack-prod/TestVpc/isolatedSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "TestVpcisolatedSubnet2RouteTableAssociation2BB4538E": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "TestVpcisolatedSubnet2RouteTable7EBE60D9",
+        },
+        "SubnetId": {
+          "Ref": "TestVpcisolatedSubnet2SubnetA6454F0B",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "TestVpcisolatedSubnet2SubnetA6454F0B": {
+      "Properties": {
+        "AvailabilityZone": "dummy1b",
+        "CidrBlock": "10.0.3.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "isolated",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Isolated",
+          },
+          {
+            "Key": "Name",
+            "Value": "TestStack-prod/TestVpc/isolatedSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "TestVpcprivateSubnet1RouteTableAssociationD9192E40": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "TestVpcprivateSubnet1RouteTableF370C70F",
+        },
+        "SubnetId": {
+          "Ref": "TestVpcprivateSubnet1Subnet6E9D0483",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "TestVpcprivateSubnet1RouteTableF370C70F": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestStack-prod/TestVpc/privateSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "TestVpcprivateSubnet1Subnet6E9D0483": {
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "CidrBlock": "10.0.0.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "private",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private",
+          },
+          {
+            "Key": "Name",
+            "Value": "TestStack-prod/TestVpc/privateSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "TestVpcprivateSubnet2RouteTable43EBB202": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestStack-prod/TestVpc/privateSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "TestVpcprivateSubnet2RouteTableAssociation6E00A0A0": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "TestVpcprivateSubnet2RouteTable43EBB202",
+        },
+        "SubnetId": {
+          "Ref": "TestVpcprivateSubnet2SubnetB8BE3628",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "TestVpcprivateSubnet2SubnetB8BE3628": {
+      "Properties": {
+        "AvailabilityZone": "dummy1b",
+        "CidrBlock": "10.0.1.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "private",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private",
+          },
+          {
+            "Key": "Name",
+            "Value": "TestStack-prod/TestVpc/privateSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;

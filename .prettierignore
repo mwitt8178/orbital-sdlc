@@ -1,0 +1,7 @@
+dist/
+build/
+node_modules/
+*.generated.*
+packages/orchestrator/src/db/migrations/*.sql
+coverage/
+.vitest-cache/

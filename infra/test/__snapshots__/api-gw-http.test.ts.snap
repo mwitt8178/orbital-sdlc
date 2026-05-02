@@ -1,0 +1,1209 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ApiGwHttpConstruct — snapshot mwitt stack matches snapshot 1`] = `
+{
+  "Outputs": {
+    "ApiGwApiEndpoint1F7D28E6": {
+      "Description": "Orbital mwitt API endpoint (custom domain)",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-ApiEndpoint",
+      },
+      "Value": "https://api.mwitt.orbital.team.dev",
+    },
+    "ApiGwHttpApiId3B734B43": {
+      "Description": "Orbital mwitt HTTP API ID",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-HttpApiId",
+      },
+      "Value": {
+        "Ref": "ApiGwHttpApi88C101BA",
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "ApiGwAccessLogs8FEFC74C": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/orbital/mwitt/apigateway/http-api-access-logs",
+        "RetentionInDays": 30,
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "api-gateway-http",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "ApiGwApiDnsRecord7F3B421D": {
+      "Properties": {
+        "AliasTarget": {
+          "DNSName": {
+            "Fn::GetAtt": [
+              "ApiGwCustomDomainFB708C72",
+              "RegionalDomainName",
+            ],
+          },
+          "HostedZoneId": {
+            "Fn::GetAtt": [
+              "ApiGwCustomDomainFB708C72",
+              "RegionalHostedZoneId",
+            ],
+          },
+        },
+        "Comment": "Orbital mwitt — HTTP API custom domain",
+        "HostedZoneId": {
+          "Ref": "TestZone0C3926D9",
+        },
+        "Name": "api.mwitt.orbital.team.dev.",
+        "Type": "A",
+      },
+      "Type": "AWS::Route53::RecordSet",
+    },
+    "ApiGwCustomDomainFB708C72": {
+      "Properties": {
+        "DomainName": "api.mwitt.orbital.team.dev",
+        "DomainNameConfigurations": [
+          {
+            "CertificateArn": {
+              "Ref": "TestCert9C74CCBF",
+            },
+            "EndpointType": "REGIONAL",
+          },
+        ],
+        "Tags": {
+          "orbital:component": "api-gateway-http",
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::DomainName",
+    },
+    "ApiGwHttpApi88C101BA": {
+      "Properties": {
+        "CorsConfiguration": {
+          "AllowCredentials": true,
+          "AllowHeaders": [
+            "Content-Type",
+            "Authorization",
+            "X-Orbital-Install-Id",
+            "X-Orbital-Sig",
+            "X-Orbital-Sig-Body",
+            "X-Orbital-Tenant-ID",
+          ],
+          "AllowMethods": [
+            "GET",
+            "POST",
+            "OPTIONS",
+          ],
+          "AllowOrigins": [
+            "https://mwitt.orbital.team.dev",
+            "http://localhost:3000",
+            "http://localhost:5173",
+          ],
+          "MaxAge": 3600,
+        },
+        "Description": "Orbital mwitt tRPC HTTP API",
+        "DisableExecuteApiEndpoint": false,
+        "Name": "orbital-mwitt-api",
+        "ProtocolType": "HTTP",
+        "Tags": {
+          "orbital:component": "api-gateway-http",
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Api",
+    },
+    "ApiGwHttpApiANYinstallproxy45EFC0D0": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "AuthorizationType": "CUSTOM",
+        "AuthorizerId": {
+          "Ref": "ApiGwHttpApiInstallAuth9AAE3545",
+        },
+        "RouteKey": "ANY /install/{proxy+}",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "ApiGwHttpApiANYinstallproxyIntegrationANYinstallproxy51D654D0",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "ApiGwHttpApiANYinstallproxyIntegrationANYinstallproxy51D654D0": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "PayloadFormatVersion": "2.0",
+        "TimeoutInMillis": 29000,
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "ApiGwHttpApiANYinstallproxyIntegrationANYinstallproxyPermission240830E7": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:us-east-1:123456789012:",
+              {
+                "Ref": "ApiGwHttpApi88C101BA",
+              },
+              "/*/*/install/{proxy+}",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "ApiGwHttpApiANYtrpcauditproxyDD1CA9DA": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "AuthorizationType": "JWT",
+        "AuthorizerId": {
+          "Ref": "ApiGwHttpApiCognitoAuth4CC0573C",
+        },
+        "RouteKey": "ANY /trpc/audit/{proxy+}",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "ApiGwHttpApiANYtrpcauditproxyIntegrationANYtrpcauditproxy7C147508",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "ApiGwHttpApiANYtrpcauditproxyIntegrationANYtrpcauditproxy7C147508": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "PayloadFormatVersion": "2.0",
+        "TimeoutInMillis": 29000,
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "ApiGwHttpApiANYtrpcauditproxyIntegrationANYtrpcauditproxyPermission1F4BF791": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:us-east-1:123456789012:",
+              {
+                "Ref": "ApiGwHttpApi88C101BA",
+              },
+              "/*/*/trpc/audit/{proxy+}",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "ApiGwHttpApiANYtrpcauthproxy8BDD179F": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "AuthorizationType": "JWT",
+        "AuthorizerId": {
+          "Ref": "ApiGwHttpApiCognitoAuth4CC0573C",
+        },
+        "RouteKey": "ANY /trpc/auth/{proxy+}",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "ApiGwHttpApiANYtrpcauthproxyIntegrationANYtrpcauthproxy0C6F3CF6",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "ApiGwHttpApiANYtrpcauthproxyIntegrationANYtrpcauthproxy0C6F3CF6": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "PayloadFormatVersion": "2.0",
+        "TimeoutInMillis": 29000,
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "ApiGwHttpApiANYtrpcauthproxyIntegrationANYtrpcauthproxyPermissionF4F9E24C": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:us-east-1:123456789012:",
+              {
+                "Ref": "ApiGwHttpApi88C101BA",
+              },
+              "/*/*/trpc/auth/{proxy+}",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "ApiGwHttpApiANYtrpccommsproxy2B1A0A5E": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "AuthorizationType": "JWT",
+        "AuthorizerId": {
+          "Ref": "ApiGwHttpApiCognitoAuth4CC0573C",
+        },
+        "RouteKey": "ANY /trpc/comms/{proxy+}",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "ApiGwHttpApiANYtrpccommsproxyIntegrationANYtrpccommsproxy2156A1A2",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "ApiGwHttpApiANYtrpccommsproxyIntegrationANYtrpccommsproxy2156A1A2": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "PayloadFormatVersion": "2.0",
+        "TimeoutInMillis": 29000,
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "ApiGwHttpApiANYtrpccommsproxyIntegrationANYtrpccommsproxyPermission56DF5700": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:us-east-1:123456789012:",
+              {
+                "Ref": "ApiGwHttpApi88C101BA",
+              },
+              "/*/*/trpc/comms/{proxy+}",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "ApiGwHttpApiANYtrpccostproxyCF5CD5A7": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "AuthorizationType": "JWT",
+        "AuthorizerId": {
+          "Ref": "ApiGwHttpApiCognitoAuth4CC0573C",
+        },
+        "RouteKey": "ANY /trpc/cost/{proxy+}",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "ApiGwHttpApiANYtrpccostproxyIntegrationANYtrpccostproxy1D379883",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "ApiGwHttpApiANYtrpccostproxyIntegrationANYtrpccostproxy1D379883": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "PayloadFormatVersion": "2.0",
+        "TimeoutInMillis": 29000,
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "ApiGwHttpApiANYtrpccostproxyIntegrationANYtrpccostproxyPermission6B7FCBBA": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:us-east-1:123456789012:",
+              {
+                "Ref": "ApiGwHttpApi88C101BA",
+              },
+              "/*/*/trpc/cost/{proxy+}",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "ApiGwHttpApiANYtrpcdefectsproxy9B754884": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "AuthorizationType": "JWT",
+        "AuthorizerId": {
+          "Ref": "ApiGwHttpApiCognitoAuth4CC0573C",
+        },
+        "RouteKey": "ANY /trpc/defects/{proxy+}",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "ApiGwHttpApiANYtrpcdefectsproxyIntegrationANYtrpcdefectsproxy256C48A0",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "ApiGwHttpApiANYtrpcdefectsproxyIntegrationANYtrpcdefectsproxy256C48A0": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "PayloadFormatVersion": "2.0",
+        "TimeoutInMillis": 29000,
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "ApiGwHttpApiANYtrpcdefectsproxyIntegrationANYtrpcdefectsproxyPermissionB3DA7997": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:us-east-1:123456789012:",
+              {
+                "Ref": "ApiGwHttpApi88C101BA",
+              },
+              "/*/*/trpc/defects/{proxy+}",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "ApiGwHttpApiANYtrpcmemoryproxy55523501": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "AuthorizationType": "JWT",
+        "AuthorizerId": {
+          "Ref": "ApiGwHttpApiCognitoAuth4CC0573C",
+        },
+        "RouteKey": "ANY /trpc/memory/{proxy+}",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "ApiGwHttpApiANYtrpcmemoryproxyIntegrationANYtrpcmemoryproxy46B2A98A",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "ApiGwHttpApiANYtrpcmemoryproxyIntegrationANYtrpcmemoryproxy46B2A98A": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "PayloadFormatVersion": "2.0",
+        "TimeoutInMillis": 29000,
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "ApiGwHttpApiANYtrpcmemoryproxyIntegrationANYtrpcmemoryproxyPermission5EF3A7D5": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:us-east-1:123456789012:",
+              {
+                "Ref": "ApiGwHttpApi88C101BA",
+              },
+              "/*/*/trpc/memory/{proxy+}",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "ApiGwHttpApiANYtrpconboardingproxy81431983": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "AuthorizationType": "JWT",
+        "AuthorizerId": {
+          "Ref": "ApiGwHttpApiCognitoAuth4CC0573C",
+        },
+        "RouteKey": "ANY /trpc/onboarding/{proxy+}",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "ApiGwHttpApiANYtrpconboardingproxyIntegrationANYtrpconboardingproxy91F0BD5A",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "ApiGwHttpApiANYtrpconboardingproxyIntegrationANYtrpconboardingproxy91F0BD5A": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "PayloadFormatVersion": "2.0",
+        "TimeoutInMillis": 29000,
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "ApiGwHttpApiANYtrpconboardingproxyIntegrationANYtrpconboardingproxyPermission52F53D6F": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:us-east-1:123456789012:",
+              {
+                "Ref": "ApiGwHttpApi88C101BA",
+              },
+              "/*/*/trpc/onboarding/{proxy+}",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "ApiGwHttpApiANYtrpcprovidersproxy2C1F6CCB": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "AuthorizationType": "JWT",
+        "AuthorizerId": {
+          "Ref": "ApiGwHttpApiCognitoAuth4CC0573C",
+        },
+        "RouteKey": "ANY /trpc/providers/{proxy+}",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "ApiGwHttpApiANYtrpcprovidersproxyIntegrationANYtrpcprovidersproxyF4BF5B27",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "ApiGwHttpApiANYtrpcprovidersproxyIntegrationANYtrpcprovidersproxyF4BF5B27": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "PayloadFormatVersion": "2.0",
+        "TimeoutInMillis": 29000,
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "ApiGwHttpApiANYtrpcprovidersproxyIntegrationANYtrpcprovidersproxyPermission0A332575": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:us-east-1:123456789012:",
+              {
+                "Ref": "ApiGwHttpApi88C101BA",
+              },
+              "/*/*/trpc/providers/{proxy+}",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "ApiGwHttpApiANYtrpcprsproxy24CA4623": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "AuthorizationType": "JWT",
+        "AuthorizerId": {
+          "Ref": "ApiGwHttpApiCognitoAuth4CC0573C",
+        },
+        "RouteKey": "ANY /trpc/prs/{proxy+}",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "ApiGwHttpApiANYtrpcprsproxyIntegrationANYtrpcprsproxy5AB803A2",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "ApiGwHttpApiANYtrpcprsproxyIntegrationANYtrpcprsproxy5AB803A2": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "PayloadFormatVersion": "2.0",
+        "TimeoutInMillis": 29000,
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "ApiGwHttpApiANYtrpcprsproxyIntegrationANYtrpcprsproxyPermissionD50E21CF": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:us-east-1:123456789012:",
+              {
+                "Ref": "ApiGwHttpApi88C101BA",
+              },
+              "/*/*/trpc/prs/{proxy+}",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "ApiGwHttpApiANYtrpctasksproxyF82950C2": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "AuthorizationType": "JWT",
+        "AuthorizerId": {
+          "Ref": "ApiGwHttpApiCognitoAuth4CC0573C",
+        },
+        "RouteKey": "ANY /trpc/tasks/{proxy+}",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "ApiGwHttpApiANYtrpctasksproxyIntegrationANYtrpctasksproxy62A01143",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "ApiGwHttpApiANYtrpctasksproxyIntegrationANYtrpctasksproxy62A01143": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "PayloadFormatVersion": "2.0",
+        "TimeoutInMillis": 29000,
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "ApiGwHttpApiANYtrpctasksproxyIntegrationANYtrpctasksproxyPermission4A9DCAB6": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:us-east-1:123456789012:",
+              {
+                "Ref": "ApiGwHttpApi88C101BA",
+              },
+              "/*/*/trpc/tasks/{proxy+}",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "ApiGwHttpApiANYtrpcteamproxy5C3CD791": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "AuthorizationType": "JWT",
+        "AuthorizerId": {
+          "Ref": "ApiGwHttpApiCognitoAuth4CC0573C",
+        },
+        "RouteKey": "ANY /trpc/team/{proxy+}",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "ApiGwHttpApiANYtrpcteamproxyIntegrationANYtrpcteamproxy0F39F5F9",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "ApiGwHttpApiANYtrpcteamproxyIntegrationANYtrpcteamproxy0F39F5F9": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "PayloadFormatVersion": "2.0",
+        "TimeoutInMillis": 29000,
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "ApiGwHttpApiANYtrpcteamproxyIntegrationANYtrpcteamproxyPermission15897A34": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:us-east-1:123456789012:",
+              {
+                "Ref": "ApiGwHttpApi88C101BA",
+              },
+              "/*/*/trpc/team/{proxy+}",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "ApiGwHttpApiCognitoAuth4CC0573C": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "AuthorizerType": "JWT",
+        "IdentitySource": [
+          "$request.header.Authorization",
+        ],
+        "JwtConfiguration": {
+          "Audience": [
+            "testClientId",
+          ],
+          "Issuer": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_test",
+        },
+        "Name": "orbital-mwitt-cognito-auth",
+      },
+      "Type": "AWS::ApiGatewayV2::Authorizer",
+    },
+    "ApiGwHttpApiDefaultStage0A53C3B1": {
+      "DependsOn": [
+        "ApiGwCustomDomainFB708C72",
+      ],
+      "Properties": {
+        "AccessLogSettings": {
+          "DestinationArn": {
+            "Fn::GetAtt": [
+              "ApiGwAccessLogs8FEFC74C",
+              "Arn",
+            ],
+          },
+          "Format": "{"requestId":"$context.requestId","routeKey":"$context.routeKey","status":"$context.status","protocol":"$context.protocol","requestTime":"$context.requestTime","responseLength":"$context.responseLength","integrationLatency":"$context.integrationLatency","responseLatency":"$context.responseLatency","errorMessage":"$context.error.message","errorType":"$context.error.responseType","tenantId":"$context.authorizer.tenantId","installId":"$context.authorizer.installId","userId":"$context.authorizer.userId"}",
+        },
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "AutoDeploy": true,
+        "DefaultRouteSettings": {
+          "DataTraceEnabled": false,
+          "DetailedMetricsEnabled": true,
+          "LoggingLevel": "INFO",
+          "ThrottlingBurstLimit": 200,
+          "ThrottlingRateLimit": 100,
+        },
+        "StageName": "$default",
+        "Tags": {
+          "orbital:component": "api-gateway-http",
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Stage",
+    },
+    "ApiGwHttpApiDefaultStageTestApiGwmwittApiGwCustomDomainundefinedEF244596": {
+      "DependsOn": [
+        "ApiGwCustomDomainFB708C72",
+        "ApiGwHttpApiDefaultStage0A53C3B1",
+      ],
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "DomainName": {
+          "Ref": "ApiGwCustomDomainFB708C72",
+        },
+        "Stage": "$default",
+      },
+      "Type": "AWS::ApiGatewayV2::ApiMapping",
+    },
+    "ApiGwHttpApiInstallAuth9AAE3545": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "ApiGwHttpApi88C101BA",
+        },
+        "AuthorizerPayloadFormatVersion": "2.0",
+        "AuthorizerResultTtlInSeconds": 0,
+        "AuthorizerType": "REQUEST",
+        "AuthorizerUri": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+              {
+                "Fn::GetAtt": [
+                  "StubFn505B4F25",
+                  "Arn",
+                ],
+              },
+              "/invocations",
+            ],
+          ],
+        },
+        "EnableSimpleResponses": true,
+        "IdentitySource": [
+          "$request.header.X-Orbital-Install-Id",
+          "$request.header.X-Orbital-Sig",
+          "$request.header.X-Orbital-Sig-Body",
+        ],
+        "Name": "orbital-mwitt-install-auth",
+      },
+      "Type": "AWS::ApiGatewayV2::Authorizer",
+    },
+    "ApiGwHttpApiTestApiGwmwittApiGwHttpApiInstallAuth9EF4610FPermission940FFADA": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "StubFn505B4F25",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":execute-api:us-east-1:123456789012:",
+              {
+                "Ref": "ApiGwHttpApi88C101BA",
+              },
+              "/authorizers/",
+              {
+                "Ref": "ApiGwHttpApiInstallAuth9AAE3545",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "StubFn505B4F25": {
+      "DependsOn": [
+        "StubFnServiceRole23F47329",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({ statusCode: 200 })",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "StubFnServiceRole23F47329",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "StubFnServiceRole23F47329": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "TestCert9C74CCBF": {
+      "Properties": {
+        "DomainName": "mwitt.orbital.team.dev",
+        "DomainValidationOptions": [
+          {
+            "DomainName": "mwitt.orbital.team.dev",
+            "ValidationDomain": "team.dev",
+          },
+          {
+            "DomainName": "*.mwitt.orbital.team.dev",
+            "ValidationDomain": "team.dev",
+          },
+        ],
+        "SubjectAlternativeNames": [
+          "*.mwitt.orbital.team.dev",
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestApiGw-mwitt/TestCert",
+          },
+        ],
+        "ValidationMethod": "EMAIL",
+      },
+      "Type": "AWS::CertificateManager::Certificate",
+    },
+    "TestZone0C3926D9": {
+      "Properties": {
+        "Name": "mwitt.orbital.team.dev.",
+      },
+      "Type": "AWS::Route53::HostedZone",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;

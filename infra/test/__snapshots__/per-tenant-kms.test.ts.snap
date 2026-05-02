@@ -1,0 +1,216 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`PerTenantKmsConstruct — snapshot template matches snapshot 1`] = `
+{
+  "Outputs": {
+    "PerTenantKmsTenantKeyAliasPrefix636879E5": {
+      "Description": "Per-tenant CMK alias prefix — mwitt",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-TenantKeyAliasPrefix",
+      },
+      "Value": "alias/orbital-tenant-",
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "AuditRole88E97C2A": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "AuditRoleDefaultPolicyAFD8B297": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:GenerateDataKey",
+                "kms:GenerateDataKeyWithoutPlaintext",
+                "kms:DescribeKey",
+                "kms:ReEncryptFrom",
+                "kms:ReEncryptTo",
+              ],
+              "Condition": {
+                "StringLike": {
+                  "kms:RequestAlias": "alias/orbital-tenant-*",
+                },
+              },
+              "Effect": "Allow",
+              "Resource": "arn:aws:kms:us-east-1:123456789012:key/*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "AuditRoleDefaultPolicyAFD8B297",
+        "Roles": [
+          {
+            "Ref": "AuditRole88E97C2A",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "OnboardingRoleDefaultPolicy55DEFEA2": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "kms:CreateKey",
+                "kms:TagResource",
+                "kms:EnableKeyRotation",
+                "kms:PutKeyPolicy",
+              ],
+              "Condition": {
+                "StringEquals": {
+                  "aws:RequestTag/Env": "mwitt",
+                  "aws:RequestTag/Owner": "orbital",
+                },
+              },
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": "kms:CreateAlias",
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:kms:us-east-1:123456789012:alias/orbital-tenant-*",
+                "arn:aws:kms:us-east-1:123456789012:key/*",
+              ],
+            },
+            {
+              "Action": "kms:DescribeKey",
+              "Effect": "Allow",
+              "Resource": "arn:aws:kms:us-east-1:123456789012:key/*",
+            },
+            {
+              "Action": [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:GenerateDataKey",
+                "kms:GenerateDataKeyWithoutPlaintext",
+                "kms:DescribeKey",
+                "kms:ReEncryptFrom",
+                "kms:ReEncryptTo",
+              ],
+              "Condition": {
+                "StringLike": {
+                  "kms:RequestAlias": "alias/orbital-tenant-*",
+                },
+              },
+              "Effect": "Allow",
+              "Resource": "arn:aws:kms:us-east-1:123456789012:key/*",
+            },
+            {
+              "Action": [
+                "kms:DeleteAlias",
+                "kms:ScheduleKeyDeletion",
+                "kms:DescribeKey",
+              ],
+              "Condition": {
+                "StringLike": {
+                  "kms:ResourceAliases": "alias/orbital-tenant-*",
+                },
+              },
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:kms:us-east-1:123456789012:alias/orbital-tenant-*",
+                "arn:aws:kms:us-east-1:123456789012:key/*",
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "OnboardingRoleDefaultPolicy55DEFEA2",
+        "Roles": [
+          {
+            "Ref": "OnboardingRoleEAA80E17",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "OnboardingRoleEAA80E17": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "UnrelatedRole72EB0385": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;

@@ -1,0 +1,11 @@
+{
+  "name": "orbital-migration-runner",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lambda that applies Drizzle SQL migrations against Aurora via RDS Proxy on each CDK deploy.",
+  "main": "index.js",
+  "dependencies": {
+    "@aws-sdk/rds-signer": "^3.750.0",
+    "postgres": "^3.4.0"
+  }
+}

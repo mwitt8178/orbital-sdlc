@@ -1,0 +1,17 @@
+# CDK output
+cdk.out/
+
+# TypeScript compiled output
+*.js
+*.d.ts
+*.d.ts.map
+*.js.map
+
+# Incremental TypeScript build
+*.tsbuildinfo
+
+# Node modules
+node_modules/
+
+# CDK bootstrap
+.cdk.staging/

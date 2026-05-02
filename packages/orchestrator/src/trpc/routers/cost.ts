@@ -1,0 +1,297 @@
+/**
+ * trpc/routers/cost.ts — Cost governance tRPC router.
+ *
+ * [Engineer-Sr · Sonnet · run-round6-05-cost-governance]
+ *
+ * Procedures:
+ *   cost.summary({projectId, sprintId?})        — aggregate cost + budget status
+ *   cost.ledger({projectId, sprintId?, limit?}) — paginated cost_ledger rows
+ *   cost.setBudget({scope, scopeId?, hardCapUsd, ...}) — upsert budget (admin-gated)
+ *   cost.killAll({scope, scopeId, reason})       — SIGTERM all workers in scope (admin-gated)
+ *
+ * Auth: kill and setBudget require adminToken (same as admin.ts pattern).
+ * summary and ledger are public (read-only cost data).
+ */
+
+import { z } from 'zod'
+import { TRPCError } from '@trpc/server'
+import { eq, and, desc, lte } from 'drizzle-orm'
+import { uuidv7 } from 'uuidv7'
+
+import { router, publicProcedure } from '../init.js'
+import { db, sql as sqlPool } from '../../db/client.js'
+import { createEventStore } from '../../events/store.js'
+import { costLedger } from '../../db/schema/cost.js'
+import { getCostService } from '../../cost/service.js'
+import { getCostEnforcer } from '../../cost/enforcer.js'
+import { authorizeAdminRequest } from '../../admin/auth.js'
+import { loadEnv } from '../../config/env.js'
+import { logger } from '../../config/logger.js'
+import type { BudgetPausedPayload } from '../../events/types.js'
+import type { Actor } from '@orbital/types'
+
+const SYSTEM_ACTOR: Actor = { type: 'system', component: 'orchestrator' }
+
+let _eventStore: ReturnType<typeof createEventStore> | null = null
+function getEventStore(): ReturnType<typeof createEventStore> {
+  if (_eventStore === null) _eventStore = createEventStore(db, sqlPool)
+  return _eventStore
+}
+
+async function requireAdmin(token: string | undefined): Promise<void> {
+  const env = loadEnv()
+  const decision = await authorizeAdminRequest(token, env.NODE_ENV)
+  if (!decision.allowed) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: decision.detail ?? `admin access denied (${decision.reasonCode})`,
+    })
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Input / output schemas
+// ---------------------------------------------------------------------------
+
+const adminTokenSchema = z.string().optional()
+
+const summaryInput = z.object({
+  projectId: z.string().uuid(),
+  sprintId:  z.string().uuid().optional(),
+})
+
+const summaryOutput = z.object({
+  projectId:        z.string(),
+  sprintId:         z.string().nullable(),
+  totalCostUsd:     z.number(),
+  todayCostUsd:     z.number(),
+  hardCapUsd:       z.number().nullable(),
+  softThresholdPct: z.number(),
+  pctUsed:          z.number(),
+  entryCount:       z.number(),
+  windowStart:      z.string(),
+  windowEnd:        z.string(),
+})
+
+const ledgerInput = z.object({
+  projectId: z.string().uuid(),
+  sprintId:  z.string().uuid().optional(),
+  taskId:    z.string().uuid().optional(),
+  limit:     z.number().int().min(1).max(500).default(100),
+  cursor:    z.string().optional(),
+})
+
+const ledgerRowSchema = z.object({
+  entryId:          z.string(),
+  occurredAt:       z.string(),
+  projectId:        z.string(),
+  sprintId:         z.string().nullable(),
+  taskId:           z.string().nullable(),
+  workerId:         z.string().nullable(),
+  personaId:        z.string().nullable(),
+  model:            z.string(),
+  provider:         z.string(),
+  inputTokens:      z.number(),
+  outputTokens:     z.number(),
+  cacheReadTokens:  z.number(),
+  cacheWriteTokens: z.number(),
+  costUsd:          z.number(),
+  requestId:        z.string().nullable(),
+})
+
+const ledgerOutput = z.object({
+  rows:       z.array(ledgerRowSchema),
+  nextCursor: z.string().nullable(),
+})
+
+const setBudgetInput = z.object({
+  adminToken:       adminTokenSchema,
+  scope:            z.enum(['install', 'project', 'sprint']),
+  scopeId:          z.string().uuid().optional(),
+  hardCapUsd:       z.number().positive(),
+  softThresholdPct: z.number().int().min(1).max(100).default(80),
+  onSoft:           z.enum(['alert', 'pause', 'none']).default('alert'),
+  onHard:           z.enum(['pause', 'kill', 'alert_only']).default('pause'),
+})
+
+const setBudgetOutput = z.object({
+  budgetId:         z.string(),
+  scope:            z.string(),
+  scopeId:          z.string().nullable(),
+  hardCapUsd:       z.number(),
+  softThresholdPct: z.number(),
+  onSoft:           z.string(),
+  onHard:           z.string(),
+  active:           z.boolean(),
+  createdAt:        z.string(),
+})
+
+const killAllInput = z.object({
+  adminToken: adminTokenSchema,
+  scope:      z.enum(['install', 'project', 'sprint']),
+  scopeId:    z.string().uuid(),
+  reason:     z.string().min(1).max(256),
+})
+
+const killAllOutput = z.object({
+  killedWorkerIds: z.array(z.string()),
+  signalsSent:     z.number(),
+})
+
+// ---------------------------------------------------------------------------
+// Router
+// ---------------------------------------------------------------------------
+
+export const costRouter = router({
+  /**
+   * Aggregate cost summary for a project (optionally scoped to a sprint).
+   * Includes hard cap, pct used, and today's spend.
+   */
+  summary: publicProcedure
+    .input(summaryInput)
+    .output(summaryOutput)
+    .query(async ({ input }) => {
+      const svc = getCostService()
+      const summary = await svc.summarize(input.projectId, input.sprintId ?? null)
+      return summary
+    }),
+
+  /**
+   * Paginated cost_ledger rows for a project/sprint/task.
+   * Cursor is ISO timestamp of last row (occurred_at).
+   */
+  ledger: publicProcedure
+    .input(ledgerInput)
+    .output(ledgerOutput)
+    .query(async ({ input }) => {
+      const conditions = [eq(costLedger.projectId, input.projectId)]
+      if (input.sprintId)  conditions.push(eq(costLedger.sprintId, input.sprintId))
+      if (input.taskId)    conditions.push(eq(costLedger.taskId, input.taskId))
+      if (input.cursor) {
+        conditions.push(lte(costLedger.occurredAt, new Date(input.cursor)))
+      }
+
+      const rows = await db
+        .select()
+        .from(costLedger)
+        .where(and(...conditions))
+        .orderBy(desc(costLedger.occurredAt))
+        .limit(input.limit + 1)
+
+      const hasMore = rows.length > input.limit
+      const pageRows = hasMore ? rows.slice(0, input.limit) : rows
+      const nextCursor = hasMore
+        ? pageRows[pageRows.length - 1]?.occurredAt.toISOString() ?? null
+        : null
+
+      return {
+        rows: pageRows.map((r) => ({
+          entryId:          r.entryId,
+          occurredAt:       r.occurredAt.toISOString(),
+          projectId:        r.projectId,
+          sprintId:         r.sprintId ?? null,
+          taskId:           r.taskId ?? null,
+          workerId:         r.workerId ?? null,
+          personaId:        r.personaId ?? null,
+          model:            r.model,
+          provider:         r.provider,
+          inputTokens:      r.inputTokens,
+          outputTokens:     r.outputTokens,
+          cacheReadTokens:  r.cacheReadTokens,
+          cacheWriteTokens: r.cacheWriteTokens,
+          costUsd:          Number(r.costUsd),
+          requestId:        r.requestId ?? null,
+        })),
+        nextCursor,
+      }
+    }),
+
+  /**
+   * Upsert a cost budget. Deactivates prior budget for the same scope.
+   * Capability-gated: requires adminToken.
+   */
+  setBudget: publicProcedure
+    .input(setBudgetInput)
+    .output(setBudgetOutput)
+    .mutation(async ({ input }) => {
+      await requireAdmin(input.adminToken)
+
+      const svc = getCostService()
+      const budget = await svc.setBudget({
+        scope:            input.scope,
+        scopeId:          input.scopeId ?? null,
+        hardCapUsd:       input.hardCapUsd,
+        softThresholdPct: input.softThresholdPct,
+        onSoft:           input.onSoft,
+        onHard:           input.onHard,
+      })
+
+      logger.info(
+        { scope: input.scope, scopeId: input.scopeId, hardCapUsd: input.hardCapUsd },
+        'cost.setBudget: budget upserted',
+      )
+
+      return {
+        budgetId:         budget.budgetId,
+        scope:            budget.scope,
+        scopeId:          budget.scopeId,
+        hardCapUsd:       budget.hardCapUsd,
+        softThresholdPct: budget.softThresholdPct,
+        onSoft:           budget.onSoft,
+        onHard:           budget.onHard,
+        active:           budget.active,
+        createdAt:        budget.createdAt,
+      }
+    }),
+
+  /**
+   * Kill all workers in a scope. SIGTERM each; emits KillSwitchTripped per worker.
+   * Capability-gated: requires adminToken.
+   */
+  killAll: publicProcedure
+    .input(killAllInput)
+    .output(killAllOutput)
+    .mutation(async ({ input }) => {
+      await requireAdmin(input.adminToken)
+
+      const enforcer = getCostEnforcer()
+      const result = await enforcer.killAll(
+        input.scope,
+        input.scopeId,
+        input.reason,
+        'operator',
+      )
+
+      // Emit BudgetPaused for scope.
+      const eventStore = getEventStore()
+      const payload: BudgetPausedPayload = {
+        scope:     input.scope,
+        scope_id:  input.scopeId,
+        reason:    input.reason,
+        paused_at: new Date().toISOString(),
+      }
+      try {
+        await eventStore.append({
+          aggregate_id:   input.scopeId,
+          aggregate_type: 'sprint',
+          event_type:     'BudgetPaused',
+          payload:        payload as unknown as Record<string, unknown>,
+          actor:          SYSTEM_ACTOR,
+          trace_id:       uuidv7(),
+          occurred_at:    payload.paused_at,
+          schema_version: 1,
+        })
+      } catch (err) {
+        logger.warn({ err }, 'cost.killAll: BudgetPaused emit failed (non-fatal)')
+      }
+
+      logger.info(
+        { scope: input.scope, scopeId: input.scopeId, ...result },
+        'cost.killAll: kill switch tripped',
+      )
+
+      return result
+    }),
+})
+
+export type CostRouter = typeof costRouter

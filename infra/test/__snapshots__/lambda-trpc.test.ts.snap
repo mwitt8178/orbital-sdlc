@@ -1,0 +1,3057 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`LambdaTrpcConstruct — snapshot mwitt stack with all 11 router groups matches snapshot 1`] = `
+{
+  "Outputs": {
+    "LambdaauditFunctionArn7D65360D": {
+      "Description": "Orbital mwitt tRPC audit Lambda ARN",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-Trpc-audit-Arn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "LambdaauditFn0B9C6851",
+          "Arn",
+        ],
+      },
+    },
+    "LambdaauthFunctionArnF7BED7CD": {
+      "Description": "Orbital mwitt tRPC auth Lambda ARN",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-Trpc-auth-Arn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "LambdaauthFnC4E70A51",
+          "Arn",
+        ],
+      },
+    },
+    "LambdacommsFunctionArn758B5AD6": {
+      "Description": "Orbital mwitt tRPC comms Lambda ARN",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-Trpc-comms-Arn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "LambdacommsFn8C2EFF13",
+          "Arn",
+        ],
+      },
+    },
+    "LambdacostFunctionArn9F0CB3B1": {
+      "Description": "Orbital mwitt tRPC cost Lambda ARN",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-Trpc-cost-Arn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "LambdacostFn3CA4A890",
+          "Arn",
+        ],
+      },
+    },
+    "LambdadefectsFunctionArnED09FEC0": {
+      "Description": "Orbital mwitt tRPC defects Lambda ARN",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-Trpc-defects-Arn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "LambdadefectsFn14F4FB9D",
+          "Arn",
+        ],
+      },
+    },
+    "LambdamemoryFunctionArn79AE95F0": {
+      "Description": "Orbital mwitt tRPC memory Lambda ARN",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-Trpc-memory-Arn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "LambdamemoryFn080176FE",
+          "Arn",
+        ],
+      },
+    },
+    "LambdaonboardingFunctionArn9B430FC3": {
+      "Description": "Orbital mwitt tRPC onboarding Lambda ARN",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-Trpc-onboarding-Arn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "LambdaonboardingFnCE0AE64C",
+          "Arn",
+        ],
+      },
+    },
+    "LambdaprovidersFunctionArnEDA35C84": {
+      "Description": "Orbital mwitt tRPC providers Lambda ARN",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-Trpc-providers-Arn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "LambdaprovidersFnA7E133FF",
+          "Arn",
+        ],
+      },
+    },
+    "LambdaprsFunctionArn784AA11C": {
+      "Description": "Orbital mwitt tRPC prs Lambda ARN",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-Trpc-prs-Arn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "LambdaprsFn17BEDBCD",
+          "Arn",
+        ],
+      },
+    },
+    "LambdatasksFunctionArnE1BEE70F": {
+      "Description": "Orbital mwitt tRPC tasks Lambda ARN",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-Trpc-tasks-Arn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "LambdatasksFn3BC7B3D4",
+          "Arn",
+        ],
+      },
+    },
+    "LambdateamFunctionArn257EC444": {
+      "Description": "Orbital mwitt tRPC team Lambda ARN",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-Trpc-team-Arn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "LambdateamFnD2AAAE6D",
+          "Arn",
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "LambdaSg30A6108C": {
+      "Properties": {
+        "GroupDescription": "Test Lambda SG",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "LambdaauditFn0B9C6851": {
+      "DependsOn": [
+        "LambdaauditRoleDefaultPolicy8D5E4E68",
+        "LambdaauditRole1B676BD4",
+        "TestVpcprivateSubnet1DefaultRouteE55BA5B9",
+        "TestVpcprivateSubnet1RouteTableAssociationD9192E40",
+        "TestVpcprivateSubnet2DefaultRoute4E717BCF",
+        "TestVpcprivateSubnet2RouteTableAssociation6E00A0A0",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "AURORA_DB_NAME": "orbital_hub",
+            "AURORA_USERNAME": "orbital_admin",
+            "AWS_ACCOUNT_ID": "123456789012",
+            "COGNITO_APP_CLIENT_ID": "testClientId",
+            "COGNITO_USER_POOL_ID": "us-east-1_testPool",
+            "ORBITAL_DEPLOY_TARGET": "aws",
+            "ORBITAL_ENV": "mwitt",
+            "ORBITAL_ROUTER_GROUP": "audit",
+            "ORBITAL_TENANT_RESOLUTION": "jwt",
+            "RDS_PROXY_HOSTNAME": "test-proxy.proxy.rds.amazonaws.com",
+            "RDS_PROXY_PORT": "5432",
+          },
+        },
+        "FunctionName": "orbital-mwitt-trpc-audit",
+        "Handler": "lambda/handlers/audit.handler",
+        "LoggingConfig": {
+          "LogGroup": {
+            "Ref": "LambdaauditLogGroup32F957F8",
+          },
+        },
+        "MemorySize": 1024,
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaauditRole1B676BD4",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-audit",
+          },
+        ],
+        "Timeout": 29,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "LambdaSg30A6108C",
+                "GroupId",
+              ],
+            },
+          ],
+          "SubnetIds": [
+            {
+              "Ref": "TestVpcprivateSubnet1Subnet6E9D0483",
+            },
+            {
+              "Ref": "TestVpcprivateSubnet2SubnetB8BE3628",
+            },
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "LambdaauditLogGroup32F957F8": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/orbital/mwitt/lambda/trpc-audit",
+        "RetentionInDays": 30,
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-audit",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "LambdaauditRole1B676BD4": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Orbital mwitt tRPC audit Lambda execution role",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+              ],
+            ],
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-audit",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "LambdaauditRoleDefaultPolicy8D5E4E68": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "rds-db:connect",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":rds-db:us-east-1:123456789012:dbuser:",
+                    {
+                      "Fn::Select": [
+                        6,
+                        {
+                          "Fn::Split": [
+                            ":",
+                            {
+                              "Fn::GetAtt": [
+                                "TestProxy3A354B7F",
+                                "DBProxyArn",
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    "/orbital_admin",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "LambdaauditRoleDefaultPolicy8D5E4E68",
+        "Roles": [
+          {
+            "Ref": "LambdaauditRole1B676BD4",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "LambdaauthFnC4E70A51": {
+      "DependsOn": [
+        "LambdaauthRoleDefaultPolicyF5B439D0",
+        "LambdaauthRole87B39A43",
+        "TestVpcprivateSubnet1DefaultRouteE55BA5B9",
+        "TestVpcprivateSubnet1RouteTableAssociationD9192E40",
+        "TestVpcprivateSubnet2DefaultRoute4E717BCF",
+        "TestVpcprivateSubnet2RouteTableAssociation6E00A0A0",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "AURORA_DB_NAME": "orbital_hub",
+            "AURORA_USERNAME": "orbital_admin",
+            "AWS_ACCOUNT_ID": "123456789012",
+            "COGNITO_APP_CLIENT_ID": "testClientId",
+            "COGNITO_USER_POOL_ID": "us-east-1_testPool",
+            "ORBITAL_DEPLOY_TARGET": "aws",
+            "ORBITAL_ENV": "mwitt",
+            "ORBITAL_ROUTER_GROUP": "auth",
+            "ORBITAL_TENANT_RESOLUTION": "jwt",
+            "RDS_PROXY_HOSTNAME": "test-proxy.proxy.rds.amazonaws.com",
+            "RDS_PROXY_PORT": "5432",
+          },
+        },
+        "FunctionName": "orbital-mwitt-trpc-auth",
+        "Handler": "lambda/handlers/auth.handler",
+        "LoggingConfig": {
+          "LogGroup": {
+            "Ref": "LambdaauthLogGroup24F39435",
+          },
+        },
+        "MemorySize": 1024,
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaauthRole87B39A43",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-auth",
+          },
+        ],
+        "Timeout": 29,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "LambdaSg30A6108C",
+                "GroupId",
+              ],
+            },
+          ],
+          "SubnetIds": [
+            {
+              "Ref": "TestVpcprivateSubnet1Subnet6E9D0483",
+            },
+            {
+              "Ref": "TestVpcprivateSubnet2SubnetB8BE3628",
+            },
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "LambdaauthFnCurrentVersion2C8EC88F1b890a22b0b0d51e6745acddcc42dbb8": {
+      "DeletionPolicy": "Retain",
+      "DependsOn": [
+        "TestVpcprivateSubnet1DefaultRouteE55BA5B9",
+        "TestVpcprivateSubnet1RouteTableAssociationD9192E40",
+        "TestVpcprivateSubnet2DefaultRoute4E717BCF",
+        "TestVpcprivateSubnet2RouteTableAssociation6E00A0A0",
+      ],
+      "Properties": {
+        "FunctionName": {
+          "Ref": "LambdaauthFnC4E70A51",
+        },
+      },
+      "Type": "AWS::Lambda::Version",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "LambdaauthFnCurrentVersionEventInvokeConfig7B6EABA6": {
+      "DependsOn": [
+        "TestVpcprivateSubnet1DefaultRouteE55BA5B9",
+        "TestVpcprivateSubnet1RouteTableAssociationD9192E40",
+        "TestVpcprivateSubnet2DefaultRoute4E717BCF",
+        "TestVpcprivateSubnet2RouteTableAssociation6E00A0A0",
+      ],
+      "Properties": {
+        "FunctionName": {
+          "Ref": "LambdaauthFnC4E70A51",
+        },
+        "MaximumRetryAttempts": 1,
+        "Qualifier": {
+          "Fn::GetAtt": [
+            "LambdaauthFnCurrentVersion2C8EC88F1b890a22b0b0d51e6745acddcc42dbb8",
+            "Version",
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::EventInvokeConfig",
+    },
+    "LambdaauthLiveAliasB61C7D46": {
+      "Properties": {
+        "Description": "Orbital mwitt tRPC auth — provisioned concurrency=2",
+        "FunctionName": {
+          "Ref": "LambdaauthFnC4E70A51",
+        },
+        "FunctionVersion": {
+          "Fn::GetAtt": [
+            "LambdaauthFnCurrentVersion2C8EC88F1b890a22b0b0d51e6745acddcc42dbb8",
+            "Version",
+          ],
+        },
+        "Name": "live",
+        "ProvisionedConcurrencyConfig": {
+          "ProvisionedConcurrentExecutions": 2,
+        },
+      },
+      "Type": "AWS::Lambda::Alias",
+    },
+    "LambdaauthLogGroup24F39435": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/orbital/mwitt/lambda/trpc-auth",
+        "RetentionInDays": 30,
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-auth",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "LambdaauthRole87B39A43": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Orbital mwitt tRPC auth Lambda execution role",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+              ],
+            ],
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-auth",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "LambdaauthRoleDefaultPolicyF5B439D0": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "rds-db:connect",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":rds-db:us-east-1:123456789012:dbuser:",
+                    {
+                      "Fn::Select": [
+                        6,
+                        {
+                          "Fn::Split": [
+                            ":",
+                            {
+                              "Fn::GetAtt": [
+                                "TestProxy3A354B7F",
+                                "DBProxyArn",
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    "/orbital_admin",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "LambdaauthRoleDefaultPolicyF5B439D0",
+        "Roles": [
+          {
+            "Ref": "LambdaauthRole87B39A43",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "LambdacommsFn8C2EFF13": {
+      "DependsOn": [
+        "LambdacommsRoleDefaultPolicy55A4065D",
+        "LambdacommsRole1ACBC827",
+        "TestVpcprivateSubnet1DefaultRouteE55BA5B9",
+        "TestVpcprivateSubnet1RouteTableAssociationD9192E40",
+        "TestVpcprivateSubnet2DefaultRoute4E717BCF",
+        "TestVpcprivateSubnet2RouteTableAssociation6E00A0A0",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "AURORA_DB_NAME": "orbital_hub",
+            "AURORA_USERNAME": "orbital_admin",
+            "AWS_ACCOUNT_ID": "123456789012",
+            "COGNITO_APP_CLIENT_ID": "testClientId",
+            "COGNITO_USER_POOL_ID": "us-east-1_testPool",
+            "ORBITAL_DEPLOY_TARGET": "aws",
+            "ORBITAL_ENV": "mwitt",
+            "ORBITAL_ROUTER_GROUP": "comms",
+            "ORBITAL_TENANT_RESOLUTION": "jwt",
+            "RDS_PROXY_HOSTNAME": "test-proxy.proxy.rds.amazonaws.com",
+            "RDS_PROXY_PORT": "5432",
+          },
+        },
+        "FunctionName": "orbital-mwitt-trpc-comms",
+        "Handler": "lambda/handlers/comms.handler",
+        "LoggingConfig": {
+          "LogGroup": {
+            "Ref": "LambdacommsLogGroupF1321825",
+          },
+        },
+        "MemorySize": 1024,
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdacommsRole1ACBC827",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-comms",
+          },
+        ],
+        "Timeout": 29,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "LambdaSg30A6108C",
+                "GroupId",
+              ],
+            },
+          ],
+          "SubnetIds": [
+            {
+              "Ref": "TestVpcprivateSubnet1Subnet6E9D0483",
+            },
+            {
+              "Ref": "TestVpcprivateSubnet2SubnetB8BE3628",
+            },
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "LambdacommsLogGroupF1321825": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/orbital/mwitt/lambda/trpc-comms",
+        "RetentionInDays": 30,
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-comms",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "LambdacommsRole1ACBC827": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Orbital mwitt tRPC comms Lambda execution role",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+              ],
+            ],
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-comms",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "LambdacommsRoleDefaultPolicy55A4065D": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "rds-db:connect",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":rds-db:us-east-1:123456789012:dbuser:",
+                    {
+                      "Fn::Select": [
+                        6,
+                        {
+                          "Fn::Split": [
+                            ":",
+                            {
+                              "Fn::GetAtt": [
+                                "TestProxy3A354B7F",
+                                "DBProxyArn",
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    "/orbital_admin",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "LambdacommsRoleDefaultPolicy55A4065D",
+        "Roles": [
+          {
+            "Ref": "LambdacommsRole1ACBC827",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "LambdacostFn3CA4A890": {
+      "DependsOn": [
+        "LambdacostRoleDefaultPolicy959AF8E9",
+        "LambdacostRoleE9ED1CC4",
+        "TestVpcprivateSubnet1DefaultRouteE55BA5B9",
+        "TestVpcprivateSubnet1RouteTableAssociationD9192E40",
+        "TestVpcprivateSubnet2DefaultRoute4E717BCF",
+        "TestVpcprivateSubnet2RouteTableAssociation6E00A0A0",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "AURORA_DB_NAME": "orbital_hub",
+            "AURORA_USERNAME": "orbital_admin",
+            "AWS_ACCOUNT_ID": "123456789012",
+            "COGNITO_APP_CLIENT_ID": "testClientId",
+            "COGNITO_USER_POOL_ID": "us-east-1_testPool",
+            "ORBITAL_DEPLOY_TARGET": "aws",
+            "ORBITAL_ENV": "mwitt",
+            "ORBITAL_ROUTER_GROUP": "cost",
+            "ORBITAL_TENANT_RESOLUTION": "jwt",
+            "RDS_PROXY_HOSTNAME": "test-proxy.proxy.rds.amazonaws.com",
+            "RDS_PROXY_PORT": "5432",
+          },
+        },
+        "FunctionName": "orbital-mwitt-trpc-cost",
+        "Handler": "lambda/handlers/cost.handler",
+        "LoggingConfig": {
+          "LogGroup": {
+            "Ref": "LambdacostLogGroupBDA2A534",
+          },
+        },
+        "MemorySize": 1024,
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdacostRoleE9ED1CC4",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-cost",
+          },
+        ],
+        "Timeout": 29,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "LambdaSg30A6108C",
+                "GroupId",
+              ],
+            },
+          ],
+          "SubnetIds": [
+            {
+              "Ref": "TestVpcprivateSubnet1Subnet6E9D0483",
+            },
+            {
+              "Ref": "TestVpcprivateSubnet2SubnetB8BE3628",
+            },
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "LambdacostLogGroupBDA2A534": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/orbital/mwitt/lambda/trpc-cost",
+        "RetentionInDays": 30,
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-cost",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "LambdacostRoleDefaultPolicy959AF8E9": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "rds-db:connect",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":rds-db:us-east-1:123456789012:dbuser:",
+                    {
+                      "Fn::Select": [
+                        6,
+                        {
+                          "Fn::Split": [
+                            ":",
+                            {
+                              "Fn::GetAtt": [
+                                "TestProxy3A354B7F",
+                                "DBProxyArn",
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    "/orbital_admin",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "LambdacostRoleDefaultPolicy959AF8E9",
+        "Roles": [
+          {
+            "Ref": "LambdacostRoleE9ED1CC4",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "LambdacostRoleE9ED1CC4": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Orbital mwitt tRPC cost Lambda execution role",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+              ],
+            ],
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-cost",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "LambdadefectsFn14F4FB9D": {
+      "DependsOn": [
+        "LambdadefectsRoleDefaultPolicyC21D11E6",
+        "LambdadefectsRole6710C830",
+        "TestVpcprivateSubnet1DefaultRouteE55BA5B9",
+        "TestVpcprivateSubnet1RouteTableAssociationD9192E40",
+        "TestVpcprivateSubnet2DefaultRoute4E717BCF",
+        "TestVpcprivateSubnet2RouteTableAssociation6E00A0A0",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "AURORA_DB_NAME": "orbital_hub",
+            "AURORA_USERNAME": "orbital_admin",
+            "AWS_ACCOUNT_ID": "123456789012",
+            "COGNITO_APP_CLIENT_ID": "testClientId",
+            "COGNITO_USER_POOL_ID": "us-east-1_testPool",
+            "ORBITAL_DEPLOY_TARGET": "aws",
+            "ORBITAL_ENV": "mwitt",
+            "ORBITAL_ROUTER_GROUP": "defects",
+            "ORBITAL_TENANT_RESOLUTION": "jwt",
+            "RDS_PROXY_HOSTNAME": "test-proxy.proxy.rds.amazonaws.com",
+            "RDS_PROXY_PORT": "5432",
+          },
+        },
+        "FunctionName": "orbital-mwitt-trpc-defects",
+        "Handler": "lambda/handlers/defects.handler",
+        "LoggingConfig": {
+          "LogGroup": {
+            "Ref": "LambdadefectsLogGroupAC8B9A59",
+          },
+        },
+        "MemorySize": 1024,
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdadefectsRole6710C830",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-defects",
+          },
+        ],
+        "Timeout": 29,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "LambdaSg30A6108C",
+                "GroupId",
+              ],
+            },
+          ],
+          "SubnetIds": [
+            {
+              "Ref": "TestVpcprivateSubnet1Subnet6E9D0483",
+            },
+            {
+              "Ref": "TestVpcprivateSubnet2SubnetB8BE3628",
+            },
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "LambdadefectsLogGroupAC8B9A59": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/orbital/mwitt/lambda/trpc-defects",
+        "RetentionInDays": 30,
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-defects",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "LambdadefectsRole6710C830": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Orbital mwitt tRPC defects Lambda execution role",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+              ],
+            ],
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-defects",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "LambdadefectsRoleDefaultPolicyC21D11E6": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "rds-db:connect",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":rds-db:us-east-1:123456789012:dbuser:",
+                    {
+                      "Fn::Select": [
+                        6,
+                        {
+                          "Fn::Split": [
+                            ":",
+                            {
+                              "Fn::GetAtt": [
+                                "TestProxy3A354B7F",
+                                "DBProxyArn",
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    "/orbital_admin",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "LambdadefectsRoleDefaultPolicyC21D11E6",
+        "Roles": [
+          {
+            "Ref": "LambdadefectsRole6710C830",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "LambdamemoryFn080176FE": {
+      "DependsOn": [
+        "LambdamemoryRoleDefaultPolicyBAC8E788",
+        "LambdamemoryRole2EEB9976",
+        "TestVpcprivateSubnet1DefaultRouteE55BA5B9",
+        "TestVpcprivateSubnet1RouteTableAssociationD9192E40",
+        "TestVpcprivateSubnet2DefaultRoute4E717BCF",
+        "TestVpcprivateSubnet2RouteTableAssociation6E00A0A0",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "AURORA_DB_NAME": "orbital_hub",
+            "AURORA_USERNAME": "orbital_admin",
+            "AWS_ACCOUNT_ID": "123456789012",
+            "COGNITO_APP_CLIENT_ID": "testClientId",
+            "COGNITO_USER_POOL_ID": "us-east-1_testPool",
+            "ORBITAL_DEPLOY_TARGET": "aws",
+            "ORBITAL_ENV": "mwitt",
+            "ORBITAL_ROUTER_GROUP": "memory",
+            "ORBITAL_TENANT_RESOLUTION": "jwt",
+            "RDS_PROXY_HOSTNAME": "test-proxy.proxy.rds.amazonaws.com",
+            "RDS_PROXY_PORT": "5432",
+          },
+        },
+        "FunctionName": "orbital-mwitt-trpc-memory",
+        "Handler": "lambda/handlers/memory.handler",
+        "LoggingConfig": {
+          "LogGroup": {
+            "Ref": "LambdamemoryLogGroupE38076D7",
+          },
+        },
+        "MemorySize": 1024,
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdamemoryRole2EEB9976",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-memory",
+          },
+        ],
+        "Timeout": 29,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "LambdaSg30A6108C",
+                "GroupId",
+              ],
+            },
+          ],
+          "SubnetIds": [
+            {
+              "Ref": "TestVpcprivateSubnet1Subnet6E9D0483",
+            },
+            {
+              "Ref": "TestVpcprivateSubnet2SubnetB8BE3628",
+            },
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "LambdamemoryLogGroupE38076D7": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/orbital/mwitt/lambda/trpc-memory",
+        "RetentionInDays": 30,
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-memory",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "LambdamemoryRole2EEB9976": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Orbital mwitt tRPC memory Lambda execution role",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+              ],
+            ],
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-memory",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "LambdamemoryRoleDefaultPolicyBAC8E788": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "rds-db:connect",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":rds-db:us-east-1:123456789012:dbuser:",
+                    {
+                      "Fn::Select": [
+                        6,
+                        {
+                          "Fn::Split": [
+                            ":",
+                            {
+                              "Fn::GetAtt": [
+                                "TestProxy3A354B7F",
+                                "DBProxyArn",
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    "/orbital_admin",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "LambdamemoryRoleDefaultPolicyBAC8E788",
+        "Roles": [
+          {
+            "Ref": "LambdamemoryRole2EEB9976",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "LambdaonboardingFnCE0AE64C": {
+      "DependsOn": [
+        "LambdaonboardingRoleDefaultPolicy1E3FED0A",
+        "LambdaonboardingRoleACB5C428",
+        "TestVpcprivateSubnet1DefaultRouteE55BA5B9",
+        "TestVpcprivateSubnet1RouteTableAssociationD9192E40",
+        "TestVpcprivateSubnet2DefaultRoute4E717BCF",
+        "TestVpcprivateSubnet2RouteTableAssociation6E00A0A0",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "AURORA_DB_NAME": "orbital_hub",
+            "AURORA_USERNAME": "orbital_admin",
+            "AWS_ACCOUNT_ID": "123456789012",
+            "COGNITO_APP_CLIENT_ID": "testClientId",
+            "COGNITO_USER_POOL_ID": "us-east-1_testPool",
+            "ORBITAL_DEPLOY_TARGET": "aws",
+            "ORBITAL_ENV": "mwitt",
+            "ORBITAL_ROUTER_GROUP": "onboarding",
+            "ORBITAL_TENANT_RESOLUTION": "jwt",
+            "RDS_PROXY_HOSTNAME": "test-proxy.proxy.rds.amazonaws.com",
+            "RDS_PROXY_PORT": "5432",
+          },
+        },
+        "FunctionName": "orbital-mwitt-trpc-onboarding",
+        "Handler": "lambda/handlers/onboarding.handler",
+        "LoggingConfig": {
+          "LogGroup": {
+            "Ref": "LambdaonboardingLogGroup5DA4D753",
+          },
+        },
+        "MemorySize": 1024,
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaonboardingRoleACB5C428",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-onboarding",
+          },
+        ],
+        "Timeout": 29,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "LambdaSg30A6108C",
+                "GroupId",
+              ],
+            },
+          ],
+          "SubnetIds": [
+            {
+              "Ref": "TestVpcprivateSubnet1Subnet6E9D0483",
+            },
+            {
+              "Ref": "TestVpcprivateSubnet2SubnetB8BE3628",
+            },
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "LambdaonboardingLogGroup5DA4D753": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/orbital/mwitt/lambda/trpc-onboarding",
+        "RetentionInDays": 30,
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-onboarding",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "LambdaonboardingRoleACB5C428": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Orbital mwitt tRPC onboarding Lambda execution role",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+              ],
+            ],
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-onboarding",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "LambdaonboardingRoleDefaultPolicy1E3FED0A": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "rds-db:connect",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":rds-db:us-east-1:123456789012:dbuser:",
+                    {
+                      "Fn::Select": [
+                        6,
+                        {
+                          "Fn::Split": [
+                            ":",
+                            {
+                              "Fn::GetAtt": [
+                                "TestProxy3A354B7F",
+                                "DBProxyArn",
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    "/orbital_admin",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "LambdaonboardingRoleDefaultPolicy1E3FED0A",
+        "Roles": [
+          {
+            "Ref": "LambdaonboardingRoleACB5C428",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "LambdaprovidersFnA7E133FF": {
+      "DependsOn": [
+        "LambdaprovidersRoleDefaultPolicyA5B5B621",
+        "LambdaprovidersRoleF78A816A",
+        "TestVpcprivateSubnet1DefaultRouteE55BA5B9",
+        "TestVpcprivateSubnet1RouteTableAssociationD9192E40",
+        "TestVpcprivateSubnet2DefaultRoute4E717BCF",
+        "TestVpcprivateSubnet2RouteTableAssociation6E00A0A0",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "AURORA_DB_NAME": "orbital_hub",
+            "AURORA_USERNAME": "orbital_admin",
+            "AWS_ACCOUNT_ID": "123456789012",
+            "COGNITO_APP_CLIENT_ID": "testClientId",
+            "COGNITO_USER_POOL_ID": "us-east-1_testPool",
+            "ORBITAL_DEPLOY_TARGET": "aws",
+            "ORBITAL_ENV": "mwitt",
+            "ORBITAL_ROUTER_GROUP": "providers",
+            "ORBITAL_TENANT_RESOLUTION": "jwt",
+            "RDS_PROXY_HOSTNAME": "test-proxy.proxy.rds.amazonaws.com",
+            "RDS_PROXY_PORT": "5432",
+          },
+        },
+        "FunctionName": "orbital-mwitt-trpc-providers",
+        "Handler": "lambda/handlers/providers.handler",
+        "LoggingConfig": {
+          "LogGroup": {
+            "Ref": "LambdaprovidersLogGroupA0A01B0D",
+          },
+        },
+        "MemorySize": 1024,
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaprovidersRoleF78A816A",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-providers",
+          },
+        ],
+        "Timeout": 29,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "LambdaSg30A6108C",
+                "GroupId",
+              ],
+            },
+          ],
+          "SubnetIds": [
+            {
+              "Ref": "TestVpcprivateSubnet1Subnet6E9D0483",
+            },
+            {
+              "Ref": "TestVpcprivateSubnet2SubnetB8BE3628",
+            },
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "LambdaprovidersLogGroupA0A01B0D": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/orbital/mwitt/lambda/trpc-providers",
+        "RetentionInDays": 30,
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-providers",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "LambdaprovidersRoleDefaultPolicyA5B5B621": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "rds-db:connect",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":rds-db:us-east-1:123456789012:dbuser:",
+                    {
+                      "Fn::Select": [
+                        6,
+                        {
+                          "Fn::Split": [
+                            ":",
+                            {
+                              "Fn::GetAtt": [
+                                "TestProxy3A354B7F",
+                                "DBProxyArn",
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    "/orbital_admin",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "LambdaprovidersRoleDefaultPolicyA5B5B621",
+        "Roles": [
+          {
+            "Ref": "LambdaprovidersRoleF78A816A",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "LambdaprovidersRoleF78A816A": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Orbital mwitt tRPC providers Lambda execution role",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+              ],
+            ],
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-providers",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "LambdaprsFn17BEDBCD": {
+      "DependsOn": [
+        "LambdaprsRoleDefaultPolicyB926CA6F",
+        "LambdaprsRoleD29A3497",
+        "TestVpcprivateSubnet1DefaultRouteE55BA5B9",
+        "TestVpcprivateSubnet1RouteTableAssociationD9192E40",
+        "TestVpcprivateSubnet2DefaultRoute4E717BCF",
+        "TestVpcprivateSubnet2RouteTableAssociation6E00A0A0",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "AURORA_DB_NAME": "orbital_hub",
+            "AURORA_USERNAME": "orbital_admin",
+            "AWS_ACCOUNT_ID": "123456789012",
+            "COGNITO_APP_CLIENT_ID": "testClientId",
+            "COGNITO_USER_POOL_ID": "us-east-1_testPool",
+            "ORBITAL_DEPLOY_TARGET": "aws",
+            "ORBITAL_ENV": "mwitt",
+            "ORBITAL_ROUTER_GROUP": "prs",
+            "ORBITAL_TENANT_RESOLUTION": "jwt",
+            "RDS_PROXY_HOSTNAME": "test-proxy.proxy.rds.amazonaws.com",
+            "RDS_PROXY_PORT": "5432",
+          },
+        },
+        "FunctionName": "orbital-mwitt-trpc-prs",
+        "Handler": "lambda/handlers/prs.handler",
+        "LoggingConfig": {
+          "LogGroup": {
+            "Ref": "LambdaprsLogGroupC13AEE81",
+          },
+        },
+        "MemorySize": 1024,
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaprsRoleD29A3497",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-prs",
+          },
+        ],
+        "Timeout": 29,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "LambdaSg30A6108C",
+                "GroupId",
+              ],
+            },
+          ],
+          "SubnetIds": [
+            {
+              "Ref": "TestVpcprivateSubnet1Subnet6E9D0483",
+            },
+            {
+              "Ref": "TestVpcprivateSubnet2SubnetB8BE3628",
+            },
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "LambdaprsLogGroupC13AEE81": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/orbital/mwitt/lambda/trpc-prs",
+        "RetentionInDays": 30,
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-prs",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "LambdaprsRoleD29A3497": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Orbital mwitt tRPC prs Lambda execution role",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+              ],
+            ],
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-prs",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "LambdaprsRoleDefaultPolicyB926CA6F": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "rds-db:connect",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":rds-db:us-east-1:123456789012:dbuser:",
+                    {
+                      "Fn::Select": [
+                        6,
+                        {
+                          "Fn::Split": [
+                            ":",
+                            {
+                              "Fn::GetAtt": [
+                                "TestProxy3A354B7F",
+                                "DBProxyArn",
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    "/orbital_admin",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "LambdaprsRoleDefaultPolicyB926CA6F",
+        "Roles": [
+          {
+            "Ref": "LambdaprsRoleD29A3497",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "LambdatasksFn3BC7B3D4": {
+      "DependsOn": [
+        "LambdatasksRoleDefaultPolicyA82BA16D",
+        "LambdatasksRole18396BE8",
+        "TestVpcprivateSubnet1DefaultRouteE55BA5B9",
+        "TestVpcprivateSubnet1RouteTableAssociationD9192E40",
+        "TestVpcprivateSubnet2DefaultRoute4E717BCF",
+        "TestVpcprivateSubnet2RouteTableAssociation6E00A0A0",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "AURORA_DB_NAME": "orbital_hub",
+            "AURORA_USERNAME": "orbital_admin",
+            "AWS_ACCOUNT_ID": "123456789012",
+            "COGNITO_APP_CLIENT_ID": "testClientId",
+            "COGNITO_USER_POOL_ID": "us-east-1_testPool",
+            "ORBITAL_DEPLOY_TARGET": "aws",
+            "ORBITAL_ENV": "mwitt",
+            "ORBITAL_ROUTER_GROUP": "tasks",
+            "ORBITAL_TENANT_RESOLUTION": "jwt",
+            "RDS_PROXY_HOSTNAME": "test-proxy.proxy.rds.amazonaws.com",
+            "RDS_PROXY_PORT": "5432",
+          },
+        },
+        "FunctionName": "orbital-mwitt-trpc-tasks",
+        "Handler": "lambda/handlers/tasks.handler",
+        "LoggingConfig": {
+          "LogGroup": {
+            "Ref": "LambdatasksLogGroupF500EC7C",
+          },
+        },
+        "MemorySize": 1024,
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdatasksRole18396BE8",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-tasks",
+          },
+        ],
+        "Timeout": 29,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "LambdaSg30A6108C",
+                "GroupId",
+              ],
+            },
+          ],
+          "SubnetIds": [
+            {
+              "Ref": "TestVpcprivateSubnet1Subnet6E9D0483",
+            },
+            {
+              "Ref": "TestVpcprivateSubnet2SubnetB8BE3628",
+            },
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "LambdatasksFnCurrentVersion1524F0CA0e9420d1dd87e7eb1a1cf5ab2ac6995c": {
+      "DeletionPolicy": "Retain",
+      "DependsOn": [
+        "TestVpcprivateSubnet1DefaultRouteE55BA5B9",
+        "TestVpcprivateSubnet1RouteTableAssociationD9192E40",
+        "TestVpcprivateSubnet2DefaultRoute4E717BCF",
+        "TestVpcprivateSubnet2RouteTableAssociation6E00A0A0",
+      ],
+      "Properties": {
+        "FunctionName": {
+          "Ref": "LambdatasksFn3BC7B3D4",
+        },
+      },
+      "Type": "AWS::Lambda::Version",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "LambdatasksFnCurrentVersionEventInvokeConfig6FDA8758": {
+      "DependsOn": [
+        "TestVpcprivateSubnet1DefaultRouteE55BA5B9",
+        "TestVpcprivateSubnet1RouteTableAssociationD9192E40",
+        "TestVpcprivateSubnet2DefaultRoute4E717BCF",
+        "TestVpcprivateSubnet2RouteTableAssociation6E00A0A0",
+      ],
+      "Properties": {
+        "FunctionName": {
+          "Ref": "LambdatasksFn3BC7B3D4",
+        },
+        "MaximumRetryAttempts": 1,
+        "Qualifier": {
+          "Fn::GetAtt": [
+            "LambdatasksFnCurrentVersion1524F0CA0e9420d1dd87e7eb1a1cf5ab2ac6995c",
+            "Version",
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::EventInvokeConfig",
+    },
+    "LambdatasksLiveAlias65B57A45": {
+      "Properties": {
+        "Description": "Orbital mwitt tRPC tasks — provisioned concurrency=2",
+        "FunctionName": {
+          "Ref": "LambdatasksFn3BC7B3D4",
+        },
+        "FunctionVersion": {
+          "Fn::GetAtt": [
+            "LambdatasksFnCurrentVersion1524F0CA0e9420d1dd87e7eb1a1cf5ab2ac6995c",
+            "Version",
+          ],
+        },
+        "Name": "live",
+        "ProvisionedConcurrencyConfig": {
+          "ProvisionedConcurrentExecutions": 2,
+        },
+      },
+      "Type": "AWS::Lambda::Alias",
+    },
+    "LambdatasksLogGroupF500EC7C": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/orbital/mwitt/lambda/trpc-tasks",
+        "RetentionInDays": 30,
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-tasks",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "LambdatasksRole18396BE8": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Orbital mwitt tRPC tasks Lambda execution role",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+              ],
+            ],
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-tasks",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "LambdatasksRoleDefaultPolicyA82BA16D": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "rds-db:connect",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":rds-db:us-east-1:123456789012:dbuser:",
+                    {
+                      "Fn::Select": [
+                        6,
+                        {
+                          "Fn::Split": [
+                            ":",
+                            {
+                              "Fn::GetAtt": [
+                                "TestProxy3A354B7F",
+                                "DBProxyArn",
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    "/orbital_admin",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "LambdatasksRoleDefaultPolicyA82BA16D",
+        "Roles": [
+          {
+            "Ref": "LambdatasksRole18396BE8",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "LambdateamFnD2AAAE6D": {
+      "DependsOn": [
+        "LambdateamRoleDefaultPolicy797DB424",
+        "LambdateamRole70456841",
+        "TestVpcprivateSubnet1DefaultRouteE55BA5B9",
+        "TestVpcprivateSubnet1RouteTableAssociationD9192E40",
+        "TestVpcprivateSubnet2DefaultRoute4E717BCF",
+        "TestVpcprivateSubnet2RouteTableAssociation6E00A0A0",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+        },
+        "Environment": {
+          "Variables": {
+            "AURORA_DB_NAME": "orbital_hub",
+            "AURORA_USERNAME": "orbital_admin",
+            "AWS_ACCOUNT_ID": "123456789012",
+            "COGNITO_APP_CLIENT_ID": "testClientId",
+            "COGNITO_USER_POOL_ID": "us-east-1_testPool",
+            "ORBITAL_DEPLOY_TARGET": "aws",
+            "ORBITAL_ENV": "mwitt",
+            "ORBITAL_ROUTER_GROUP": "team",
+            "ORBITAL_TENANT_RESOLUTION": "jwt",
+            "RDS_PROXY_HOSTNAME": "test-proxy.proxy.rds.amazonaws.com",
+            "RDS_PROXY_PORT": "5432",
+          },
+        },
+        "FunctionName": "orbital-mwitt-trpc-team",
+        "Handler": "lambda/handlers/team.handler",
+        "LoggingConfig": {
+          "LogGroup": {
+            "Ref": "LambdateamLogGroup8DE555F6",
+          },
+        },
+        "MemorySize": 1024,
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdateamRole70456841",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-team",
+          },
+        ],
+        "Timeout": 29,
+        "TracingConfig": {
+          "Mode": "Active",
+        },
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "LambdaSg30A6108C",
+                "GroupId",
+              ],
+            },
+          ],
+          "SubnetIds": [
+            {
+              "Ref": "TestVpcprivateSubnet1Subnet6E9D0483",
+            },
+            {
+              "Ref": "TestVpcprivateSubnet2SubnetB8BE3628",
+            },
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "LambdateamLogGroup8DE555F6": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/orbital/mwitt/lambda/trpc-team",
+        "RetentionInDays": 30,
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-team",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "LambdateamRole70456841": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Orbital mwitt tRPC team Lambda execution role",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+              ],
+            ],
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "trpc-team",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "LambdateamRoleDefaultPolicy797DB424": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "rds-db:connect",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":rds-db:us-east-1:123456789012:dbuser:",
+                    {
+                      "Fn::Select": [
+                        6,
+                        {
+                          "Fn::Split": [
+                            ":",
+                            {
+                              "Fn::GetAtt": [
+                                "TestProxy3A354B7F",
+                                "DBProxyArn",
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    "/orbital_admin",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "LambdateamRoleDefaultPolicy797DB424",
+        "Roles": [
+          {
+            "Ref": "LambdateamRole70456841",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "MasterSecretA11BF785": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Generated by the CDK for stack: ",
+              {
+                "Ref": "AWS::StackName",
+              },
+            ],
+          ],
+        },
+        "GenerateSecretString": {
+          "ExcludeCharacters": " %+~\`#$&*()|[]{}:;<>?!'/@"\\",
+          "GenerateStringKey": "password",
+          "PasswordLength": 30,
+          "SecretStringTemplate": "{"username":"orbital_admin"}",
+        },
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "MasterSecretAttachment88D1C60C": {
+      "Properties": {
+        "SecretId": {
+          "Ref": "MasterSecretA11BF785",
+        },
+        "TargetId": {
+          "Ref": "TestClusterE0095054",
+        },
+        "TargetType": "AWS::RDS::DBCluster",
+      },
+      "Type": "AWS::SecretsManager::SecretTargetAttachment",
+    },
+    "ProxySgDFD428A2": {
+      "Properties": {
+        "GroupDescription": "Test proxy SG",
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "ProxySgfromTestLambdamwittProxySg2EC3841FIndirectPort1B82644A": {
+      "Properties": {
+        "Description": "Allow connections to the database Cluster from the Proxy",
+        "FromPort": {
+          "Fn::GetAtt": [
+            "TestClusterE0095054",
+            "Endpoint.Port",
+          ],
+        },
+        "GroupId": {
+          "Fn::GetAtt": [
+            "ProxySgDFD428A2",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "ProxySgDFD428A2",
+            "GroupId",
+          ],
+        },
+        "ToPort": {
+          "Fn::GetAtt": [
+            "TestClusterE0095054",
+            "Endpoint.Port",
+          ],
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "ProxySgtoTestLambdamwittProxySg2EC3841FIndirectPortEB850A73": {
+      "Properties": {
+        "Description": "Allow connections to the database Cluster from the Proxy",
+        "DestinationSecurityGroupId": {
+          "Fn::GetAtt": [
+            "ProxySgDFD428A2",
+            "GroupId",
+          ],
+        },
+        "FromPort": {
+          "Fn::GetAtt": [
+            "TestClusterE0095054",
+            "Endpoint.Port",
+          ],
+        },
+        "GroupId": {
+          "Fn::GetAtt": [
+            "ProxySgDFD428A2",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "ToPort": {
+          "Fn::GetAtt": [
+            "TestClusterE0095054",
+            "Endpoint.Port",
+          ],
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroupEgress",
+    },
+    "TestClusterE0095054": {
+      "DeletionPolicy": "Snapshot",
+      "Properties": {
+        "CopyTagsToSnapshot": true,
+        "DBClusterParameterGroupName": "default.aurora-postgresql16",
+        "DBSubnetGroupName": {
+          "Ref": "TestClusterSubnets3F89F97D",
+        },
+        "Engine": "aurora-postgresql",
+        "EngineVersion": "16.4",
+        "MasterUserPassword": {
+          "Fn::Join": [
+            "",
+            [
+              "{{resolve:secretsmanager:",
+              {
+                "Ref": "MasterSecretA11BF785",
+              },
+              ":SecretString:password::}}",
+            ],
+          ],
+        },
+        "MasterUsername": {
+          "Fn::Join": [
+            "",
+            [
+              "{{resolve:secretsmanager:",
+              {
+                "Ref": "MasterSecretA11BF785",
+              },
+              ":SecretString:username::}}",
+            ],
+          ],
+        },
+        "Port": 5432,
+        "ServerlessV2ScalingConfiguration": {
+          "MaxCapacity": 4,
+          "MinCapacity": 0.5,
+        },
+        "VpcSecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "ProxySgDFD428A2",
+              "GroupId",
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBCluster",
+      "UpdateReplacePolicy": "Snapshot",
+    },
+    "TestClusterSubnets3F89F97D": {
+      "Properties": {
+        "DBSubnetGroupDescription": "Subnets for TestCluster database",
+        "SubnetIds": [
+          {
+            "Ref": "TestVpcisolatedSubnet1Subnet2860A680",
+          },
+          {
+            "Ref": "TestVpcisolatedSubnet2SubnetA6454F0B",
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBSubnetGroup",
+    },
+    "TestClusterWriterF2FB6644": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "TestVpcisolatedSubnet1RouteTableAssociationB18A00D7",
+        "TestVpcisolatedSubnet2RouteTableAssociation2BB4538E",
+      ],
+      "Properties": {
+        "DBClusterIdentifier": {
+          "Ref": "TestClusterE0095054",
+        },
+        "DBInstanceClass": "db.serverless",
+        "Engine": "aurora-postgresql",
+        "PromotionTier": 0,
+        "PubliclyAccessible": false,
+      },
+      "Type": "AWS::RDS::DBInstance",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "TestProxy3A354B7F": {
+      "Properties": {
+        "Auth": [
+          {
+            "AuthScheme": "SECRETS",
+            "IAMAuth": "REQUIRED",
+            "SecretArn": {
+              "Ref": "MasterSecretA11BF785",
+            },
+          },
+        ],
+        "DBProxyName": "orbital-mwitt-proxy",
+        "EngineFamily": "POSTGRESQL",
+        "RequireTLS": true,
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "TestProxyIAMRoleA8001066",
+            "Arn",
+          ],
+        },
+        "VpcSecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "ProxySgDFD428A2",
+              "GroupId",
+            ],
+          },
+        ],
+        "VpcSubnetIds": [
+          {
+            "Ref": "TestVpcprivateSubnet1Subnet6E9D0483",
+          },
+          {
+            "Ref": "TestVpcprivateSubnet2SubnetB8BE3628",
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBProxy",
+    },
+    "TestProxyIAMRoleA8001066": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "rds.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "TestProxyIAMRoleDefaultPolicy71908257": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "MasterSecretA11BF785",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "TestProxyIAMRoleDefaultPolicy71908257",
+        "Roles": [
+          {
+            "Ref": "TestProxyIAMRoleA8001066",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "TestProxyProxyTargetGroup5BE882BD": {
+      "DependsOn": [
+        "TestClusterE0095054",
+        "TestClusterWriterF2FB6644",
+      ],
+      "Properties": {
+        "ConnectionPoolConfigurationInfo": {},
+        "DBClusterIdentifiers": [
+          {
+            "Ref": "TestClusterE0095054",
+          },
+        ],
+        "DBProxyName": {
+          "Ref": "TestProxy3A354B7F",
+        },
+        "TargetGroupName": "default",
+      },
+      "Type": "AWS::RDS::DBProxyTargetGroup",
+    },
+    "TestVpcE77CE678": {
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsHostnames": true,
+        "EnableDnsSupport": true,
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestLambda-mwitt/TestVpc",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::VPC",
+    },
+    "TestVpcIGW9DD53F70": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestLambda-mwitt/TestVpc",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::InternetGateway",
+    },
+    "TestVpcVPCGWF1827B84": {
+      "Properties": {
+        "InternetGatewayId": {
+          "Ref": "TestVpcIGW9DD53F70",
+        },
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+    },
+    "TestVpcisolatedSubnet1RouteTable93EFC1F5": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestLambda-mwitt/TestVpc/isolatedSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "TestVpcisolatedSubnet1RouteTableAssociationB18A00D7": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "TestVpcisolatedSubnet1RouteTable93EFC1F5",
+        },
+        "SubnetId": {
+          "Ref": "TestVpcisolatedSubnet1Subnet2860A680",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "TestVpcisolatedSubnet1Subnet2860A680": {
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "CidrBlock": "10.0.4.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "isolated",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Isolated",
+          },
+          {
+            "Key": "Name",
+            "Value": "TestLambda-mwitt/TestVpc/isolatedSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "TestVpcisolatedSubnet2RouteTable7EBE60D9": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestLambda-mwitt/TestVpc/isolatedSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "TestVpcisolatedSubnet2RouteTableAssociation2BB4538E": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "TestVpcisolatedSubnet2RouteTable7EBE60D9",
+        },
+        "SubnetId": {
+          "Ref": "TestVpcisolatedSubnet2SubnetA6454F0B",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "TestVpcisolatedSubnet2SubnetA6454F0B": {
+      "Properties": {
+        "AvailabilityZone": "dummy1b",
+        "CidrBlock": "10.0.5.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "isolated",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Isolated",
+          },
+          {
+            "Key": "Name",
+            "Value": "TestLambda-mwitt/TestVpc/isolatedSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "TestVpcprivateSubnet1DefaultRouteE55BA5B9": {
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "TestVpcpublicSubnet1NATGateway72351FDC",
+        },
+        "RouteTableId": {
+          "Ref": "TestVpcprivateSubnet1RouteTableF370C70F",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "TestVpcprivateSubnet1RouteTableAssociationD9192E40": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "TestVpcprivateSubnet1RouteTableF370C70F",
+        },
+        "SubnetId": {
+          "Ref": "TestVpcprivateSubnet1Subnet6E9D0483",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "TestVpcprivateSubnet1RouteTableF370C70F": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestLambda-mwitt/TestVpc/privateSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "TestVpcprivateSubnet1Subnet6E9D0483": {
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "CidrBlock": "10.0.2.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "private",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private",
+          },
+          {
+            "Key": "Name",
+            "Value": "TestLambda-mwitt/TestVpc/privateSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "TestVpcprivateSubnet2DefaultRoute4E717BCF": {
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "TestVpcpublicSubnet1NATGateway72351FDC",
+        },
+        "RouteTableId": {
+          "Ref": "TestVpcprivateSubnet2RouteTable43EBB202",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "TestVpcprivateSubnet2RouteTable43EBB202": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestLambda-mwitt/TestVpc/privateSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "TestVpcprivateSubnet2RouteTableAssociation6E00A0A0": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "TestVpcprivateSubnet2RouteTable43EBB202",
+        },
+        "SubnetId": {
+          "Ref": "TestVpcprivateSubnet2SubnetB8BE3628",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "TestVpcprivateSubnet2SubnetB8BE3628": {
+      "Properties": {
+        "AvailabilityZone": "dummy1b",
+        "CidrBlock": "10.0.3.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "private",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private",
+          },
+          {
+            "Key": "Name",
+            "Value": "TestLambda-mwitt/TestVpc/privateSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "TestVpcpublicSubnet1DefaultRoute5A98368D": {
+      "DependsOn": [
+        "TestVpcVPCGWF1827B84",
+      ],
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "TestVpcIGW9DD53F70",
+        },
+        "RouteTableId": {
+          "Ref": "TestVpcpublicSubnet1RouteTableD55D3AC3",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "TestVpcpublicSubnet1EIPEA50A69B": {
+      "Properties": {
+        "Domain": "vpc",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestLambda-mwitt/TestVpc/publicSubnet1",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::EIP",
+    },
+    "TestVpcpublicSubnet1NATGateway72351FDC": {
+      "DependsOn": [
+        "TestVpcpublicSubnet1DefaultRoute5A98368D",
+        "TestVpcpublicSubnet1RouteTableAssociationEA0572FC",
+      ],
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "TestVpcpublicSubnet1EIPEA50A69B",
+            "AllocationId",
+          ],
+        },
+        "SubnetId": {
+          "Ref": "TestVpcpublicSubnet1Subnet4F70BC85",
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestLambda-mwitt/TestVpc/publicSubnet1",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::NatGateway",
+    },
+    "TestVpcpublicSubnet1RouteTableAssociationEA0572FC": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "TestVpcpublicSubnet1RouteTableD55D3AC3",
+        },
+        "SubnetId": {
+          "Ref": "TestVpcpublicSubnet1Subnet4F70BC85",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "TestVpcpublicSubnet1RouteTableD55D3AC3": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestLambda-mwitt/TestVpc/publicSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "TestVpcpublicSubnet1Subnet4F70BC85": {
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "CidrBlock": "10.0.0.0/24",
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "public",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public",
+          },
+          {
+            "Key": "Name",
+            "Value": "TestLambda-mwitt/TestVpc/publicSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "TestVpcpublicSubnet2DefaultRouteBF011106": {
+      "DependsOn": [
+        "TestVpcVPCGWF1827B84",
+      ],
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "TestVpcIGW9DD53F70",
+        },
+        "RouteTableId": {
+          "Ref": "TestVpcpublicSubnet2RouteTable19CD621C",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "TestVpcpublicSubnet2RouteTable19CD621C": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestLambda-mwitt/TestVpc/publicSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "TestVpcpublicSubnet2RouteTableAssociation8BC8AAA7": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "TestVpcpublicSubnet2RouteTable19CD621C",
+        },
+        "SubnetId": {
+          "Ref": "TestVpcpublicSubnet2Subnet96FF72E6",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "TestVpcpublicSubnet2Subnet96FF72E6": {
+      "Properties": {
+        "AvailabilityZone": "dummy1b",
+        "CidrBlock": "10.0.1.0/24",
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "public",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public",
+          },
+          {
+            "Key": "Name",
+            "Value": "TestLambda-mwitt/TestVpc/publicSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "TestVpcE77CE678",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
