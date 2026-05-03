@@ -106,13 +106,18 @@ export default [
   {
     ignores: [
       'node_modules/**',
+      '**/node_modules/**',
       'dist/**',
+      '**/dist/**',
       'build/**',
+      '**/build/**',
       '**/*.generated.*',
       'coverage/**',
       '.vitest-cache/**',
       'packages/orchestrator/src/db/migrations/**',
       '**/*.d.ts',
+      'infra/cdk.out/**',
+      'packages/api-lambda/dist/**',
     ],
   },
   prettier,

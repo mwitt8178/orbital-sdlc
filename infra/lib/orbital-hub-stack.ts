@@ -16,7 +16,10 @@ import { RunMigrationsTrigger } from './triggers/run-migrations'
 import { StaticUiConstruct } from './constructs/static-ui'
 import { ReplayBucketConstruct } from './constructs/replay-bucket'
 // 8-03 Lambda + API Gateway HTTP imports - [Engineer-Sr · Sonnet · run-round8-03-lambda-apigw-http]
+// Phase-1 migration: ApiLambdaConstruct replaces the 12-per-router LambdaTrpcConstruct
+// for browser traffic. LambdaTrpcConstruct retained ONLY for the install→hub PKI route.
 import { LambdaTrpcConstruct, RouterGroup } from './constructs/lambda-trpc'
+import { ApiLambdaConstruct } from './constructs/api-lambda'
 import { ApiGwHttpConstruct } from './constructs/api-gw-http'
 import { AuthorizersConstruct } from './constructs/authorizers'
 // 8-07 Secrets KMS imports - [Engineer-Principal · Opus · run-round8-07-secrets-kms]
@@ -124,9 +127,19 @@ export class OrbitalHubStack extends cdk.Stack {
   // ------------------------------------------------------------------
   /**
    * Map of router group → Lambda construct.
-   * All 11 tRPC router groups are created here.
+   *
+   * Phase-1 migration: previously held 12 entries (the per-router-group
+   * Lambdas). Now holds ONLY `'tasks'` — the install→hub PKI route
+   * Lambda. Browser traffic goes through `apiLambda` below.
    */
   readonly lambdas: Map<RouterGroup, LambdaTrpcConstruct>
+
+  /**
+   * The single api-lambda backing the browser tRPC surface.
+   * Receives `/trpc/{proxy+}` (Cognito JWT) and `/public/{proxy+}` (no auth).
+   * [Phase 1 migration]
+   */
+  readonly apiLambda: ApiLambdaConstruct
 
   /**
    * Authorizers construct - Cognito JWT + PKI envelope authorizers.
@@ -350,92 +363,104 @@ export class OrbitalHubStack extends cdk.Stack {
       logRetentionDays: props.envConfig.logRetentionDays,
     })
 
-    // One Lambda per router group.
+    // ----- Phase 1 migration -----
     //
-    // 'all' is a single catch-all Lambda using the full root appRouter. It
-    // backs the `/trpc/{proxy+}` route and is the canonical path for all
-    // browser tRPC traffic — tRPC v10's dot-separated procedure URLs cannot
-    // be matched by per-router slash routes.
+    // Browser tRPC traffic flows through a SINGLE ApiLambdaConstruct that
+    // bundles the @orbital/api-lambda package (a narrow router that
+    // deliberately excludes daemon-shaped procedures).
     //
-    // The per-router Lambdas ('tasks', 'auth', etc.) remain provisioned for
-    // install→hub traffic ('tasks' backs `/install/{proxy+}` with the PKI
-    // authorizer) and to keep IAM scoping tight per router group when
-    // future direct routes are added.
-    const allRouterGroups: RouterGroup[] = [
-      'all',
-      'auth',
-      'tasks',
-      'memory',
-      'comms',
-      'defects',
-      'audit',
-      'prs',
-      'cost',
-      'providers',
-      'team',
-      'onboarding',
-    ]
+    // The legacy LambdaTrpcConstruct is retained ONLY for the install→hub
+    // PKI route at `/install/{proxy+}` because the install Lambda has its
+    // own auth model and is invoked by remote installs, not browsers.
+    //
+    // The previous 12-Lambdas-per-router architecture is removed: only
+    // `trpc-all` was wired to a route, and importing the eager root
+    // appRouter caused INIT crashes (see docs/module-import-side-effects.md).
+    // ------------------------------
 
+    // Single api-lambda for all browser traffic.
+    this.apiLambda = new ApiLambdaConstruct(this, 'ApiLambda', {
+      envName: props.envName,
+      vpc: this.vpc,
+      lambdaSg: this.rdsProxy.lambdaSecurityGroup,
+      rdsProxy: this.rdsProxy.proxy,
+      proxyEndpoint: this.rdsProxy.proxy.endpoint,
+      logRetentionDays: props.envConfig.logRetentionDays,
+      cognitoUserPoolId: this.cognito.userPool.userPoolId,
+      cognitoAppClientId: this.cognito.appClient.userPoolClientId,
+      region: props.envConfig.region,
+      // Phase 1.11: enable PC after first deploy is healthy (env flag).
+      enableProvisionedConcurrency: process.env['ORBITAL_ENABLE_PC'] === '1',
+    })
+
+    // Replay bucket grant — api-lambda serves audit procedures that read
+    // replay blobs on demand.
+    this.replayBucket.bucket.grantRead(this.apiLambda.role)
+
+    // Install Lambda — single survivor of the legacy per-router Lambdas.
+    // Backs `/install/{proxy+}` with the PKI envelope authorizer. Code
+    // path is the `tasks` router group (claim work, append events).
     this.lambdas = new Map<RouterGroup, LambdaTrpcConstruct>()
+    const installLambda = new LambdaTrpcConstruct(this, 'Lambda-tasks', {
+      routerGroup: 'tasks',
+      envName: props.envName,
+      vpc: this.vpc,
+      lambdaSg: this.rdsProxy.lambdaSecurityGroup,
+      rdsProxy: this.rdsProxy.proxy,
+      secretArns: {},
+      proxyEndpoint: this.rdsProxy.proxy.endpoint,
+      logRetentionDays: props.envConfig.logRetentionDays,
+      cognitoUserPoolId: this.cognito.userPool.userPoolId,
+      cognitoAppClientId: this.cognito.appClient.userPoolClientId,
+      region: props.envConfig.region,
+    })
+    this.lambdas.set('tasks', installLambda)
 
-    for (const group of allRouterGroups) {
-      const construct = new LambdaTrpcConstruct(this, `Lambda-${group}`, {
-        routerGroup: group,
-        envName: props.envName,
-        vpc: this.vpc,
-        lambdaSg: this.rdsProxy.lambdaSecurityGroup,
-        rdsProxy: this.rdsProxy.proxy,
-        // Secret ARNs - 8-07 will populate; placeholder empty map for now.
-        // 8-07 will extend by calling role.addToPolicy on each Lambda's role.
-        secretArns: {},
-        proxyEndpoint: this.rdsProxy.proxy.endpoint,
-        logRetentionDays: props.envConfig.logRetentionDays,
-        cognitoUserPoolId: this.cognito.userPool.userPoolId,
-        cognitoAppClientId: this.cognito.appClient.userPoolClientId,
-        region: props.envConfig.region,
-        // Replay bucket for audit Lambda (reads replay blobs)
-        replayBucket: group === 'audit' ? this.replayBucket.bucket : undefined,
-      })
-      this.lambdas.set(group, construct)
-    }
-
-    // API Gateway HTTP - routes wired to Lambdas.
+    // ------------------------------------------------------------------
+    // API Gateway HTTP — three routes, one Lambda for browser traffic.
     //
-    // The single `/trpc/{proxy+}` catch-all backs every browser tRPC call.
-    // tRPC v10 emits dot-separated procedure paths (e.g. /trpc/onboarding.status)
-    // that cannot be matched by per-router slash routes.
-    // Install traffic uses /install/{proxy+} with the PKI authorizer.
+    //   /trpc/{proxy+}    — JWT-protected; api-lambda
+    //   /public/{proxy+}  — no authorizer; api-lambda (SetupGate, health)
+    //   /install/{proxy+} — PKI envelope; install Lambda
+    // ------------------------------------------------------------------
     const routeConfigs = [
-      // Browser-facing tRPC catch-all.
-      //
-      // No API-GW authorizer: tRPC's own context + procedure middleware is the
-      // auth boundary. The Lambda's lambda-trpc-adapter still inspects the
-      // Authorization header and populates ctx.tenantId / ctx.userId from a
-      // verified Cognito JWT when present, so authed procedures throw
-      // UNAUTHORIZED from inside tRPC. Public procedures (e.g.
-      // onboarding.status, providers.health) work without a token, which is
-      // required because the SetupGate runs BEFORE sign-in to determine
-      // whether the user must hit the wizard first.
-      { routeKey: 'ANY /trpc/{proxy+}', group: 'all' as RouterGroup, authType: 'none' as const },
-      // Install-to-hub routes (PKI envelope authorizer)
-      // Local Orbital installs use tasks Lambda for work claiming + event append
-      { routeKey: 'ANY /install/{proxy+}', group: 'tasks' as RouterGroup, authType: 'install' as const },
+      // Browser-facing tRPC. Phase 1 keeps the `none` authorizer so the
+      // SetupGate (which calls onboarding.status pre-login) and other
+      // anonymous procedures continue to work without UI changes. The
+      // api-lambda's handler extracts JWT claims from the Authorization
+      // header when present — authed procedures throw UNAUTHORIZED at the
+      // tRPC layer if claims are missing. Phase 4 (auth-stack split) moves
+      // to gateway-level JWT auth with a proper /public/ route prefix and
+      // updates the UI client to use `splitLink` for routing.
+      {
+        routeKey: 'ANY /trpc/{proxy+}',
+        fn: this.apiLambda.fn,
+        authType: 'none' as const,
+      },
+      // /public/{proxy+} — provisioned now so the UI can be migrated
+      // procedure-by-procedure during Phase 4 without another CDK deploy.
+      // Same Lambda; no authorizer.
+      {
+        routeKey: 'ANY /public/{proxy+}',
+        fn: this.apiLambda.fn,
+        authType: 'none' as const,
+      },
+      // Install-to-hub PKI envelope route — unchanged from prior design.
+      {
+        routeKey: 'ANY /install/{proxy+}',
+        fn: installLambda.fn,
+        authType: 'install' as const,
+      },
     ]
 
     this.apiGw = new ApiGwHttpConstruct(this, 'ApiGw', {
       envName: props.envName,
       domain: props.envConfig.domain,
-      // certificate and hostedZone are undefined when useCustomDomain=false;
-      // ApiGwHttpConstruct skips custom domain + Route53 record in that case.
       certificate: this.dns.certificate,
       hostedZone: this.dns.hostedZone,
       cognitoAuthorizer: this.authorizersConstruct.cognitoAuthorizer,
       installAuthorizer: this.authorizersConstruct.installAuthorizer,
-      routes: routeConfigs.map(({ routeKey, group, authType }) => ({
-        routeKey,
-        fn: this.lambdas.get(group)!.fn,
-        authType,
-      })),
+      routes: routeConfigs,
       logRetentionDays: props.envConfig.logRetentionDays,
     })
 
@@ -487,70 +512,33 @@ export class OrbitalHubStack extends cdk.Stack {
     // Each Lambda group declares the minimum set of secrets it must access.
     // Wrong scoping = secret leak across boundaries - covered by IAM scoping
     // tests in secrets.test.ts.
-    const lambdaSecretGrants: Record<RouterGroup, SecretRef[]> = {
-      // all: catch-all Lambda using full appRouter — needs every secret any
-      // sub-router needs (DB creds, hub master key for install paths invoked
-      // through the catch-all, GitHub webhook secret for prs procedures).
-      all: ['dbMasterCreds', 'hubMasterKey', 'githubWebhookSecret'],
-      // auth: needs hub master key (sign envelopes for hub-to-install) +
-      // db creds (Aurora connection via RDS Proxy IAM auth - but we still
-      // need the master secret for username lookup).
-      auth: ['dbMasterCreds', 'hubMasterKey'],
-      // tasks: install→hub envelope verification + DB.
-      tasks: ['dbMasterCreds', 'hubMasterKey'],
-      // memory: DB only.
-      memory: ['dbMasterCreds'],
-      // comms: DB only.
-      comms: ['dbMasterCreds'],
-      // defects: DB only.
-      defects: ['dbMasterCreds'],
-      // audit: DB + per-tenant KMS usage (read replay blobs).
-      audit: ['dbMasterCreds'],
-      // prs: DB + GitHub webhook secret (HMAC verification).
-      prs: ['dbMasterCreds', 'githubWebhookSecret'],
-      // cost: DB only.
-      cost: ['dbMasterCreds'],
-      // providers: DB only.
-      providers: ['dbMasterCreds'],
-      // team: DB only.
-      team: ['dbMasterCreds'],
-      // onboarding: DB + per-tenant KMS create/usage (provisions tenant CMK).
-      onboarding: ['dbMasterCreds'],
+    // Phase-1 migration: api-lambda needs every secret any browser-served
+    // procedure transitively touches — DB creds, hub master key (install
+    // path invoked from browser via /trpc/install.* helpers), GitHub
+    // webhook secret (prs router HMAC verify when re-checked from browser).
+    const apiLambdaSecretRefs: SecretRef[] = ['dbMasterCreds', 'hubMasterKey', 'githubWebhookSecret']
+    this.secrets.grantReadFor(this.apiLambda.role, apiLambdaSecretRefs)
+    for (const ref of apiLambdaSecretRefs) {
+      this.apiLambda.fn.addEnvironment(secretEnvVarName(ref), secretArnFor(this.secrets, ref))
+      this.apiLambda.fn.addEnvironment(secretNameEnvVar(ref), secretName(props.envName, ref))
     }
 
-    for (const [group, refs] of Object.entries(lambdaSecretGrants) as [RouterGroup, SecretRef[]][]) {
-      const lambda = this.lambdas.get(group)
-      if (!lambda) continue
-      this.secrets.grantReadFor(lambda.role, refs)
-
-      // Inject the secret ARNs into Lambda env so the runtime can call
-      // GetSecretValue without hard-coding ARNs in code.
-      for (const ref of refs) {
-        const envVar = secretEnvVarName(ref)
-        lambda.fn.addEnvironment(envVar, secretArnFor(this.secrets, ref))
-      }
-      // Also export the secret name (some clients prefer name to ARN).
-      for (const ref of refs) {
-        lambda.fn.addEnvironment(secretNameEnvVar(ref), secretName(props.envName, ref))
-      }
+    // Install Lambda — needs DB + hub master key (envelope verify).
+    const installSecretRefs: SecretRef[] = ['dbMasterCreds', 'hubMasterKey']
+    const installLambdaConstruct = this.lambdas.get('tasks')!
+    this.secrets.grantReadFor(installLambdaConstruct.role, installSecretRefs)
+    for (const ref of installSecretRefs) {
+      installLambdaConstruct.fn.addEnvironment(secretEnvVarName(ref), secretArnFor(this.secrets, ref))
+      installLambdaConstruct.fn.addEnvironment(secretNameEnvVar(ref), secretName(props.envName, ref))
     }
 
     // Per-tenant KMS grants:
-    //   - audit Lambda: USE per-tenant CMKs (decrypt replay blobs)
-    //   - onboarding Lambda: CREATE per-tenant CMKs + USE
-    const auditLambda = this.lambdas.get('audit')
-    if (auditLambda) {
-      this.perTenantKms.grantPerTenantUsage(auditLambda.role)
-    }
-    const onboardingLambda = this.lambdas.get('onboarding')
-    if (onboardingLambda) {
-      this.perTenantKms.grantOnboardingPermissions(onboardingLambda.role)
-      this.perTenantKms.grantPerTenantUsage(onboardingLambda.role)
-      // The admin Lambda (if any) should hold deletion rights for tenant
-      // offboarding. We grant deletion to the onboarding Lambda since that's
-      // where the offboarding handler lives in the orchestrator.
-      this.perTenantKms.grantTenantDeletion(onboardingLambda.role)
-    }
+    //   - api-lambda: USE per-tenant CMKs (decrypt replay blobs for audit
+    //     procedures) AND CREATE+USE+DELETE (onboarding flow provisions
+    //     a tenant CMK; admin flow may delete on offboarding).
+    this.perTenantKms.grantPerTenantUsage(this.apiLambda.role)
+    this.perTenantKms.grantOnboardingPermissions(this.apiLambda.role)
+    this.perTenantKms.grantTenantDeletion(this.apiLambda.role)
 
     // ------------------------------------------------------------------
     // (end 8-07 Secrets KMS)
@@ -932,18 +920,12 @@ export class OrbitalHubStack extends cdk.Stack {
       hygieneSweepFn:   scheduledFns['hygiene-sweep']!,
     })
 
-    // Inject EVENTS_TOPIC_ARN into all tRPC Lambdas that publish events.
-    // 'all' covers every browser tRPC procedure now, so it must publish.
-    // The legacy per-router Lambdas (tasks, memory, defects, audit, comms)
-    // remain wired for backward-compat (install routes still hit 'tasks').
-    const eventPublishingGroups: RouterGroup[] = ['all', 'tasks', 'memory', 'defects', 'audit', 'comms']
-    for (const group of eventPublishingGroups) {
-      const lc = this.lambdas.get(group)
-      if (lc) {
-        lc.fn.addEnvironment('EVENTS_TOPIC_ARN', this.eventBus.snsTopic.topicArn)
-        this.eventBus.grantPublish(lc.role)
-      }
-    }
+    // Phase-1 migration: api-lambda publishes browser-originated events,
+    // install Lambda publishes events from install→hub work claims.
+    this.apiLambda.fn.addEnvironment('EVENTS_TOPIC_ARN', this.eventBus.snsTopic.topicArn)
+    this.eventBus.grantPublish(this.apiLambda.role)
+    installLambdaConstruct.fn.addEnvironment('EVENTS_TOPIC_ARN', this.eventBus.snsTopic.topicArn)
+    this.eventBus.grantPublish(installLambdaConstruct.role)
 
     // Also inject into consumer Lambdas (defect-router may re-publish cross-install events)
     consumerFns['defect-router'].addEnvironment('EVENTS_TOPIC_ARN', this.eventBus.snsTopic.topicArn)
@@ -962,13 +944,12 @@ export class OrbitalHubStack extends cdk.Stack {
     // [Engineer-Sr · Sonnet · run-round8-08-observability]
     // ------------------------------------------------------------------
 
-    // Build the lambda descriptor list - all tRPC + WS + consumer + scheduled Lambdas
+    // Build the lambda descriptor list - api-lambda + install + WS + consumer + scheduled
     const allLambdaDescriptors: LambdaDescriptor[] = [
-      // tRPC router group Lambdas
-      ...allRouterGroups.map((group) => ({
-        label: `trpc-${group}`,
-        fn: this.lambdas.get(group)!.fn,
-      })),
+      // Phase-1 migration: single api-lambda backs all browser tRPC traffic.
+      { label: 'api-lambda', fn: this.apiLambda.fn },
+      // Install Lambda — sole survivor of legacy per-router Lambdas.
+      { label: 'install', fn: installLambdaConstruct.fn },
       // WS Lambdas
       { label: 'ws-connect',    fn: wsConnectFn },
       { label: 'ws-disconnect', fn: wsDisconnectFn },

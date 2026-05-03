@@ -1,0 +1,1830 @@
+{
+  "lambdas": [
+    {
+      "FunctionName": "orbital-mwitt-ws-default",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/ws/default.handler",
+      "MemorySize": 512,
+      "Timeout": 29,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-WsDefaultRole36410031-uyUz8bjNGmpn",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": null,
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-trpc-memory",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/handlers/memory.handler",
+      "MemorySize": 1024,
+      "Timeout": 29,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-LambdamemoryRole2EEB9976-HkfVpX8KKUju",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": {
+        "SubnetIds": [
+          "subnet-0a7ada7adeee9e50a",
+          "subnet-0e67b14ca77bd7c39"
+        ],
+        "SecurityGroupIds": [
+          "sg-0123c7e72cff97908"
+        ],
+        "VpcId": "vpc-0d9e890c86582c676",
+        "Ipv6AllowedForDualStack": false
+      },
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-trpc-prs",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/handlers/prs.handler",
+      "MemorySize": 1024,
+      "Timeout": 29,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-LambdaprsRoleD29A3497-AW6flJlRGCnA",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": {
+        "SubnetIds": [
+          "subnet-0a7ada7adeee9e50a",
+          "subnet-0e67b14ca77bd7c39"
+        ],
+        "SecurityGroupIds": [
+          "sg-0123c7e72cff97908"
+        ],
+        "VpcId": "vpc-0d9e890c86582c676",
+        "Ipv6AllowedForDualStack": false
+      },
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-trpc-providers",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/handlers/providers.handler",
+      "MemorySize": 1024,
+      "Timeout": 29,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-LambdaprovidersRoleF78A816A-yDlWaS9KXQxh",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": {
+        "SubnetIds": [
+          "subnet-0a7ada7adeee9e50a",
+          "subnet-0e67b14ca77bd7c39"
+        ],
+        "SecurityGroupIds": [
+          "sg-0123c7e72cff97908"
+        ],
+        "VpcId": "vpc-0d9e890c86582c676",
+        "Ipv6AllowedForDualStack": false
+      },
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-ws-disconnect",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/ws/disconnect.handler",
+      "MemorySize": 256,
+      "Timeout": 10,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-WsDisconnectRole995AD956-4MKyVkUA5wxr",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": null,
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-consumer-memory-recorder",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/consumers/memory-recorder.handler",
+      "MemorySize": 256,
+      "Timeout": 60,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-ConsumermemoryrecorderRole84E14A6A-FI2bqB7tvO8I",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": null,
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-consumer-replay-recorder",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/consumers/replay-recorder.handler",
+      "MemorySize": 256,
+      "Timeout": 60,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-ConsumerreplayrecorderRole6EF473EB-yjF2k8WPXNdc",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": null,
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-trpc-team",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/handlers/team.handler",
+      "MemorySize": 1024,
+      "Timeout": 29,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-LambdateamRole70456841-s2qkcYDVtjRX",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": {
+        "SubnetIds": [
+          "subnet-0a7ada7adeee9e50a",
+          "subnet-0e67b14ca77bd7c39"
+        ],
+        "SecurityGroupIds": [
+          "sg-0123c7e72cff97908"
+        ],
+        "VpcId": "vpc-0d9e890c86582c676",
+        "Ipv6AllowedForDualStack": false
+      },
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-trpc-audit",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/handlers/audit.handler",
+      "MemorySize": 1024,
+      "Timeout": 29,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-LambdaauditRole1B676BD4-HzZ3BCAbh4BA",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": {
+        "SubnetIds": [
+          "subnet-0a7ada7adeee9e50a",
+          "subnet-0e67b14ca77bd7c39"
+        ],
+        "SecurityGroupIds": [
+          "sg-0123c7e72cff97908"
+        ],
+        "VpcId": "vpc-0d9e890c86582c676",
+        "Ipv6AllowedForDualStack": false
+      },
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-db-creds-rotation",
+      "Runtime": "python3.12",
+      "Handler": "lambda_function.lambda_handler",
+      "MemorySize": 128,
+      "Timeout": 30,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-AuroraMa-SecretsManagerRDSPostgreS-QsyCkhfUsTOU",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": null,
+      "TracingConfig": {
+        "Mode": "PassThrough"
+      },
+      "LastModified": "2026-05-03T05:54:57.835+0000",
+      "CodeSize": 5174263
+    },
+    {
+      "FunctionName": "orbital-mwitt-trpc-onboarding",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/handlers/onboarding.handler",
+      "MemorySize": 1024,
+      "Timeout": 29,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-LambdaonboardingRoleACB5C428-pb3VFVAV0JE3",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": {
+        "SubnetIds": [
+          "subnet-0a7ada7adeee9e50a",
+          "subnet-0e67b14ca77bd7c39"
+        ],
+        "SecurityGroupIds": [
+          "sg-0123c7e72cff97908"
+        ],
+        "VpcId": "vpc-0d9e890c86582c676",
+        "Ipv6AllowedForDualStack": false
+      },
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-scheduled-hygiene-sweep",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/scheduled/hygiene-sweep.handler",
+      "MemorySize": 256,
+      "Timeout": 300,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-ScheduledhygienesweepRole2944342C-D9hjMojV2dB8",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": null,
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-key-rotation",
+      "Runtime": "nodejs22.x",
+      "Handler": "index.handler",
+      "MemorySize": 256,
+      "Timeout": 120,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-KeyRotationExecutionRole5679977C-SKyccT3xl5A9",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": null,
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T05:55:14.428+0000",
+      "CodeSize": 3310627
+    },
+    {
+      "FunctionName": "orbital-mwitt-migration-runner",
+      "Runtime": "nodejs22.x",
+      "Handler": "index.handler",
+      "MemorySize": 256,
+      "Timeout": 600,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-MigrationsExecutionRole498605A6-UiX2WXFL12qF",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": {
+        "SubnetIds": [
+          "subnet-0a7ada7adeee9e50a",
+          "subnet-0e67b14ca77bd7c39"
+        ],
+        "SecurityGroupIds": [
+          "sg-0123c7e72cff97908"
+        ],
+        "VpcId": "vpc-0d9e890c86582c676",
+        "Ipv6AllowedForDualStack": false
+      },
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T07:27:24.000+0000",
+      "CodeSize": 3454726
+    },
+    {
+      "FunctionName": "orbital-mwitt-ws-connect",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/ws/connect.handler",
+      "MemorySize": 256,
+      "Timeout": 10,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-WsConnectRoleB4CD7787-aPL2UhMhKCEV",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": null,
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-trpc-comms",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/handlers/comms.handler",
+      "MemorySize": 1024,
+      "Timeout": 29,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-LambdacommsRole1ACBC827-JhyReYUqg3BZ",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": {
+        "SubnetIds": [
+          "subnet-0a7ada7adeee9e50a",
+          "subnet-0e67b14ca77bd7c39"
+        ],
+        "SecurityGroupIds": [
+          "sg-0123c7e72cff97908"
+        ],
+        "VpcId": "vpc-0d9e890c86582c676",
+        "Ipv6AllowedForDualStack": false
+      },
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:27.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-consumer-defect-router",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/consumers/defect-router.handler",
+      "MemorySize": 256,
+      "Timeout": 60,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-ConsumerdefectrouterRole95DF75F2-Syy1aBcmrrXU",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": null,
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-trpc-auth",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/handlers/auth.handler",
+      "MemorySize": 1024,
+      "Timeout": 29,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-LambdaauthRole87B39A43-72ob8r2axm0n",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": {
+        "SubnetIds": [
+          "subnet-0a7ada7adeee9e50a",
+          "subnet-0e67b14ca77bd7c39"
+        ],
+        "SecurityGroupIds": [
+          "sg-0123c7e72cff97908"
+        ],
+        "VpcId": "vpc-0d9e890c86582c676",
+        "Ipv6AllowedForDualStack": false
+      },
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-trpc-all",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/handlers/all.handler",
+      "MemorySize": 1024,
+      "Timeout": 29,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-LambdaallRole6C1A8242-0r8Bl9A6S4wY",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": {
+        "SubnetIds": [
+          "subnet-0a7ada7adeee9e50a",
+          "subnet-0e67b14ca77bd7c39"
+        ],
+        "SecurityGroupIds": [
+          "sg-0123c7e72cff97908"
+        ],
+        "VpcId": "vpc-0d9e890c86582c676",
+        "Ipv6AllowedForDualStack": false
+      },
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-scheduled-retro-runner",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/scheduled/retro-runner.handler",
+      "MemorySize": 256,
+      "Timeout": 300,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-ScheduledretrorunnerRole5F2BE406-uXG9Q4ccWvup",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": null,
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-consumer-audit-indexer",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/consumers/audit-indexer.handler",
+      "MemorySize": 256,
+      "Timeout": 60,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-ConsumerauditindexerRoleBCBF16A1-lpz0kq7r3zdU",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": null,
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-trpc-cost",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/handlers/cost.handler",
+      "MemorySize": 1024,
+      "Timeout": 29,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-LambdacostRoleE9ED1CC4-lIxpDCuquWUZ",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": {
+        "SubnetIds": [
+          "subnet-0a7ada7adeee9e50a",
+          "subnet-0e67b14ca77bd7c39"
+        ],
+        "SecurityGroupIds": [
+          "sg-0123c7e72cff97908"
+        ],
+        "VpcId": "vpc-0d9e890c86582c676",
+        "Ipv6AllowedForDualStack": false
+      },
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-ws-fanout",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/ws/fanout.handler",
+      "MemorySize": 512,
+      "Timeout": 30,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-WsFanoutRole462E70E3-357KfZOjNAxq",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": null,
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-scheduled-sprint-planning",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/scheduled/sprint-planning.handler",
+      "MemorySize": 256,
+      "Timeout": 300,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-ScheduledsprintplanningRole01608E2-kM7U8j2WcWVh",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": null,
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-install-authorizer",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/handlers/install-authorizer.handler",
+      "MemorySize": 256,
+      "Timeout": 10,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-AuthorizersInstallAuthRole1FCFBD0E-iqpE9oKSjz3n",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": {
+        "SubnetIds": [
+          "subnet-0a7ada7adeee9e50a",
+          "subnet-0e67b14ca77bd7c39"
+        ],
+        "SecurityGroupIds": [
+          "sg-0123c7e72cff97908"
+        ],
+        "VpcId": "vpc-0d9e890c86582c676",
+        "Ipv6AllowedForDualStack": false
+      },
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-trpc-tasks",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/handlers/tasks.handler",
+      "MemorySize": 1024,
+      "Timeout": 29,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-LambdatasksRole18396BE8-Kp68lpaki3pB",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": {
+        "SubnetIds": [
+          "subnet-0a7ada7adeee9e50a",
+          "subnet-0e67b14ca77bd7c39"
+        ],
+        "SecurityGroupIds": [
+          "sg-0123c7e72cff97908"
+        ],
+        "VpcId": "vpc-0d9e890c86582c676",
+        "Ipv6AllowedForDualStack": false
+      },
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    },
+    {
+      "FunctionName": "orbital-mwitt-trpc-defects",
+      "Runtime": "nodejs22.x",
+      "Handler": "lambda/handlers/defects.handler",
+      "MemorySize": 1024,
+      "Timeout": 29,
+      "Role": "arn:aws:iam::403001214246:role/OrbitalHub-mwitt-LambdadefectsRole6710C830-QKOM8c8x5EPu",
+      "Environment": {
+        "Variables": null
+      },
+      "VpcConfig": {
+        "SubnetIds": [
+          "subnet-0a7ada7adeee9e50a",
+          "subnet-0e67b14ca77bd7c39"
+        ],
+        "SecurityGroupIds": [
+          "sg-0123c7e72cff97908"
+        ],
+        "VpcId": "vpc-0d9e890c86582c676",
+        "Ipv6AllowedForDualStack": false
+      },
+      "TracingConfig": {
+        "Mode": "Active"
+      },
+      "LastModified": "2026-05-03T14:46:23.000+0000",
+      "CodeSize": 55379205
+    }
+  ],
+  "apigateway_http": {},
+  "apigateway_ws": {
+    "ApiId": "zc2367u5d1",
+    "routes": [
+      {
+        "ApiKeyRequired": false,
+        "AuthorizationScopes": [],
+        "AuthorizationType": "NONE",
+        "RequestModels": {},
+        "RouteId": "5qo41ru",
+        "RouteKey": "$connect",
+        "Target": "integrations/sdz1m6o"
+      },
+      {
+        "ApiKeyRequired": false,
+        "AuthorizationScopes": [],
+        "AuthorizationType": "NONE",
+        "RequestModels": {},
+        "RouteId": "9ch883i",
+        "RouteKey": "$disconnect",
+        "Target": "integrations/uzl09om"
+      },
+      {
+        "ApiKeyRequired": false,
+        "AuthorizationScopes": [],
+        "AuthorizationType": "NONE",
+        "RequestModels": {},
+        "RouteId": "nhsi3g1",
+        "RouteKey": "$default",
+        "Target": "integrations/aeo56k0"
+      }
+    ],
+    "integrations": [
+      {
+        "ConnectionType": "INTERNET",
+        "IntegrationId": "aeo56k0",
+        "IntegrationMethod": "POST",
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:403001214246:function:orbital-mwitt-ws-default/invocations",
+        "PassthroughBehavior": "WHEN_NO_MATCH",
+        "PayloadFormatVersion": "1.0",
+        "TimeoutInMillis": 29000
+      },
+      {
+        "ConnectionType": "INTERNET",
+        "IntegrationId": "sdz1m6o",
+        "IntegrationMethod": "POST",
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:403001214246:function:orbital-mwitt-ws-connect/invocations",
+        "PassthroughBehavior": "WHEN_NO_MATCH",
+        "PayloadFormatVersion": "1.0",
+        "TimeoutInMillis": 29000
+      },
+      {
+        "ConnectionType": "INTERNET",
+        "IntegrationId": "uzl09om",
+        "IntegrationMethod": "POST",
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:403001214246:function:orbital-mwitt-ws-disconnect/invocations",
+        "PassthroughBehavior": "WHEN_NO_MATCH",
+        "PayloadFormatVersion": "1.0",
+        "TimeoutInMillis": 29000
+      }
+    ],
+    "stages": [
+      {
+        "AccessLogSettings": {
+          "DestinationArn": "arn:aws:logs:us-east-1:403001214246:log-group:/orbital/mwitt/apigateway/ws-api-access-logs",
+          "Format": "{\"requestId\":\"$context.requestId\",\"connectionId\":\"$context.connectionId\",\"routeKey\":\"$context.routeKey\",\"status\":\"$context.status\",\"requestTime\":\"$context.requestTime\",\"integrationLatency\":\"$context.integrationLatency\",\"errorMessage\":\"$context.error.message\",\"errorType\":\"$context.error.responseType\"}"
+        },
+        "AutoDeploy": true,
+        "CreatedDate": "2026-05-03T05:55:33+00:00",
+        "DefaultRouteSettings": {
+          "DataTraceEnabled": false,
+          "DetailedMetricsEnabled": true,
+          "LoggingLevel": "INFO",
+          "ThrottlingBurstLimit": 200,
+          "ThrottlingRateLimit": 100.0
+        },
+        "DeploymentId": "qx9sad",
+        "LastDeploymentStatusMessage": "Successfully deployed stage with deployment ID 'qx9sad'",
+        "LastUpdatedDate": "2026-05-03T05:55:35+00:00",
+        "RouteSettings": {},
+        "StageName": "$default",
+        "StageVariables": {},
+        "Tags": {
+          "aws:cloudformation:stack-name": "OrbitalHub-mwitt",
+          "orbital:stack": "hub",
+          "aws:cloudformation:stack-id": "arn:aws:cloudformation:us-east-1:403001214246:stack/OrbitalHub-mwitt/60eb3180-46b4-11f1-842c-120d78857f51",
+          "orbital:component": "api-gateway-ws",
+          "aws:cloudformation:logical-id": "WsApiStage72570D1F",
+          "orbital:env": "mwitt",
+          "orbital:managed-by": "cdk"
+        }
+      }
+    ]
+  },
+  "cognito": {
+    "UserPool": {
+      "Id": "us-east-1_R89dMIxXb",
+      "Name": "orbital-mwitt",
+      "Policies": {
+        "PasswordPolicy": {
+          "MinimumLength": 12,
+          "RequireUppercase": true,
+          "RequireLowercase": true,
+          "RequireNumbers": true,
+          "RequireSymbols": true,
+          "TemporaryPasswordValidityDays": 7
+        },
+        "SignInPolicy": {
+          "AllowedFirstAuthFactors": [
+            "PASSWORD"
+          ]
+        }
+      },
+      "DeletionProtection": "INACTIVE",
+      "LambdaConfig": {},
+      "LastModifiedDate": "2026-05-03T00:54:28.398000-05:00",
+      "CreationDate": "2026-05-03T00:54:28.398000-05:00",
+      "SchemaAttributes": [
+        {
+          "Name": "profile",
+          "AttributeDataType": "String",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": true,
+          "Required": false,
+          "StringAttributeConstraints": {
+            "MinLength": "0",
+            "MaxLength": "2048"
+          }
+        },
+        {
+          "Name": "address",
+          "AttributeDataType": "String",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": true,
+          "Required": false,
+          "StringAttributeConstraints": {
+            "MinLength": "0",
+            "MaxLength": "2048"
+          }
+        },
+        {
+          "Name": "birthdate",
+          "AttributeDataType": "String",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": true,
+          "Required": false,
+          "StringAttributeConstraints": {
+            "MinLength": "10",
+            "MaxLength": "10"
+          }
+        },
+        {
+          "Name": "gender",
+          "AttributeDataType": "String",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": true,
+          "Required": false,
+          "StringAttributeConstraints": {
+            "MinLength": "0",
+            "MaxLength": "2048"
+          }
+        },
+        {
+          "Name": "preferred_username",
+          "AttributeDataType": "String",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": true,
+          "Required": false,
+          "StringAttributeConstraints": {
+            "MinLength": "0",
+            "MaxLength": "2048"
+          }
+        },
+        {
+          "Name": "updated_at",
+          "AttributeDataType": "Number",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": true,
+          "Required": false,
+          "NumberAttributeConstraints": {
+            "MinValue": "0"
+          }
+        },
+        {
+          "Name": "website",
+          "AttributeDataType": "String",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": true,
+          "Required": false,
+          "StringAttributeConstraints": {
+            "MinLength": "0",
+            "MaxLength": "2048"
+          }
+        },
+        {
+          "Name": "picture",
+          "AttributeDataType": "String",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": true,
+          "Required": false,
+          "StringAttributeConstraints": {
+            "MinLength": "0",
+            "MaxLength": "2048"
+          }
+        },
+        {
+          "Name": "identities",
+          "AttributeDataType": "String",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": true,
+          "Required": false,
+          "StringAttributeConstraints": {}
+        },
+        {
+          "Name": "sub",
+          "AttributeDataType": "String",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": false,
+          "Required": true,
+          "StringAttributeConstraints": {
+            "MinLength": "1",
+            "MaxLength": "2048"
+          }
+        },
+        {
+          "Name": "phone_number",
+          "AttributeDataType": "String",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": true,
+          "Required": false,
+          "StringAttributeConstraints": {
+            "MinLength": "0",
+            "MaxLength": "2048"
+          }
+        },
+        {
+          "Name": "phone_number_verified",
+          "AttributeDataType": "Boolean",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": true,
+          "Required": false
+        },
+        {
+          "Name": "zoneinfo",
+          "AttributeDataType": "String",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": true,
+          "Required": false,
+          "StringAttributeConstraints": {
+            "MinLength": "0",
+            "MaxLength": "2048"
+          }
+        },
+        {
+          "Name": "locale",
+          "AttributeDataType": "String",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": true,
+          "Required": false,
+          "StringAttributeConstraints": {
+            "MinLength": "0",
+            "MaxLength": "2048"
+          }
+        },
+        {
+          "Name": "email",
+          "AttributeDataType": "String",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": true,
+          "Required": true,
+          "StringAttributeConstraints": {
+            "MinLength": "0",
+            "MaxLength": "2048"
+          }
+        },
+        {
+          "Name": "email_verified",
+          "AttributeDataType": "Boolean",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": true,
+          "Required": false
+        },
+        {
+          "Name": "given_name",
+          "AttributeDataType": "String",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": true,
+          "Required": true,
+          "StringAttributeConstraints": {
+            "MinLength": "0",
+            "MaxLength": "2048"
+          }
+        },
+        {
+          "Name": "family_name",
+          "AttributeDataType": "String",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": true,
+          "Required": true,
+          "StringAttributeConstraints": {
+            "MinLength": "0",
+            "MaxLength": "2048"
+          }
+        },
+        {
+          "Name": "middle_name",
+          "AttributeDataType": "String",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": true,
+          "Required": false,
+          "StringAttributeConstraints": {
+            "MinLength": "0",
+            "MaxLength": "2048"
+          }
+        },
+        {
+          "Name": "name",
+          "AttributeDataType": "String",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": true,
+          "Required": false,
+          "StringAttributeConstraints": {
+            "MinLength": "0",
+            "MaxLength": "2048"
+          }
+        },
+        {
+          "Name": "nickname",
+          "AttributeDataType": "String",
+          "DeveloperOnlyAttribute": false,
+          "Mutable": true,
+          "Required": false,
+          "StringAttributeConstraints": {
+            "MinLength": "0",
+            "MaxLength": "2048"
+          }
+        }
+      ],
+      "AutoVerifiedAttributes": [
+        "email"
+      ],
+      "UsernameAttributes": [
+        "email"
+      ],
+      "SmsVerificationMessage": "The verification code to your new account is {####}",
+      "EmailVerificationMessage": "Your verification code for Orbital is {####}. This code expires in 24 hours.",
+      "EmailVerificationSubject": "Your Orbital verification code",
+      "VerificationMessageTemplate": {
+        "SmsMessage": "The verification code to your new account is {####}",
+        "EmailMessage": "Your verification code for Orbital is {####}. This code expires in 24 hours.",
+        "EmailSubject": "Your Orbital verification code",
+        "DefaultEmailOption": "CONFIRM_WITH_CODE"
+      },
+      "UserAttributeUpdateSettings": {
+        "AttributesRequireVerificationBeforeUpdate": []
+      },
+      "MfaConfiguration": "OPTIONAL",
+      "EstimatedNumberOfUsers": 1,
+      "EmailConfiguration": {
+        "EmailSendingAccount": "COGNITO_DEFAULT"
+      },
+      "UserPoolTags": {
+        "orbital:env": "mwitt",
+        "orbital:managed-by": "cdk",
+        "orbital:stack": "hub"
+      },
+      "Domain": "orbital-mwitt",
+      "AdminCreateUserConfig": {
+        "AllowAdminCreateUserOnly": false,
+        "UnusedAccountValidityDays": 7,
+        "InviteMessageTemplate": {
+          "EmailMessage": "Hello {username}, you have been invited to Orbital. Your temporary password is {####}.",
+          "EmailSubject": "You have been invited to Orbital"
+        }
+      },
+      "UserPoolAddOns": {
+        "AdvancedSecurityMode": "ENFORCED",
+        "AdvancedSecurityAdditionalFlows": {
+          "CustomAuthMode": "AUDIT"
+        }
+      },
+      "UsernameConfiguration": {
+        "CaseSensitive": false
+      },
+      "Arn": "arn:aws:cognito-idp:us-east-1:403001214246:userpool/us-east-1_R89dMIxXb",
+      "AccountRecoverySetting": {
+        "RecoveryMechanisms": [
+          {
+            "Priority": 1,
+            "Name": "verified_email"
+          }
+        ]
+      },
+      "UserPoolTier": "PLUS"
+    },
+    "Client": {
+      "ClientId": "32k8f80j12r5u896smd4oq3g78",
+      "UserPoolId": "us-east-1_R89dMIxXb",
+      "ClientName": "orbital-mwitt-spa"
+    }
+  },
+  "aurora": {
+    "Cluster": {
+      "AllocatedStorage": 1,
+      "AvailabilityZones": [
+        "us-east-1d",
+        "us-east-1a",
+        "us-east-1b"
+      ],
+      "BackupRetentionPeriod": 7,
+      "DatabaseName": "orbital_hub",
+      "DBClusterIdentifier": "orbital-mwitt",
+      "DBClusterParameterGroup": "orbitalhub-mwitt-auroraparamgroup6ad2798a-buhv1vukaoik",
+      "DBSubnetGroup": "orbitalhub-mwitt-aurorasubnetgroup4804f2f0-pbmeolhxeji5",
+      "Status": "available",
+      "EarliestRestorableTime": "2026-05-03T05:55:10.441000+00:00",
+      "Endpoint": "orbital-mwitt.cluster-cc7iwqk0u99p.us-east-1.rds.amazonaws.com",
+      "ReaderEndpoint": "orbital-mwitt.cluster-ro-cc7iwqk0u99p.us-east-1.rds.amazonaws.com",
+      "MultiAZ": false,
+      "Engine": "aurora-postgresql",
+      "EngineVersion": "16.4",
+      "LatestRestorableTime": "2026-05-03T15:13:54.199000+00:00",
+      "Port": 5432,
+      "MasterUsername": "orbital_admin",
+      "PreferredBackupWindow": "03:00-04:00",
+      "PreferredMaintenanceWindow": "sun:04:00-sun:05:00",
+      "UpgradeRolloutOrder": "second",
+      "ReadReplicaIdentifiers": [],
+      "DBClusterMembers": [
+        {
+          "DBInstanceIdentifier": "orbitalhub-mwitt-auroraclusterwriter398336d3-cihgm7ldgwyn",
+          "IsClusterWriter": true,
+          "DBClusterParameterGroupStatus": "in-sync",
+          "PromotionTier": 0
+        }
+      ],
+      "VpcSecurityGroups": [
+        {
+          "VpcSecurityGroupId": "sg-0d7888fe160933daa",
+          "Status": "active"
+        }
+      ],
+      "HostedZoneId": "Z2R2ITUGPM61AM",
+      "StorageEncrypted": true,
+      "KmsKeyId": "arn:aws:kms:us-east-1:403001214246:key/2fba2ff2-ae0a-4245-8c85-db440e69d07d",
+      "DbClusterResourceId": "cluster-V4A6L5VXDPZNBY6TRYNUIA7IC4",
+      "DBClusterArn": "arn:aws:rds:us-east-1:403001214246:cluster:orbital-mwitt",
+      "AssociatedRoles": [],
+      "IAMDatabaseAuthenticationEnabled": true,
+      "ClusterCreateTime": "2026-05-03T05:54:55.534000+00:00",
+      "EnabledCloudwatchLogsExports": [
+        "postgresql"
+      ],
+      "EngineMode": "provisioned",
+      "AutoMinorVersionUpgrade": true,
+      "DeletionProtection": false,
+      "HttpEndpointEnabled": false,
+      "ActivityStreamStatus": "stopped",
+      "CopyTagsToSnapshot": true,
+      "CrossAccountClone": false,
+      "DomainMemberships": [],
+      "TagList": [
+        {
+          "Key": "aws:cloudformation:stack-name",
+          "Value": "OrbitalHub-mwitt"
+        },
+        {
+          "Key": "orbital:stack",
+          "Value": "hub"
+        },
+        {
+          "Key": "aws:cloudformation:stack-id",
+          "Value": "arn:aws:cloudformation:us-east-1:403001214246:stack/OrbitalHub-mwitt/60eb3180-46b4-11f1-842c-120d78857f51"
+        },
+        {
+          "Key": "orbital:component",
+          "Value": "aurora"
+        },
+        {
+          "Key": "aws:cloudformation:logical-id",
+          "Value": "AuroraClusterD4EFE71C"
+        },
+        {
+          "Key": "orbital:env",
+          "Value": "mwitt"
+        },
+        {
+          "Key": "orbital:managed-by",
+          "Value": "cdk"
+        }
+      ],
+      "NetworkType": "IPV4",
+      "ServerlessV2ScalingConfiguration": {
+        "MinCapacity": 0.5,
+        "MaxCapacity": 4.0
+      },
+      "ServerlessV2PlatformVersion": "4",
+      "DatabaseInsightsMode": "standard",
+      "LocalWriteForwardingStatus": "disabled",
+      "EngineLifecycleSupport": "open-source-rds-extended-support"
+    },
+    "Proxies": []
+  },
+  "dynamodb": [],
+  "s3": [],
+  "cloudfront": [
+    {
+      "Id": "E28L1XYTKZTJQG",
+      "ARN": "arn:aws:cloudfront::403001214246:distribution/E28L1XYTKZTJQG",
+      "ETag": "E23ZP02F085DFQ",
+      "Status": "Deployed",
+      "LastModifiedTime": "2026-05-03T05:54:44.789000+00:00",
+      "DomainName": "d2mtgpa71y9c8t.cloudfront.net",
+      "Aliases": {
+        "Quantity": 0
+      },
+      "Origins": {
+        "Quantity": 1,
+        "Items": [
+          {
+            "Id": "OrbitalHubmwittStaticUiDistributionOrigin1FA7F27D2",
+            "DomainName": "orbital-ui-mwitt-403001214246.s3.us-east-1.amazonaws.com",
+            "OriginPath": "",
+            "CustomHeaders": {
+              "Quantity": 0
+            },
+            "S3OriginConfig": {
+              "OriginAccessIdentity": "",
+              "OriginReadTimeout": 30
+            },
+            "ConnectionAttempts": 3,
+            "ConnectionTimeout": 10,
+            "OriginShield": {
+              "Enabled": false
+            },
+            "OriginAccessControlId": "E1Y0IIN0RB3QPL"
+          }
+        ]
+      },
+      "OriginGroups": {
+        "Quantity": 0
+      },
+      "DefaultCacheBehavior": {
+        "TargetOriginId": "OrbitalHubmwittStaticUiDistributionOrigin1FA7F27D2",
+        "TrustedSigners": {
+          "Enabled": false,
+          "Quantity": 0
+        },
+        "TrustedKeyGroups": {
+          "Enabled": false,
+          "Quantity": 0
+        },
+        "ViewerProtocolPolicy": "redirect-to-https",
+        "AllowedMethods": {
+          "Quantity": 3,
+          "Items": [
+            "HEAD",
+            "GET",
+            "OPTIONS"
+          ],
+          "CachedMethods": {
+            "Quantity": 2,
+            "Items": [
+              "HEAD",
+              "GET"
+            ]
+          }
+        },
+        "SmoothStreaming": false,
+        "Compress": true,
+        "LambdaFunctionAssociations": {
+          "Quantity": 0
+        },
+        "FunctionAssociations": {
+          "Quantity": 0
+        },
+        "FieldLevelEncryptionId": "",
+        "CachePolicyId": "303810c5-fd44-4426-9ad2-841661673735",
+        "GrpcConfig": {
+          "Enabled": false
+        }
+      },
+      "CacheBehaviors": {
+        "Quantity": 2,
+        "Items": [
+          {
+            "PathPattern": "/index.html",
+            "TargetOriginId": "OrbitalHubmwittStaticUiDistributionOrigin1FA7F27D2",
+            "TrustedSigners": {
+              "Enabled": false,
+              "Quantity": 0
+            },
+            "TrustedKeyGroups": {
+              "Enabled": false,
+              "Quantity": 0
+            },
+            "ViewerProtocolPolicy": "redirect-to-https",
+            "AllowedMethods": {
+              "Quantity": 3,
+              "Items": [
+                "HEAD",
+                "GET",
+                "OPTIONS"
+              ],
+              "CachedMethods": {
+                "Quantity": 2,
+                "Items": [
+                  "HEAD",
+                  "GET"
+                ]
+              }
+            },
+            "SmoothStreaming": false,
+            "Compress": true,
+            "LambdaFunctionAssociations": {
+              "Quantity": 0
+            },
+            "FunctionAssociations": {
+              "Quantity": 0
+            },
+            "FieldLevelEncryptionId": "",
+            "CachePolicyId": "0f2e5ee3-08c9-4dca-9754-53e8676c578a",
+            "ResponseHeadersPolicyId": "5cc3b908-e619-4b99-88e5-2cf7f45965bd",
+            "GrpcConfig": {
+              "Enabled": false
+            }
+          },
+          {
+            "PathPattern": "/assets/*",
+            "TargetOriginId": "OrbitalHubmwittStaticUiDistributionOrigin1FA7F27D2",
+            "TrustedSigners": {
+              "Enabled": false,
+              "Quantity": 0
+            },
+            "TrustedKeyGroups": {
+              "Enabled": false,
+              "Quantity": 0
+            },
+            "ViewerProtocolPolicy": "redirect-to-https",
+            "AllowedMethods": {
+              "Quantity": 3,
+              "Items": [
+                "HEAD",
+                "GET",
+                "OPTIONS"
+              ],
+              "CachedMethods": {
+                "Quantity": 2,
+                "Items": [
+                  "HEAD",
+                  "GET"
+                ]
+              }
+            },
+            "SmoothStreaming": false,
+            "Compress": true,
+            "LambdaFunctionAssociations": {
+              "Quantity": 0
+            },
+            "FunctionAssociations": {
+              "Quantity": 0
+            },
+            "FieldLevelEncryptionId": "",
+            "CachePolicyId": "6c5bf910-cdba-4ed3-bcb0-37f89aefe693",
+            "GrpcConfig": {
+              "Enabled": false
+            }
+          }
+        ]
+      },
+      "CustomErrorResponses": {
+        "Quantity": 2,
+        "Items": [
+          {
+            "ErrorCode": 403,
+            "ResponsePagePath": "/index.html",
+            "ResponseCode": "200",
+            "ErrorCachingMinTTL": 0
+          },
+          {
+            "ErrorCode": 404,
+            "ResponsePagePath": "/index.html",
+            "ResponseCode": "200",
+            "ErrorCachingMinTTL": 0
+          }
+        ]
+      },
+      "Comment": "Orbital UI - mwitt (mwitt.orbital.team.dev)",
+      "PriceClass": "PriceClass_100",
+      "Enabled": true,
+      "ViewerCertificate": {
+        "CloudFrontDefaultCertificate": true,
+        "SSLSupportMethod": "vip",
+        "MinimumProtocolVersion": "TLSv1",
+        "CertificateSource": "cloudfront"
+      },
+      "Restrictions": {
+        "GeoRestriction": {
+          "RestrictionType": "none",
+          "Quantity": 0
+        }
+      },
+      "WebACLId": "",
+      "HttpVersion": "HTTP2and3",
+      "IsIPV6Enabled": true,
+      "Staging": false,
+      "ConnectionMode": "direct"
+    }
+  ],
+  "secrets": [
+    {
+      "ARN": "arn:aws:secretsmanager:us-east-1:403001214246:secret:orbital/mwitt/github-webhook-secret-02BQRa",
+      "Name": "orbital/mwitt/github-webhook-secret",
+      "Description": "Orbital mwitt - GitHub webhook HMAC verification secret.",
+      "KmsKeyId": "arn:aws:kms:us-east-1:403001214246:key/c4f32197-d9a0-4f4b-ac2c-33ea144a435c",
+      "LastChangedDate": "2026-05-03T00:54:50.103000-05:00",
+      "Tags": [
+        {
+          "Key": "aws:cloudformation:stack-name",
+          "Value": "OrbitalHub-mwitt"
+        },
+        {
+          "Key": "orbital:stack",
+          "Value": "hub"
+        },
+        {
+          "Key": "aws:cloudformation:stack-id",
+          "Value": "arn:aws:cloudformation:us-east-1:403001214246:stack/OrbitalHub-mwitt/60eb3180-46b4-11f1-842c-120d78857f51"
+        },
+        {
+          "Key": "orbital:component",
+          "Value": "secrets"
+        },
+        {
+          "Key": "aws:cloudformation:logical-id",
+          "Value": "SecretsGithubWebhookSecretA73A31FD"
+        },
+        {
+          "Key": "orbital:env",
+          "Value": "mwitt"
+        },
+        {
+          "Key": "orbital:managed-by",
+          "Value": "cdk"
+        }
+      ],
+      "SecretVersionsToStages": {
+        "b05ea1b0-8830-6127-f3c4-c839409c4a52": [
+          "AWSCURRENT"
+        ]
+      },
+      "CreatedDate": "2026-05-03T00:54:50.035000-05:00"
+    },
+    {
+      "ARN": "arn:aws:secretsmanager:us-east-1:403001214246:secret:orbital/mwitt/hub-master-key-p6zfhG",
+      "Name": "orbital/mwitt/hub-master-key",
+      "Description": "Orbital mwitt hub Ed25519 master keypair (rotated every 90 days).",
+      "KmsKeyId": "arn:aws:kms:us-east-1:403001214246:key/c4f32197-d9a0-4f4b-ac2c-33ea144a435c",
+      "LastChangedDate": "2026-05-03T00:54:50.256000-05:00",
+      "Tags": [
+        {
+          "Key": "aws:cloudformation:stack-name",
+          "Value": "OrbitalHub-mwitt"
+        },
+        {
+          "Key": "orbital:stack",
+          "Value": "hub"
+        },
+        {
+          "Key": "aws:cloudformation:stack-id",
+          "Value": "arn:aws:cloudformation:us-east-1:403001214246:stack/OrbitalHub-mwitt/60eb3180-46b4-11f1-842c-120d78857f51"
+        },
+        {
+          "Key": "orbital:component",
+          "Value": "secrets"
+        },
+        {
+          "Key": "aws:cloudformation:logical-id",
+          "Value": "SecretsHubMasterKeySecret84067CE9"
+        },
+        {
+          "Key": "orbital:env",
+          "Value": "mwitt"
+        },
+        {
+          "Key": "orbital:managed-by",
+          "Value": "cdk"
+        }
+      ],
+      "SecretVersionsToStages": {
+        "4f468afb-5789-214a-61a9-ce3ccbac6131": [
+          "AWSCURRENT"
+        ]
+      },
+      "CreatedDate": "2026-05-03T00:54:50.175000-05:00"
+    }
+  ],
+  "kms": [
+    {
+      "AliasName": "alias/orbital-mwitt-event-bus",
+      "AliasArn": "arn:aws:kms:us-east-1:403001214246:alias/orbital-mwitt-event-bus",
+      "TargetKeyId": "25a430c1-b05d-4e64-ae5f-11784ded0eef",
+      "CreationDate": "2026-05-03T00:54:44.962000-05:00",
+      "LastUpdatedDate": "2026-05-03T00:54:44.962000-05:00"
+    },
+    {
+      "AliasName": "alias/orbital-mwitt-event-bus-sns",
+      "AliasArn": "arn:aws:kms:us-east-1:403001214246:alias/orbital-mwitt-event-bus-sns",
+      "TargetKeyId": "b9443a6e-2a1c-4952-8b27-d1a4bcdb48c3",
+      "CreationDate": "2026-05-03T00:54:39.696000-05:00",
+      "LastUpdatedDate": "2026-05-03T00:54:39.696000-05:00"
+    },
+    {
+      "AliasName": "alias/orbital-mwitt-hub-secrets",
+      "AliasArn": "arn:aws:kms:us-east-1:403001214246:alias/orbital-mwitt-hub-secrets",
+      "TargetKeyId": "c4f32197-d9a0-4f4b-ac2c-33ea144a435c",
+      "CreationDate": "2026-05-03T00:54:51.510000-05:00",
+      "LastUpdatedDate": "2026-05-03T00:54:51.510000-05:00"
+    }
+  ],
+  "sns": [
+    {
+      "TopicArn": "arn:aws:sns:us-east-1:403001214246:orbital-events-mwitt"
+    }
+  ],
+  "sqs": [
+    "https://sqs.us-east-1.amazonaws.com/403001214246/orbital-mwitt-audit-indexer",
+    "https://sqs.us-east-1.amazonaws.com/403001214246/orbital-mwitt-audit-indexer-dlq",
+    "https://sqs.us-east-1.amazonaws.com/403001214246/orbital-mwitt-defect-router",
+    "https://sqs.us-east-1.amazonaws.com/403001214246/orbital-mwitt-defect-router-dlq",
+    "https://sqs.us-east-1.amazonaws.com/403001214246/orbital-mwitt-hygiene-sweep-dlq",
+    "https://sqs.us-east-1.amazonaws.com/403001214246/orbital-mwitt-memory-recorder",
+    "https://sqs.us-east-1.amazonaws.com/403001214246/orbital-mwitt-memory-recorder-dlq",
+    "https://sqs.us-east-1.amazonaws.com/403001214246/orbital-mwitt-replay-recorder",
+    "https://sqs.us-east-1.amazonaws.com/403001214246/orbital-mwitt-replay-recorder-dlq",
+    "https://sqs.us-east-1.amazonaws.com/403001214246/orbital-mwitt-retro-runner-dlq",
+    "https://sqs.us-east-1.amazonaws.com/403001214246/orbital-mwitt-sprint-planning-dlq",
+    "https://sqs.us-east-1.amazonaws.com/403001214246/orbital-mwitt-ws-fanout-dlq"
+  ],
+  "eventbridge": [
+    {
+      "Name": "orbital-mwitt-key-rotation-schedule",
+      "Arn": "arn:aws:events:us-east-1:403001214246:rule/orbital-mwitt-key-rotation-schedule",
+      "State": "ENABLED",
+      "Description": "Rotate the Orbital hub master key every 90 days.",
+      "ScheduleExpression": "rate(90 days)",
+      "EventBusName": "default"
+    }
+  ],
+  "cloudformation": [
+    {
+      "StackName": "OrbitalHub-mwitt-AuroraMasterSecretDbMasterCredsRotationB8E3EDB2HostedRotationLambda-1U0T3015VKMZJ",
+      "StackStatus": "UPDATE_COMPLETE",
+      "CreationTime": "2026-05-03T05:54:27.114000+00:00",
+      "LastUpdatedTime": "2026-05-03T14:46:19.161000+00:00",
+      "Outputs": [
+        {
+          "OutputKey": "RotationLambdaARN",
+          "OutputValue": "arn:aws:lambda:us-east-1:403001214246:function:orbital-mwitt-db-creds-rotation",
+          "Description": "The ARN of the rotation lambda"
+        }
+      ]
+    },
+    {
+      "StackName": "OrbitalHub-mwitt",
+      "StackStatus": "UPDATE_COMPLETE",
+      "CreationTime": "2026-05-03T05:53:16.274000+00:00",
+      "LastUpdatedTime": "2026-05-03T14:46:09.791000+00:00",
+      "Outputs": [
+        {
+          "OutputKey": "LambdaprsFunctionArn784AA11C",
+          "OutputValue": "arn:aws:lambda:us-east-1:403001214246:function:orbital-mwitt-trpc-prs",
+          "Description": "Orbital mwitt tRPC prs Lambda ARN",
+          "ExportName": "OrbitalHub-mwitt-Trpc-prs-Arn"
+        },
+        {
+          "OutputKey": "AuroraClusterEndpoint1C7B34FE",
+          "OutputValue": "orbital-mwitt.cluster-cc7iwqk0u99p.us-east-1.rds.amazonaws.com",
+          "Description": "Orbital mwitt Aurora cluster writer endpoint",
+          "ExportName": "OrbitalHub-mwitt-AuroraEndpoint"
+        },
+        {
+          "OutputKey": "WsConnectionsTableNameA1A69873",
+          "OutputValue": "orbital-connections-mwitt",
+          "Description": "Orbital mwitt WebSocket connections DynamoDB table",
+          "ExportName": "OrbitalHub-mwitt-ConnectionsTableName"
+        },
+        {
+          "OutputKey": "VpcVpcId87CD4CDE",
+          "OutputValue": "vpc-0d9e890c86582c676",
+          "Description": "Orbital mwitt VPC ID",
+          "ExportName": "OrbitalHub-mwitt-VpcId"
+        },
+        {
+          "OutputKey": "AuroraMasterSecretArn4B4FE9E7",
+          "OutputValue": "arn:aws:secretsmanager:us-east-1:403001214246:secret:/orbital/mwitt/aurora/master-credentials-ATpoLE",
+          "Description": "Orbital mwitt Aurora master credentials secret ARN",
+          "ExportName": "OrbitalHub-mwitt-AuroraMasterSecretArn"
+        },
+        {
+          "OutputKey": "RdsProxyProxySecurityGroupIdD46535D5",
+          "OutputValue": "sg-0f0bd5a1ae4af0bb6",
+          "Description": "Orbital mwitt RDS Proxy SG ID",
+          "ExportName": "OrbitalHub-mwitt-ProxySgId"
+        },
+        {
+          "OutputKey": "WsApiWsEndpointC1C53AD8",
+          "OutputValue": "wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/$default",
+          "Description": "Orbital mwitt WebSocket endpoint",
+          "ExportName": "OrbitalHub-mwitt-WsEndpoint"
+        },
+        {
+          "OutputKey": "EventBusSnsTopicArnA6726405",
+          "OutputValue": "arn:aws:sns:us-east-1:403001214246:orbital-events-mwitt",
+          "Description": "Orbital mwitt events SNS topic ARN",
+          "ExportName": "OrbitalHub-mwitt-EventsTopicArn"
+        },
+        {
+          "OutputKey": "SecretsHubMasterKeySecretArn7A82A579",
+          "OutputValue": "arn:aws:secretsmanager:us-east-1:403001214246:secret:orbital/mwitt/hub-master-key-p6zfhG",
+          "Description": "Orbital mwitt hub master key secret ARN",
+          "ExportName": "OrbitalHub-mwitt-HubMasterKeySecretArn"
+        },
+        {
+          "OutputKey": "StaticUiUiUrl9C386BD2",
+          "OutputValue": "https://d2mtgpa71y9c8t.cloudfront.net",
+          "Description": "Orbital UI URL - mwitt",
+          "ExportName": "OrbitalHub-mwitt-UiUrl"
+        },
+        {
+          "OutputKey": "ApiGwApiEndpoint1F7D28E6",
+          "OutputValue": "https://hhhfb8pid6.execute-api.us-east-1.amazonaws.com/",
+          "Description": "Orbital mwitt API endpoint",
+          "ExportName": "OrbitalHub-mwitt-ApiEndpoint"
+        },
+        {
+          "OutputKey": "StaticUiCloudFrontDistributionId73EDD530",
+          "OutputValue": "E28L1XYTKZTJQG",
+          "Description": "Orbital UI CloudFront distribution ID - mwitt",
+          "ExportName": "OrbitalHub-mwitt-CloudFrontDistributionId"
+        },
+        {
+          "OutputKey": "LambdaauthFunctionArnF7BED7CD",
+          "OutputValue": "arn:aws:lambda:us-east-1:403001214246:function:orbital-mwitt-trpc-auth",
+          "Description": "Orbital mwitt tRPC auth Lambda ARN",
+          "ExportName": "OrbitalHub-mwitt-Trpc-auth-Arn"
+        },
+        {
+          "OutputKey": "CognitoUserPoolArnDD5CDE76",
+          "OutputValue": "arn:aws:cognito-idp:us-east-1:403001214246:userpool/us-east-1_R89dMIxXb",
+          "Description": "Orbital mwitt Cognito user pool ARN",
+          "ExportName": "OrbitalHub-mwitt-UserPoolArn"
+        },
+        {
+          "OutputKey": "EventBusEventBusName84AD2161",
+          "OutputValue": "orbital-mwitt",
+          "Description": "Orbital mwitt EventBridge bus name",
+          "ExportName": "OrbitalHub-mwitt-EventBusName"
+        },
+        {
+          "OutputKey": "SecretsHubMasterKeyKmsCmkArnA56548AF",
+          "OutputValue": "arn:aws:kms:us-east-1:403001214246:key/c4f32197-d9a0-4f4b-ac2c-33ea144a435c",
+          "Description": "Orbital mwitt hub-secrets KMS CMK ARN",
+          "ExportName": "OrbitalHub-mwitt-HubMasterKeyKmsCmkArn"
+        },
+        {
+          "OutputKey": "LambdamemoryFunctionArn79AE95F0",
+          "OutputValue": "arn:aws:lambda:us-east-1:403001214246:function:orbital-mwitt-trpc-memory",
+          "Description": "Orbital mwitt tRPC memory Lambda ARN",
+          "ExportName": "OrbitalHub-mwitt-Trpc-memory-Arn"
+        },
+        {
+          "OutputKey": "WafWebAclId122C8B9B",
+          "OutputValue": "4a25a9d2-7bfe-4a12-a90b-1342d59f61f3",
+          "Description": "Orbital mwitt WAF WebACL ID",
+          "ExportName": "OrbitalHub-mwitt-WebAclId"
+        },
+        {
+          "OutputKey": "SecretsGithubWebhookSecretArn50A4CA7E",
+          "OutputValue": "arn:aws:secretsmanager:us-east-1:403001214246:secret:orbital/mwitt/github-webhook-secret-02BQRa",
+          "Description": "Orbital mwitt GitHub webhook secret ARN",
+          "ExportName": "OrbitalHub-mwitt-GithubWebhookSecretArn"
+        },
+        {
+          "OutputKey": "WafWebAclArn55725021",
+          "OutputValue": "arn:aws:wafv2:us-east-1:403001214246:regional/webacl/orbital-mwitt-acl/4a25a9d2-7bfe-4a12-a90b-1342d59f61f3",
+          "Description": "Orbital mwitt WAF WebACL ARN",
+          "ExportName": "OrbitalHub-mwitt-WebAclArn"
+        },
+        {
+          "OutputKey": "WsApiWsMgmtEndpoint79E9006B",
+          "OutputValue": "https://zc2367u5d1.execute-api.us-east-1.amazonaws.com/$default",
+          "Description": "Orbital mwitt WebSocket Management API endpoint (for postToConnection)",
+          "ExportName": "OrbitalHub-mwitt-WsMgmtEndpoint"
+        },
+        {
+          "OutputKey": "MigrationsMigrationRunnerArn8D82404A",
+          "OutputValue": "arn:aws:lambda:us-east-1:403001214246:function:orbital-mwitt-migration-runner",
+          "Description": "Orbital mwitt migration runner Lambda ARN",
+          "ExportName": "OrbitalHub-mwitt-MigrationRunnerArn"
+        },
+        {
+          "OutputKey": "RdsProxyProxyEndpoint90784BDF",
+          "OutputValue": "orbital-mwitt-proxy.proxy-cc7iwqk0u99p.us-east-1.rds.amazonaws.com",
+          "Description": "Orbital mwitt RDS Proxy endpoint (read/write)",
+          "ExportName": "OrbitalHub-mwitt-RdsProxyEndpoint"
+        },
+        {
+          "OutputKey": "ObservabilityAlarmTopicArn388C6399",
+          "OutputValue": "arn:aws:sns:us-east-1:403001214246:orbital-alarms-mwitt",
+          "Description": "Orbital mwitt alarm SNS topic ARN",
+          "ExportName": "OrbitalHub-mwitt-AlarmTopicArn"
+        },
+        {
+          "OutputKey": "AuroraClusterReaderEndpoint12CD68CF",
+          "OutputValue": "orbital-mwitt.cluster-ro-cc7iwqk0u99p.us-east-1.rds.amazonaws.com",
+          "Description": "Orbital mwitt Aurora cluster reader endpoint",
+          "ExportName": "OrbitalHub-mwitt-AuroraReaderEndpoint"
+        },
+        {
+          "OutputKey": "Environment",
+          "OutputValue": "mwitt",
+          "Description": "Orbital environment name"
+        },
+        {
+          "OutputKey": "CognitoAuthDomain",
+          "OutputValue": "https://orbital-mwitt.auth.us-east-1.amazoncognito.com",
+          "Description": "Orbital mwitt Cognito hosted UI base URL (orbital-mwitt.auth.us-east-1.amazoncognito.com)",
+          "ExportName": "OrbitalHub-mwitt-CognitoAuthDomain"
+        },
+        {
+          "OutputKey": "LambdacommsFunctionArn758B5AD6",
+          "OutputValue": "arn:aws:lambda:us-east-1:403001214246:function:orbital-mwitt-trpc-comms",
+          "Description": "Orbital mwitt tRPC comms Lambda ARN",
+          "ExportName": "OrbitalHub-mwitt-Trpc-comms-Arn"
+        },
+        {
+          "OutputKey": "Domain",
+          "OutputValue": "mwitt.orbital.team.dev",
+          "Description": "Orbital environment base domain"
+        },
+        {
+          "OutputKey": "KeyRotationKeyRotationScheduleName9F6010D1",
+          "OutputValue": "orbital-mwitt-key-rotation-schedule",
+          "Description": "Orbital mwitt key-rotation EventBridge schedule rule",
+          "ExportName": "OrbitalHub-mwitt-KeyRotationScheduleName"
+        },
+        {
+          "OutputKey": "ReplayBucketReplayKmsKeyArnE75057D5",
+          "OutputValue": "arn:aws:kms:us-east-1:403001214246:key/0c8779ef-d61f-4401-82a8-70748a7096a4",
+          "Description": "Orbital replay blob KMS key ARN - mwitt",
+          "ExportName": "OrbitalHub-mwitt-ReplayKmsKeyArn"
+        },
+        {
+          "OutputKey": "LambdaonboardingFunctionArn9B430FC3",
+          "OutputValue": "arn:aws:lambda:us-east-1:403001214246:function:orbital-mwitt-trpc-onboarding",
+          "Description": "Orbital mwitt tRPC onboarding Lambda ARN",
+          "ExportName": "OrbitalHub-mwitt-Trpc-onboarding-Arn"
+        },
+        {
+          "OutputKey": "UiBucketName",
+          "OutputValue": "orbital-ui-mwitt-403001214246",
+          "Description": "Orbital mwitt UI S3 bucket name",
+          "ExportName": "OrbitalHub-mwitt-UiBucketNameStack"
+        },
+        {
+          "OutputKey": "WsConnectionsTableArn4E000407",
+          "OutputValue": "arn:aws:dynamodb:us-east-1:403001214246:table/orbital-connections-mwitt",
+          "Description": "Orbital mwitt WebSocket connections DynamoDB table ARN",
+          "ExportName": "OrbitalHub-mwitt-ConnectionsTableArn"
+        },
+        {
+          "OutputKey": "WsApiWsApiIdE00A4F1E",
+          "OutputValue": "zc2367u5d1",
+          "Description": "Orbital mwitt WebSocket API ID",
+          "ExportName": "OrbitalHub-mwitt-WsApiId"
+        },
+        {
+          "OutputKey": "WsFanoutFnArn",
+          "OutputValue": "arn:aws:lambda:us-east-1:403001214246:function:orbital-mwitt-ws-fanout",
+          "Description": "Orbital mwitt WS fanout Lambda ARN (subscribe to SNS in 8-05)",
+          "ExportName": "OrbitalHub-mwitt-WsFanoutFnArn"
+        },
+        {
+          "OutputKey": "CognitoAuthCallbackUrl831A8B76",
+          "OutputValue": "https://mwitt.orbital.team.dev/auth/callback",
+          "Description": "Orbital mwitt auth callback URL"
+        },
+        {
+          "OutputKey": "LambdacostFunctionArn9F0CB3B1",
+          "OutputValue": "arn:aws:lambda:us-east-1:403001214246:function:orbital-mwitt-trpc-cost",
+          "Description": "Orbital mwitt tRPC cost Lambda ARN",
+          "ExportName": "OrbitalHub-mwitt-Trpc-cost-Arn"
+        },
+        {
+          "OutputKey": "ApiGwHttpApiId3B734B43",
+          "OutputValue": "hhhfb8pid6",
+          "Description": "Orbital mwitt HTTP API ID",
+          "ExportName": "OrbitalHub-mwitt-HttpApiId"
+        },
+        {
+          "OutputKey": "PerTenantKmsTenantKeyAliasPrefix636879E5",
+          "OutputValue": "alias/orbital-tenant-",
+          "Description": "Per-tenant CMK alias prefix - mwitt",
+          "ExportName": "OrbitalHub-mwitt-TenantKeyAliasPrefix"
+        },
+        {
+          "OutputKey": "AuthorizersInstallAuthorizerArn79A5364D",
+          "OutputValue": "arn:aws:lambda:us-east-1:403001214246:function:orbital-mwitt-install-authorizer",
+          "Description": "Orbital mwitt install Lambda authorizer ARN",
+          "ExportName": "OrbitalHub-mwitt-InstallAuthorizerArn"
+        },
+        {
+          "OutputKey": "VpcVpcCidr9CD644F9",
+          "OutputValue": "10.0.0.0/16",
+          "Description": "Orbital mwitt VPC CIDR"
+        },
+        {
+          "OutputKey": "ObservabilityDashboardName6EFA87E0",
+          "OutputValue": "orbital-mwitt",
+          "Description": "Orbital mwitt CloudWatch dashboard name",
+          "ExportName": "OrbitalHub-mwitt-DashboardName"
+        },
+        {
+          "OutputKey": "CognitoAppClientIdB0478C2B",
+          "OutputValue": "32k8f80j12r5u896smd4oq3g78",
+          "Description": "Orbital mwitt Cognito SPA app client ID",
+          "ExportName": "OrbitalHub-mwitt-AppClientId"
+        },
+        {
+          "OutputKey": "LambdaprovidersFunctionArnEDA35C84",
+          "OutputValue": "arn:aws:lambda:us-east-1:403001214246:function:orbital-mwitt-trpc-providers",
+          "Description": "Orbital mwitt tRPC providers Lambda ARN",
+          "ExportName": "OrbitalHub-mwitt-Trpc-providers-Arn"
+        },
+        {
+          "OutputKey": "KeyRotationKeyRotationLambdaArn46C8C71B",
+          "OutputValue": "arn:aws:lambda:us-east-1:403001214246:function:orbital-mwitt-key-rotation",
+          "Description": "Orbital mwitt key-rotation Lambda ARN",
+          "ExportName": "OrbitalHub-mwitt-KeyRotationLambdaArn"
+        },
+        {
+          "OutputKey": "LambdatasksFunctionArnE1BEE70F",
+          "OutputValue": "arn:aws:lambda:us-east-1:403001214246:function:orbital-mwitt-trpc-tasks",
+          "Description": "Orbital mwitt tRPC tasks Lambda ARN",
+          "ExportName": "OrbitalHub-mwitt-Trpc-tasks-Arn"
+        },
+        {
+          "OutputKey": "LambdaauditFunctionArn7D65360D",
+          "OutputValue": "arn:aws:lambda:us-east-1:403001214246:function:orbital-mwitt-trpc-audit",
+          "Description": "Orbital mwitt tRPC audit Lambda ARN",
+          "ExportName": "OrbitalHub-mwitt-Trpc-audit-Arn"
+        },
+        {
+          "OutputKey": "StaticUiCloudFrontDomainName1BAD463D",
+          "OutputValue": "d2mtgpa71y9c8t.cloudfront.net",
+          "Description": "Orbital UI CloudFront domain - mwitt"
+        },
+        {
+          "OutputKey": "CognitoUserPoolId622CD4B2",
+          "OutputValue": "us-east-1_R89dMIxXb",
+          "Description": "Orbital mwitt Cognito user pool ID",
+          "ExportName": "OrbitalHub-mwitt-UserPoolId"
+        },
+        {
+          "OutputKey": "StaticUiUiBucketName3B732E96",
+          "OutputValue": "orbital-ui-mwitt-403001214246",
+          "Description": "Orbital UI S3 bucket - mwitt",
+          "ExportName": "OrbitalHub-mwitt-UiBucketName"
+        },
+        {
+          "OutputKey": "CognitoCognitoHostedUiUrlBD06B287",
+          "OutputValue": "https://orbital-mwitt.auth.us-east-1.amazoncognito.com",
+          "Description": "Orbital mwitt Cognito hosted UI base URL"
+        },
+        {
+          "OutputKey": "ReplayBucketReplayBucketNameF0962AB4",
+          "OutputValue": "orbital-replays-mwitt-403001214246",
+          "Description": "Orbital replay blob S3 bucket - mwitt",
+          "ExportName": "OrbitalHub-mwitt-ReplayBucketName"
+        },
+        {
+          "OutputKey": "LambdateamFunctionArn257EC444",
+          "OutputValue": "arn:aws:lambda:us-east-1:403001214246:function:orbital-mwitt-trpc-team",
+          "Description": "Orbital mwitt tRPC team Lambda ARN",
+          "ExportName": "OrbitalHub-mwitt-Trpc-team-Arn"
+        },
+        {
+          "OutputKey": "RdsProxyLambdaSecurityGroupId51DE2A7F",
+          "OutputValue": "sg-0123c7e72cff97908",
+          "Description": "Orbital mwitt placeholder Lambda SG ID - imported by 8-03",
+          "ExportName": "OrbitalHub-mwitt-LambdaSgId"
+        },
+        {
+          "OutputKey": "LambdaallFunctionArn57CC4D04",
+          "OutputValue": "arn:aws:lambda:us-east-1:403001214246:function:orbital-mwitt-trpc-all",
+          "Description": "Orbital mwitt tRPC all Lambda ARN",
+          "ExportName": "OrbitalHub-mwitt-Trpc-all-Arn"
+        },
+        {
+          "OutputKey": "CloudFrontDomain",
+          "OutputValue": "d2mtgpa71y9c8t.cloudfront.net",
+          "Description": "Orbital mwitt CloudFront distribution domain (*.cloudfront.net)",
+          "ExportName": "OrbitalHub-mwitt-CloudFrontDomain"
+        },
+        {
+          "OutputKey": "AuroraDatabaseNameF2B31FDF",
+          "OutputValue": "orbital_hub",
+          "Description": "Orbital mwitt Aurora default database name"
+        },
+        {
+          "OutputKey": "StackName",
+          "OutputValue": "OrbitalHub-mwitt",
+          "Description": "OrbitalHub CloudFormation stack name"
+        },
+        {
+          "OutputKey": "LambdadefectsFunctionArnED09FEC0",
+          "OutputValue": "arn:aws:lambda:us-east-1:403001214246:function:orbital-mwitt-trpc-defects",
+          "Description": "Orbital mwitt tRPC defects Lambda ARN",
+          "ExportName": "OrbitalHub-mwitt-Trpc-defects-Arn"
+        }
+      ]
+    }
+  ]
+}
