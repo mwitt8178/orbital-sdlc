@@ -1,0 +1,61 @@
+/**
+ * projects/active-project-context.ts — request-scoped active project plumbing.
+ *
+ * Per Round 4 Projects Feature spec.
+ *
+ * The UI sends an `x-orbital-project-id` HTTP header on every tRPC request
+ * (see packages/ui/src/services/trpc.ts). This module provides:
+ *
+ *   - readActiveProjectIdFromHeaders(headers): pluck the header value safely
+ *   - requireActiveProject(ctx): throws ACTIVE_PROJECT_REQUIRED if missing
+ *   - optionalActiveProject(ctx): returns string | null
+ *
+ * Other routers (sprint, vision, channel, etc.) wire active project filtering
+ * by calling these helpers — see architecture.md "Wiring snippet" section.
+ *
+ * Why no tRPC middleware that mutates ctx? tRPC's middleware can't add fields
+ * to the typed ctx without a refactor of init.ts (which we cannot do without
+ * breaking other agents' routers). Instead, every helper reads `ctx.req.headers`
+ * directly. The header is the single source of truth.
+ */
+import { OrbitalError } from '@orbital/types';
+import { PROJECTS_ERROR_CODES } from './types.js';
+export const ACTIVE_PROJECT_HEADER = 'x-orbital-project-id';
+/**
+ * Pluck the active-project header off a Fastify-style headers record.
+ * Headers may be string | string[] | undefined depending on parser.
+ * Returns null if absent or empty.
+ */
+export function readActiveProjectIdFromHeaders(headers) {
+    if (!headers)
+        return null;
+    const raw = headers[ACTIVE_PROJECT_HEADER];
+    if (raw === undefined || raw === null)
+        return null;
+    if (Array.isArray(raw)) {
+        const first = raw.find((v) => typeof v === 'string' && v.length > 0);
+        return first ?? null;
+    }
+    if (typeof raw === 'string' && raw.length > 0)
+        return raw;
+    return null;
+}
+/**
+ * Read the active project id from the tRPC ctx, or null if absent.
+ */
+export function optionalActiveProject(ctx) {
+    return readActiveProjectIdFromHeaders(ctx.req?.headers);
+}
+/**
+ * Read the active project id from the tRPC ctx, throwing
+ * ACTIVE_PROJECT_REQUIRED if absent. Use this in routes that are unsafe
+ * without project scope (e.g. mutating ops).
+ */
+export function requireActiveProject(ctx) {
+    const id = optionalActiveProject(ctx);
+    if (!id) {
+        throw new OrbitalError(PROJECTS_ERROR_CODES.ACTIVE_PROJECT_REQUIRED, `Missing ${ACTIVE_PROJECT_HEADER} header; client must select a project before calling this procedure.`);
+    }
+    return id;
+}
+//# sourceMappingURL=active-project-context.js.map

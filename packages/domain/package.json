@@ -10,10 +10,26 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./*.js": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "events/*": ["./dist/events/*"],
+      "projects/*": ["./dist/projects/*"],
+      "memory/*": ["./dist/memory/*"],
+      "backlog/*": ["./dist/backlog/*"],
+      "uat/*": ["./dist/uat/*"],
+      "audit-export/*": ["./dist/audit-export/*"],
+      "comms/*": ["./dist/comms/*"],
+      "cost/*": ["./dist/cost/*"]
     }
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "lint": "eslint src test"
   },
@@ -21,9 +37,12 @@
     "@orbital/db": "*",
     "@orbital/types": "*",
     "drizzle-orm": "^0.36.0",
+    "pino": "^9.5.0",
+    "tar-stream": "^3.1.0",
     "ulid": "^2.3.0",
     "uuidv7": "^1.0.2",
-    "zod": "^3.24.0"
+    "zod": "^3.24.0",
+    "zstd-napi": "^0.0.10"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
