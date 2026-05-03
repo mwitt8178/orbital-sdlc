@@ -122,18 +122,22 @@ function SetupGate({ children }: { children: ReactNode }) {
     staleTime: 60_000,
   })
 
-  const setupCompletedAt = status.data?.setupCompletedAt ?? undefined
+  // BUG FIX: previous code did `?? undefined` which coerced the null API value
+  // to undefined, then compared `=== null` which was always false → redirect
+  // never fired and user was stuck on the FullScreenLoader. Read the raw value.
+  const setupCompletedAt = status.data?.setupCompletedAt
 
   useEffect(() => {
     if (
       !status.isLoading &&
       !status.isError &&
-      setupCompletedAt === null &&
+      status.data &&
+      status.data.setupCompletedAt === null &&
       location.pathname !== '/welcome'
     ) {
       navigate('/welcome', { replace: true, state: { from: location } })
     }
-  }, [status.isLoading, status.isError, setupCompletedAt, location.pathname, navigate, location])
+  }, [status.isLoading, status.isError, status.data, setupCompletedAt, location.pathname, navigate, location])
 
   if (status.isLoading) {
     return <FullScreenLoader />
