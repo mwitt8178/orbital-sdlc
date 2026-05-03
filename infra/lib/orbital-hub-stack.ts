@@ -34,6 +34,8 @@ import { EventBusConstruct, type ConsumerName } from './constructs/event-bus'
 // 8-08 Observability + WAF imports - [Engineer-Sr · Sonnet · run-round8-08-observability]
 import { ObservabilityConstruct, type LambdaDescriptor, type SqsQueueDescriptor } from './constructs/observability'
 import { WafConstruct } from './constructs/waf'
+// Phase-2 migration: orchestrator daemon on Fargate
+import { DaemonFargateConstruct } from './constructs/daemon-fargate'
 
 /**
  * Per-environment configuration - loaded from cdk.json context key "envs".
@@ -938,6 +940,27 @@ export class OrbitalHubStack extends cdk.Stack {
     // ------------------------------------------------------------------
     // (end 8-05 Event bus)
     // ------------------------------------------------------------------
+
+    // ------------------------------------------------------------------
+    // Phase-2 migration — orchestrator daemon on Fargate.
+    //
+    // First-pass deploy provisions ECR + EFS + SQS + IAM. Without
+    // imageDigest the Fargate Service is NOT created — the operator
+    // builds and pushes the daemon image, then redeploys with the
+    // ORBITAL_DAEMON_IMAGE_DIGEST env var set, which wires the running
+    // service in the second pass.
+    // ------------------------------------------------------------------
+    const daemonImageDigest = process.env['ORBITAL_DAEMON_IMAGE_DIGEST']
+    new DaemonFargateConstruct(this, 'Daemon', {
+      envName: props.envName,
+      vpc: this.vpc,
+      lambdaSg: this.rdsProxy.lambdaSecurityGroup,
+      rdsProxy: this.rdsProxy.proxy,
+      proxyEndpoint: this.rdsProxy.proxy.endpoint,
+      logRetentionDays: props.envConfig.logRetentionDays,
+      eventsTopic: this.eventBus.snsTopic,
+      ...(daemonImageDigest !== undefined ? { imageDigest: daemonImageDigest } : {}),
+    })
 
     // ------------------------------------------------------------------
     // 8-08 Observability - WAF + CloudWatch Dashboard + Alarms

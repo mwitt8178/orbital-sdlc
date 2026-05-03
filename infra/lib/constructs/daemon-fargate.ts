@@ -145,14 +145,14 @@ export class DaemonFargateConstruct extends Construct {
     this.workDlq = new sqs.Queue(this, 'WorkDlq', {
       queueName: `orbital-${props.envName}-daemon-work-dlq`,
       retentionPeriod: cdk.Duration.days(14),
-      encryption: sqs.QueueEncryption.KMS_MANAGED,
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
     })
     this.workQueue = new sqs.Queue(this, 'WorkQueue', {
       queueName: `orbital-${props.envName}-daemon-work`,
       visibilityTimeout: cdk.Duration.seconds(360), // 6 min — daemon may take time per msg
       retentionPeriod: cdk.Duration.days(4),
       receiveMessageWaitTime: cdk.Duration.seconds(20), // long-poll
-      encryption: sqs.QueueEncryption.KMS_MANAGED,
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
       deadLetterQueue: {
         maxReceiveCount: 5,
         queue: this.workDlq,
