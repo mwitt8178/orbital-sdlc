@@ -20,11 +20,13 @@
     "start": "node dist/index.js",
     "test": "vitest run",
     "lint": "eslint src test",
-    "migrate": "npm run migrate -w @orbital/db",
-    "migrate:generate": "npm run migrate:generate -w @orbital/db"
+    "migrate": "tsx src/db/migrate.ts",
+    "migrate:generate": "drizzle-kit generate"
   },
   "dependencies": {
     "@orbital/db": "*",
+    "@orbital/domain": "*",
+    "@orbital/types": "*",
     "@anthropic-ai/sdk": "^0.40.0",
     "aws-xray-sdk-core": "^3.10.3",
     "@aws-sdk/client-apigatewaymanagementapi": "^3.1041.0",

@@ -1,42 +1,41 @@
 /**
  * @orbital/domain — Aggregates, services, event store.
  *
- * Phase 3.4 of the migration plan: this package collects the major service
- * factories that belong to the domain layer. Until the file moves are
- * complete (Phase 3.7), this barrel re-exports from the orchestrator package
- * so consumers can already `import from '@orbital/domain'`.
+ * Phase 3.4 of the migration plan: this package now physically contains the
+ * major service factories that belong to the domain layer. Files were moved
+ * from packages/orchestrator/src/ via `git mv`.
  *
  * Rules enforced by Phase 3.6 boundary lint:
  *   - domain may import from: types, db
  *   - domain must NOT import from: orchestrator-daemon, api-lambda, auth
  *
- * Replace each re-export below with a native import after the file moves.
+ * Note: some moved files still carry cross-package references back to
+ * packages/orchestrator/src/ for modules that remain there (personas/,
+ * orchestration/, hub-client/, config/). Those will be resolved in Phase 3.7.
  */
 
 // Projects
-export { createProjectsService } from '../../orchestrator/src/projects/service.js'
+export { createProjectsService } from './projects/service.js'
 
 // Memory / knowledge graph
-export { createMemoryService } from '../../orchestrator/src/memory/service.js'
+export { createMemoryService } from './memory/service.js'
 
 // Backlog (stories + sprints)
-export { createBacklogService } from '../../orchestrator/src/backlog/service.js'
-export { createSprintService } from '../../orchestrator/src/backlog/sprint-service.js'
+export { createBacklogService } from './backlog/service.js'
+export { createSprintService } from './backlog/sprint-service.js'
 
 // UAT + defects + persona-of-record
-export { createUATService } from '../../orchestrator/src/uat/service.js'
-export { createDefectService } from '../../orchestrator/src/uat/defects.js'
-export { createPersonaOfRecord } from '../../orchestrator/src/uat/persona-of-record.js'
+export { createUATService } from './uat/service.js'
+export { createDefectService } from './uat/defects.js'
+export { createPersonaOfRecord } from './uat/persona-of-record.js'
 
 // Event store
-export { createEventStore } from '../../orchestrator/src/events/store.js'
-export type { EventStore } from '../../orchestrator/src/events/store.js'
+export { createEventStore } from './events/store.js'
+export type { EventStore } from './events/store.js'
 
 // Cost
-export { createCostService } from '../../orchestrator/src/cost/service.js'
+export { createCostService } from './cost/service.js'
 
-// Vision
-export { createVisionService } from '../../orchestrator/src/vision/service.js'
-
-// Replay
-export { createReplayService } from '../../orchestrator/src/replay/service.js'
+// Vision and Replay stay in @orbital/orchestrator until Phase 3.7.
+// Consumers of createVisionService / createReplayService import directly
+// from @orbital/orchestrator for now.
