@@ -18,6 +18,7 @@
     "@aws-sdk/client-sns": "^3.1041.0",
     "@aws-sdk/client-sqs": "^3.1041.0",
     "@aws-sdk/rds-signer": "^3.750.0",
+    "@aws-sdk/util-arn-parser": "^3.693.0",
     "drizzle-orm": "^0.36.0",
     "pino": "^9.5.0",
     "postgres": "^3.4.0",
