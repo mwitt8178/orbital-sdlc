@@ -50,7 +50,7 @@ export interface DaemonFargateProps {
 export class DaemonFargateConstruct extends Construct {
   readonly cluster: ecs.Cluster
   readonly service: ecs.FargateService | undefined
-  readonly taskDefinition: ecs.FargateTaskDefinition
+  readonly taskDefinition: ecs.FargateTaskDefinition | undefined
   readonly repository: ecr.Repository
   readonly fileSystem: efs.FileSystem
   readonly accessPoint: efs.AccessPoint
@@ -203,36 +203,36 @@ export class DaemonFargateConstruct extends Construct {
     // EFS mount
     this.fileSystem.grant(this.taskRole, 'elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite')
 
-    // ----- Task definition -----
-    this.taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDef', {
-      family: `orbital-${props.envName}-daemon`,
-      cpu: 2048, // 2 vCPU
-      memoryLimitMiB: 4096, // 4 GB
-      taskRole: this.taskRole,
-      executionRole: this.executionRole,
-      runtimePlatform: {
-        cpuArchitecture: ecs.CpuArchitecture.ARM64,
-        operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
-      },
-      volumes: [
-        {
-          name: 'orbital-state',
-          efsVolumeConfiguration: {
-            fileSystemId: this.fileSystem.fileSystemId,
-            authorizationConfig: {
-              accessPointId: this.accessPoint.accessPointId,
-              iam: 'ENABLED',
-            },
-            transitEncryption: 'ENABLED',
-          },
-        },
-      ],
-    })
-
-    // Daemon container — only added when imageDigest is present. The first
-    // CDK pass before the image is pushed creates everything else; the
-    // second pass after the image is published wires the container.
+    // ----- Task definition + container — only created when imageDigest is set.
+    // ECS rejects a TaskDefinition without containers, so on the first pass
+    // (before the operator has pushed an image) we skip both the task def and
+    // the service. The ECR repo + EFS + SQS + IAM are still provisioned.
     if (props.imageDigest !== undefined) {
+      this.taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDef', {
+        family: `orbital-${props.envName}-daemon`,
+        cpu: 2048, // 2 vCPU
+        memoryLimitMiB: 4096, // 4 GB
+        taskRole: this.taskRole,
+        executionRole: this.executionRole,
+        runtimePlatform: {
+          cpuArchitecture: ecs.CpuArchitecture.ARM64,
+          operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
+        },
+        volumes: [
+          {
+            name: 'orbital-state',
+            efsVolumeConfiguration: {
+              fileSystemId: this.fileSystem.fileSystemId,
+              authorizationConfig: {
+                accessPointId: this.accessPoint.accessPointId,
+                iam: 'ENABLED',
+              },
+              transitEncryption: 'ENABLED',
+            },
+          },
+        ],
+      })
+
       const container = this.taskDefinition.addContainer('daemon', {
         image: ecs.ContainerImage.fromEcrRepository(this.repository, props.imageDigest),
         containerName: 'orbital-daemon',

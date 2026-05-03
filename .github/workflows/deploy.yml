@@ -1,0 +1,164 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: Target environment (mwitt, rreed, prod)
+        required: true
+        type: choice
+        options:
+          - mwitt
+          - rreed
+          - prod
+      skip_daemon_image:
+        description: Skip rebuilding the daemon container image
+        required: false
+        default: false
+        type: boolean
+  push:
+    branches: [main]
+    paths:
+      - 'packages/api-lambda/**'
+      - 'packages/orchestrator/**'
+      - 'packages/orchestrator-daemon/**'
+      - 'packages/types/**'
+      - 'packages/ui/**'
+      - 'infra/**'
+
+permissions:
+  id-token: write    # for OIDC AWS auth
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  # ----------------------------------------------------------------
+  # Quality gate — runs first, blocks deploy on any failure.
+  # ----------------------------------------------------------------
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Format check
+        run: npm run format:check
+      - name: Build (types, orchestrator, ui, api-lambda)
+        run: |
+          npm run build -w @orbital/types
+          npm run build -w @orbital/orchestrator
+          npm run build -w @orbital/api-lambda
+          npm run build -w @orbital/orchestrator-daemon
+      - name: Cold-import guard — api-lambda
+        run: node scripts/lambda-cold-import-check.mjs packages/api-lambda/dist/handler.mjs
+      - name: TypeScript strict typecheck
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+
+  # ----------------------------------------------------------------
+  # CDK synth + nag — independent of the deploy account.
+  # ----------------------------------------------------------------
+  synth:
+    needs: quality
+    runs-on: ubuntu-latest
+    outputs:
+      env_name: ${{ steps.envcfg.outputs.env_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: npm }
+      - run: npm ci
+      - name: Resolve env_name
+        id: envcfg
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "env_name=${{ inputs.env }}" >> $GITHUB_OUTPUT
+          else
+            echo "env_name=mwitt" >> $GITHUB_OUTPUT
+          fi
+      - name: cdk synth (with cdk-nag)
+        env:
+          JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION: '1'
+        run: |
+          cd infra
+          npx cdk synth --context env=${{ steps.envcfg.outputs.env_name }} --quiet
+
+  # ----------------------------------------------------------------
+  # Deploy — only runs after quality + synth pass.
+  # Configure OIDC trust against this repo for the role.
+  # ----------------------------------------------------------------
+  deploy:
+    needs: [quality, synth]
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ needs.synth.outputs.env_name }}
+      # GitHub Environments enforce manual approval for prod via
+      # the Environment's required-reviewers setting.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: npm }
+      - run: npm ci
+
+      - name: Configure AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Build api-lambda bundle
+        run: npm run build -w @orbital/api-lambda
+
+      - name: Build daemon image
+        if: ${{ inputs.skip_daemon_image != true }}
+        run: |
+          docker build --platform linux/arm64 \
+            -f packages/orchestrator-daemon/Dockerfile \
+            -t orbital-daemon:ci .
+
+      - name: Push daemon image to ECR
+        if: ${{ inputs.skip_daemon_image != true }}
+        id: ecr_push
+        run: |
+          ENV_NAME=${{ needs.synth.outputs.env_name }}
+          REPO=orbital-${ENV_NAME}-daemon
+          ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+          ECR_HOST=${ACCOUNT}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+          # If the repo doesn't exist yet (first deploy), do an
+          # imageless pre-deploy to create it, then build/push.
+          if ! aws ecr describe-repositories --repository-names $REPO 2>/dev/null; then
+            cd infra && JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION=1 \
+              npx cdk deploy --context env=$ENV_NAME --require-approval never --output cdk.out
+            cd ..
+          fi
+          aws ecr get-login-password | docker login --username AWS --password-stdin $ECR_HOST
+          TAG=${GITHUB_SHA::7}
+          docker tag orbital-daemon:ci $ECR_HOST/$REPO:$TAG
+          docker push $ECR_HOST/$REPO:$TAG
+          DIGEST=$(aws ecr describe-images --repository-name $REPO \
+            --image-ids imageTag=$TAG --query 'imageDetails[0].imageDigest' --output text)
+          echo "digest=$DIGEST" >> $GITHUB_OUTPUT
+
+      - name: cdk deploy (with image digest if built)
+        env:
+          ORBITAL_DAEMON_IMAGE_DIGEST: ${{ steps.ecr_push.outputs.digest }}
+          JSII_SILENCE_WARNING_UNTESTED_NODE_VERSION: '1'
+        run: |
+          cd infra
+          npx cdk deploy --context env=${{ needs.synth.outputs.env_name }} \
+            --require-approval never \
+            --output cdk.out
+
+      - name: Verify api-lambda
+        run: bash scripts/verify-phase1-deploy.sh
+
+      - name: Verify daemon
+        run: bash scripts/verify-phase2-daemon.sh
