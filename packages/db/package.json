@@ -1,0 +1,43 @@
+{
+  "name": "@orbital/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Aurora client factory + Drizzle schema + migrations + multi-tenant query helpers. No business logic. Imported by api-lambda, install-lambda, daemon, and event-workers.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./schema": {
+      "types": "./dist/schema/index.d.ts",
+      "default": "./dist/schema/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run",
+    "lint": "eslint src test",
+    "migrate": "tsx src/migrate.ts",
+    "migrate:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "@aws-sdk/rds-signer": "^3.750.0",
+    "@orbital/types": "*",
+    "drizzle-kit": "^0.28.0",
+    "drizzle-orm": "^0.36.0",
+    "postgres": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}

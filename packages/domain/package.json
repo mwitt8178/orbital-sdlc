@@ -1,0 +1,33 @@
+{
+  "name": "@orbital/domain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Domain logic — aggregates, services, event store. Imports types + db only. Zero infrastructure concerns. Imported by api-lambda, install-lambda, daemon.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run",
+    "lint": "eslint src test"
+  },
+  "dependencies": {
+    "@orbital/db": "*",
+    "@orbital/types": "*",
+    "drizzle-orm": "^0.36.0",
+    "ulid": "^2.3.0",
+    "uuidv7": "^1.0.2",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}
