@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * lambda-cold-import-check.mjs — Prove a Lambda bundle is import-time safe.
+ * lambda-cold-import-check.mjs — Prove Lambda bundle(s) are import-time safe.
  *
  * Why: Lambda containers crash during INIT if the imported module graph
  * touches the filesystem ($HOME, ~/.orbital), spawns child processes,
@@ -15,6 +15,7 @@
  *
  * Usage:
  *   node scripts/lambda-cold-import-check.mjs <bundle-path>
+ *   node scripts/lambda-cold-import-check.mjs <directory>   (checks all *.mjs in dir)
  *
  * Negative test (proves the harness works):
  *   ORBITAL_COLD_IMPORT_NEGATIVE=1 node scripts/lambda-cold-import-check.mjs <bundle>
@@ -22,15 +23,43 @@
  */
 
 import { spawn } from 'node:child_process'
-import { writeFile, mkdtemp, rm } from 'node:fs/promises'
+import { writeFile, mkdtemp, rm, readdir, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { join, resolve, extname } from 'node:path'
 
-const bundlePath = resolve(process.argv[2] ?? '')
-if (!bundlePath || !bundlePath.endsWith('.mjs')) {
-  console.error('usage: lambda-cold-import-check.mjs <path-to-bundle.mjs>')
+const arg = process.argv[2] ?? ''
+if (!arg) {
+  console.error('usage: lambda-cold-import-check.mjs <bundle-path-or-directory>')
   process.exit(2)
 }
+
+// Collect bundles to check: either a single .mjs file or all .mjs in a directory.
+async function collectBundles(pathArg) {
+  const abs = resolve(pathArg)
+  const info = await stat(abs).catch(() => null)
+  if (!info) {
+    console.error(`ERROR: path not found: ${abs}`)
+    process.exit(2)
+  }
+  if (info.isDirectory()) {
+    const entries = await readdir(abs)
+    const bundles = entries
+      .filter((e) => extname(e) === '.mjs')
+      .map((e) => join(abs, e))
+    if (bundles.length === 0) {
+      console.error(`ERROR: no .mjs files found in directory: ${abs}`)
+      process.exit(2)
+    }
+    return bundles
+  }
+  if (!abs.endsWith('.mjs')) {
+    console.error('ERROR: bundle must be a .mjs file or a directory containing .mjs files')
+    process.exit(2)
+  }
+  return [abs]
+}
+
+const bundlePaths = await collectBundles(arg)
 
 // Minimal env that Lambda always has (region, function name) — explicitly
 // NOT including HOME, USERPROFILE, USER, LOGNAME. Anything beyond this set
@@ -66,10 +95,14 @@ const lambdaApproxEnv = {
   ORBITAL_COLD_IMPORT_NEGATIVE: process.env.ORBITAL_COLD_IMPORT_NEGATIVE ?? '',
 }
 
-const tmp = await mkdtemp(join(tmpdir(), 'cold-import-'))
-const probeFile = join(tmp, 'probe.mjs')
+/**
+ * Check a single bundle. Returns the exit code (0 = pass).
+ */
+async function checkBundle(bundlePath) {
+  const tmp = await mkdtemp(join(tmpdir(), 'cold-import-'))
+  const probeFile = join(tmp, 'probe.mjs')
 
-const probe = `
+  const probe = `
 // Probe — dynamic-imports the target bundle and reports success/failure.
 //
 // CRITICAL: this script must NOT rely on ANY external state. The Lambda
@@ -110,20 +143,23 @@ const target = ${JSON.stringify(bundlePath)}
 })()
 `
 
-await writeFile(probeFile, probe, 'utf8')
+  await writeFile(probeFile, probe, 'utf8')
 
-const child = spawn(process.execPath, [probeFile], {
-  env: lambdaApproxEnv, // sanitized env
-  stdio: 'inherit',
-  // Run from /tmp so CWD-relative resolution can't reach the repo
-  cwd: tmp,
-})
+  const child = spawn(process.execPath, [probeFile], {
+    env: lambdaApproxEnv, // sanitized env
+    stdio: 'inherit',
+    // Run from /tmp so CWD-relative resolution can't reach the repo
+    cwd: tmp,
+  })
 
-const exitCode = await new Promise((res) => child.on('exit', res))
-await rm(tmp, { recursive: true, force: true })
+  const exitCode = await new Promise((res) => child.on('exit', res))
+  await rm(tmp, { recursive: true, force: true })
+  return exitCode ?? 1
+}
 
+// --- Negative-test mode: use the first (only) bundle ---
 if (process.env.ORBITAL_COLD_IMPORT_NEGATIVE === '1') {
-  // Negative test: we WANT a non-zero exit
+  const exitCode = await checkBundle(bundlePaths[0])
   if (exitCode === 0) {
     console.error('NEGATIVE-TEST FAIL: bundle imported clean despite ORBITAL_COLD_IMPORT_NEGATIVE=1')
     process.exit(1)
@@ -132,4 +168,15 @@ if (process.env.ORBITAL_COLD_IMPORT_NEGATIVE === '1') {
   process.exit(0)
 }
 
-process.exit(exitCode ?? 1)
+// --- Normal mode: check all collected bundles sequentially ---
+let anyFailed = false
+for (const bp of bundlePaths) {
+  console.log(`\n--- checking: ${bp}`)
+  const exitCode = await checkBundle(bp)
+  if (exitCode !== 0) {
+    console.error(`FAIL: ${bp}`)
+    anyFailed = true
+  }
+}
+
+process.exit(anyFailed ? 1 : 0)
