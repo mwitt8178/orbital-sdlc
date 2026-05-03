@@ -313,12 +313,14 @@ export class DaemonFargateConstruct extends Construct {
         deploymentController: { type: ecs.DeploymentControllerType.ECS },
       })
 
-      // RDS Proxy ingress — allow the daemon SG into the proxy.
-      // The lambdaSg is already in the proxy ingress; we add daemonSg too.
-      props.lambdaSg.connections.allowFrom(
+      // RDS Proxy ingress — allow the daemon SG INTO the proxy itself,
+      // not just into the lambdaSg. The proxy's own SG accepts traffic
+      // from the lambdaSg by construction (via 8-02); we add a parallel
+      // rule for the daemonSg.
+      props.rdsProxy.connections.allowFrom(
         this.daemonSg,
         ec2.Port.tcp(5432),
-        'Daemon connect to Aurora via RDS Proxy',
+        'Daemon connect to RDS Proxy',
       )
     }
 

@@ -68,8 +68,19 @@ let _shuttingDown = false
 async function bootSecrets(): Promise<void> {
   logger.info({ tenant_id: 'system' }, 'daemon: resolving secrets from Secrets Manager')
   const t0 = Date.now()
-  await getSecrets()
-  logger.info({ tenant_id: 'system', elapsed_ms: Date.now() - t0 }, 'daemon: secrets resolved')
+  try {
+    await getSecrets()
+    logger.info({ tenant_id: 'system', elapsed_ms: Date.now() - t0 }, 'daemon: secrets resolved')
+  } catch (err) {
+    if (err instanceof Error && /hub master key is uninitialized/.test(err.message)) {
+      logger.warn(
+        { tenant_id: 'system', err: err.message },
+        'daemon: hub master key uninitialized; running in degraded mode until KeyRotation Lambda runs',
+      )
+      return
+    }
+    throw err
+  }
 }
 
 async function bootDb(): Promise<{ db: Awaited<ReturnType<typeof getDb>>['db'] }> {
