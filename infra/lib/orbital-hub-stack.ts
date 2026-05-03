@@ -951,7 +951,13 @@ export class OrbitalHubStack extends cdk.Stack {
     // service in the second pass.
     // ------------------------------------------------------------------
     const daemonImageDigest = process.env['ORBITAL_DAEMON_IMAGE_DIGEST']
-    new DaemonFargateConstruct(this, 'Daemon', {
+    const daemonSecretRefs: SecretRef[] = ['dbMasterCreds', 'hubMasterKey', 'githubWebhookSecret']
+    const daemonSecretEnvVars: Record<string, string> = {}
+    for (const ref of daemonSecretRefs) {
+      daemonSecretEnvVars[secretEnvVarName(ref)] = secretArnFor(this.secrets, ref)
+      daemonSecretEnvVars[secretNameEnvVar(ref)] = secretName(props.envName, ref)
+    }
+    const daemon = new DaemonFargateConstruct(this, 'Daemon', {
       envName: props.envName,
       vpc: this.vpc,
       lambdaSg: this.rdsProxy.lambdaSecurityGroup,
@@ -959,8 +965,18 @@ export class OrbitalHubStack extends cdk.Stack {
       proxyEndpoint: this.rdsProxy.proxy.endpoint,
       logRetentionDays: props.envConfig.logRetentionDays,
       eventsTopic: this.eventBus.snsTopic,
+      secretEnvVars: daemonSecretEnvVars,
       ...(daemonImageDigest !== undefined ? { imageDigest: daemonImageDigest } : {}),
     })
+    // Grant daemon task role read access to the same secrets.
+    this.secrets.grantReadFor(daemon.taskRole, daemonSecretRefs)
+    // Per-tenant KMS — daemon needs CREATE+USE for onboarding flow + USE
+    // for replay decrypt and DELETE for offboarding.
+    this.perTenantKms.grantPerTenantUsage(daemon.taskRole)
+    this.perTenantKms.grantOnboardingPermissions(daemon.taskRole)
+    this.perTenantKms.grantTenantDeletion(daemon.taskRole)
+    // Replay bucket read+write — daemon writes replay blobs.
+    this.replayBucket.bucket.grantReadWrite(daemon.taskRole)
 
     // ------------------------------------------------------------------
     // 8-08 Observability - WAF + CloudWatch Dashboard + Alarms

@@ -24,14 +24,15 @@
  */
 
 import { hostname } from 'node:os'
+import http from 'node:http'
 import { ulid } from 'ulid'
 import pino from 'pino'
 
 // Use deep relative paths so tsc resolves directly to source rather than
 // requiring orchestrator package subpath exports. esbuild/tsc bundle this.
-import { getDb, closeDb } from '../../orchestrator/src/db/client.js'
-import { getSecrets } from '../../orchestrator/src/lambda/secrets-cache.js'
-import { createEventStore } from '../../orchestrator/src/events/store.js'
+import { getDb, closeDb } from '../../orchestrator/dist/db/client.js'
+import { getSecrets } from '../../orchestrator/dist/lambda/secrets-cache.js'
+import { createEventStore } from '../../orchestrator/dist/events/store.js'
 
 const logger = pino({
   level: process.env['LOG_LEVEL'] ?? 'info',
@@ -90,8 +91,6 @@ function startHealthEndpoint(): void {
   // Daemon does NOT serve HTTP traffic; the only listener is a Fargate
   // task health probe on TCP port 3000 returning 200. We use a plain
   // node:http server so we don't pull Fastify into the daemon.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const http = require('node:http') as typeof import('node:http')
   const port = Number(process.env['DAEMON_HEALTH_PORT'] ?? '3000')
   const server = http.createServer((req, res) => {
     if (req.url === '/health' || req.url === '/health/') {

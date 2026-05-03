@@ -45,6 +45,9 @@ export interface DaemonFargateProps {
    * but doesn't reference an image — useful for first-time provisioning
    * before the image is pushed. */
   readonly imageDigest?: string
+  /** Secret ARN env vars injected on the daemon container. Caller wires
+   * the matching IAM grants on the task role via `taskRole`. */
+  readonly secretEnvVars?: Record<string, string>
 }
 
 export class DaemonFargateConstruct extends Construct {
@@ -250,6 +253,7 @@ export class DaemonFargateConstruct extends Construct {
           AWS_ACCOUNT_ID: cdk.Stack.of(this).account,
           NODE_ENV: 'production',
           LOG_LEVEL: isProd ? 'info' : 'debug',
+          ...(props.secretEnvVars ?? {}),
         },
         logging: ecs.LogDrivers.awsLogs({
           streamPrefix: 'daemon',
