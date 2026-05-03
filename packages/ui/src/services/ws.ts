@@ -441,8 +441,15 @@ function buildWsUrl(cursor: string | null): string | null {
 
   if (fromEnv && fromEnv.length > 0) {
     const base = fromEnv.replace(/\/$/, '')
-    // Allow either an exact endpoint (wss://host/ws) or a host root (wss://host).
-    const withPath = base.endsWith('/ws') ? base : `${base}/ws`
+    // AWS API Gateway WebSocket URLs end with the stage name (e.g. /$default)
+    // and DO NOT take a /ws suffix — appending one yields a 404 closure during
+    // upgrade. Detect those by host pattern; everything else (local Fastify,
+    // self-host) keeps the historical /ws-suffix behaviour.
+    const isApiGwWs =
+      base.includes('execute-api.') ||
+      /\/\$default(?:$|\?)/.test(base) ||
+      base.endsWith('/$default')
+    const withPath = isApiGwWs || base.endsWith('/ws') ? base : `${base}/ws`
     return `${withPath}${cursorParam}`
   }
 
