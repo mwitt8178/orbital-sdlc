@@ -14,6 +14,7 @@
   "exclude": ["dist", "test", "node_modules"],
   "references": [
     { "path": "../types" },
+    { "path": "../db" },
     { "path": "../orchestrator" }
   ]
 }
