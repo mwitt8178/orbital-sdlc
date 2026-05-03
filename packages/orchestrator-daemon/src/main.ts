@@ -33,6 +33,8 @@ import pino from 'pino'
 import { getDb, closeDb } from '../../orchestrator/dist/db/client.js'
 import { getSecrets } from '../../orchestrator/dist/lambda/secrets-cache.js'
 import { createEventStore } from '../../orchestrator/dist/events/store.js'
+import { SqsConsumer, type EventHandler } from './sqs-consumer.js'
+import { counter } from './metrics-emf.js'
 
 const logger = pino({
   level: process.env['LOG_LEVEL'] ?? 'info',
@@ -64,6 +66,7 @@ const logger = pino({
 })
 
 let _shuttingDown = false
+let _consumer: SqsConsumer | null = null
 
 async function bootSecrets(): Promise<void> {
   logger.info({ tenant_id: 'system' }, 'daemon: resolving secrets from Secrets Manager')
@@ -128,8 +131,11 @@ async function shutdown(signal: string, exitCode = 0): Promise<void> {
   if (_shuttingDown) return
   _shuttingDown = true
   logger.warn({ tenant_id: 'system', signal }, 'daemon: SIGTERM received, draining')
-  // TODO Phase 2.6: stop SQS consumer and finish in-flight messages.
-  // TODO Phase 2.x: stop scheduler tick loop and let current tick finish.
+  // Stop the SQS consumer first so no new messages are picked up; the
+  // consumer drains in-flight handlers before its start() resolves.
+  if (_consumer) {
+    _consumer.stop()
+  }
   try {
     await closeDb()
   } catch (err) {
@@ -170,16 +176,51 @@ async function main(): Promise<void> {
     'daemon: event store wired',
   )
 
-  // ----- Phase 2.6 — SQS consumer (placeholder until queue exists) -----
-  // The actual consumer is wired in a follow-up commit once the SQS
-  // daemon-work queue is created in CDK (Phase 2.6 item).
-  logger.info(
-    { tenant_id: 'system' },
-    'daemon: ready (scheduler tick loop + SQS consumer wired in Phase 2.6)',
-  )
+  // ----- Phase 2.6 — SQS consumer wired live -----
+  const queueUrl = process.env['DAEMON_WORK_QUEUE_URL']
+  if (!queueUrl) {
+    logger.fatal(
+      { tenant_id: 'system' },
+      'daemon: DAEMON_WORK_QUEUE_URL is not set — cannot start consumer',
+    )
+    void shutdown('config-missing', 1)
+    return
+  }
 
-  // Keep process alive — health server holds the event loop. When SIGTERM
-  // fires the shutdown handler exits cleanly.
+  _consumer = new SqsConsumer({ queueUrl })
+
+  // Event handler — Phase 2.6 deliberately keeps this thin. Each event is
+  // logged with its `kind` (extracted from the parsed body if present) so
+  // we can verify end-to-end fan-out via the SNS topic. Real dispatch to
+  // the scheduler / worker spawn is Phase 2.x and lives in domain/.
+  const handler: EventHandler = async (event, raw) => {
+    const kind =
+      typeof event === 'object' && event !== null && 'kind' in event
+        ? String((event as { kind?: unknown }).kind ?? 'unknown')
+        : 'unknown'
+    const tenant_id =
+      typeof event === 'object' && event !== null && 'tenant_id' in event
+        ? String((event as { tenant_id?: unknown }).tenant_id ?? 'system')
+        : 'system'
+    counter('events.received', { kind, tenant_id }, 'Orbital/Daemon')
+    logger.info(
+      { tenant_id, kind, messageId: raw.MessageId },
+      'daemon: received event',
+    )
+    // Receipt is captured in CloudWatch + EMF metric. Real domain dispatch
+    // (write an audit row + run scheduler) lands when the daemon migrates
+    // its scheduler tick into this loop — Phase 2.x in the plan. The
+    // event-store reference is held for that wiring.
+    void events
+  }
+
+  logger.info(
+    { tenant_id: 'system', queueUrl },
+    'daemon: starting SQS consumer',
+  )
+  // Run the consumer; this never resolves until stop() is called. Other
+  // workers (scheduler tick, etc.) can be spawned in parallel here.
+  await _consumer.start(handler)
 }
 
 main().catch((err) => {

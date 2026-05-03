@@ -16,6 +16,8 @@ import {
   ReceiveMessageCommand,
   DeleteMessageCommand,
   ChangeMessageVisibilityCommand,
+  MessageSystemAttributeName,
+  QueueAttributeName,
   type Message,
 } from '@aws-sdk/client-sqs'
 import type { Logger } from 'pino'
@@ -112,7 +114,10 @@ export class SqsConsumer {
         WaitTimeSeconds: this.waitTimeSeconds,
         VisibilityTimeout: this.visibilityTimeoutSeconds,
         MessageAttributeNames: ['All'],
-        AttributeNames: ['ApproximateReceiveCount', 'SentTimestamp'],
+        MessageSystemAttributeNames: [
+          MessageSystemAttributeName.ApproximateReceiveCount,
+          MessageSystemAttributeName.SentTimestamp,
+        ],
       }),
     )
 
