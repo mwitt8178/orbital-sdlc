@@ -25,7 +25,7 @@ import { Construct } from 'constructs'
 export interface AutoDashboardProps {
   readonly envName: string
   readonly lambdas: ReadonlyArray<{ label: string; fn: lambda.IFunction }>
-  readonly ecsServices?: ReadonlyArray<{ label: string; service: ecs.IService; cluster: ecs.ICluster }>
+  readonly ecsServices?: ReadonlyArray<{ label: string; service: ecs.BaseService; cluster: ecs.ICluster }>
   readonly sqsQueues?: ReadonlyArray<{ label: string; queue: sqs.IQueue; dlq?: sqs.IQueue }>
   readonly snsTopics?: ReadonlyArray<{ label: string; topic: sns.ITopic }>
   /** Aurora cluster identifier — referenced via DBClusterIdentifier dim. */
