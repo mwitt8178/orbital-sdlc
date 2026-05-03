@@ -15,3 +15,9 @@ export {
   verifyCognitoJwt,
   type JwtClaims,
 } from '../../orchestrator/src/lambda/ws-auth/cognito.js'
+
+// PKI envelope verifier (used by install-lambda + hub middleware)
+// verifyEnvelope lives in keys/envelope.ts — re-exported here under the
+// preferred name `verifyInstallEnvelope` for clarity at the call site.
+export { verifyEnvelope as verifyInstallEnvelope } from '../../orchestrator/src/keys/envelope.js'
+export type { VerifyResult as InstallVerifyResult } from '../../orchestrator/src/keys/envelope.js'
