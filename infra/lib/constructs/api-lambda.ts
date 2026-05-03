@@ -94,6 +94,10 @@ export class ApiLambdaConstruct extends Construct {
     const apiLambdaDist = path.resolve(__dirname, '../../../packages/api-lambda/dist')
 
     const environment: Record<string, string> = {
+      // CRITICAL: NODE_ENV=production prevents pino logger from initializing
+      // pino-pretty transport (which is externalized and not in the bundle).
+      // Other libraries (drizzle, react-query for SSR, etc.) also branch on this.
+      NODE_ENV: 'production',
       ORBITAL_DEPLOY_TARGET: 'aws',
       ORBITAL_TENANT_RESOLUTION: 'jwt',
       ORBITAL_HOME: '/tmp/.orbital',
@@ -105,7 +109,6 @@ export class ApiLambdaConstruct extends Construct {
       COGNITO_USER_POOL_ID: props.cognitoUserPoolId,
       COGNITO_APP_CLIENT_ID: props.cognitoAppClientId,
       ORBITAL_ENV: props.envName,
-      // No NODE_ENV — the orchestrator's loadEnv schema accepts the default.
     }
 
     this.fn = new lambda.Function(this, 'Fn', {

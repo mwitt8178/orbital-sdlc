@@ -37,13 +37,11 @@ const externals = [
   'keytar',
   'pino-pretty',
   'drizzle-kit',
-  // OpenTelemetry — Lambda uses managed instrumentation layer, not bundled SDK.
-  '@opentelemetry/api',
-  '@opentelemetry/auto-instrumentations-node',
-  '@opentelemetry/exporter-trace-otlp-http',
-  '@opentelemetry/sdk-node',
-  // Native bindings the Lambda runtime doesn't need.
-  'zstd-napi',
+  // NOTE: @opentelemetry/* are NOT externalized. They are not provided by
+  // the Lambda runtime; bundling them adds ~500 KB but keeps init clean.
+  // Phase 5.3 may switch to the Lambda OTel layer for tracing instead, at
+  // which point these become external.
+  // NOTE: zstd-napi is NOT externalized — it's aliased to a stub below.
 ]
 
 const result = await build({
@@ -72,6 +70,11 @@ const result = await build({
     ].join('\n'),
   },
   external: externals,
+  // Alias `zstd-napi` to our stub — native binding not available in Lambda.
+  // Audit-export compression runs on the daemon (Phase 2).
+  alias: {
+    'zstd-napi': path.resolve(__dirname, 'src/_stubs/zstd-napi.ts'),
+  },
   logLevel: 'info',
   metafile: true,
 })
