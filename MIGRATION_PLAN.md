@@ -219,33 +219,45 @@ Updated as worktrees are created/destroyed.
 
 **Started:** 2026-05-03 09:55 CDT
 
-**Last orchestrator update:** 2026-05-03 11:01 CDT
-
-**Current phase:** Phase 2 mid-deploy. Phase 1 LIVE.
+**Last orchestrator update:** 2026-05-03 ~11:30 CDT
 
 **Phase 1 (DONE, LIVE on mwitt):**
 - 11 legacy `orbital-mwitt-trpc-*` Lambdas removed
-- Single `orbital-mwitt-api` Lambda live with 2.5 MB esbuild bundle
+- Single `orbital-mwitt-api` Lambda live (2.5 MB esbuild bundle)
 - Endpoints verified 200: `/trpc/onboarding.status`, `/trpc/projects.list`, `/public/onboarding.status`, `/trpc/providers.health`
-- `ORBITAL_HOME=/tmp/.orbital` and `NODE_ENV=production` correctly injected
+- Bundle issues fixed: OTel bundled, zstd-napi aliased to stub, NODE_ENV=production injected, hub-master-key uninitialized handled gracefully
 - Cold-import CI guard `scripts/lambda-cold-import-check.mjs` armed (positive + negative tests verified)
 
-**Phase 2 (in-flight):**
-- Daemon package, Dockerfile, Fargate CDK construct: scaffolded and committed
-- Docker image `orbital-daemon:dev` built locally (1.09 GB ARM64, exit 0)
-- Daemon CDK deploy: BLOCKED by Phase 1's CFN cleanup phase still in progress
-- Once cleanup completes, the path is: `cdk deploy` (creates ECR/EFS/SQS) → `docker tag + push` → `ORBITAL_DAEMON_IMAGE_DIGEST=<digest> cdk deploy` (starts Fargate service)
+**Phase 2 (mid-deploy):**
+- Daemon package, Dockerfile, Fargate CDK construct: COMMITTED
+- Image build issues fixed: ESM `require` → `import`, dist/ paths, secret env injection
+- Image `orbital-daemon:17c946f-fix1` PUSHED to ECR (digest sha256:a89ace00...)
+- Phase 2 deploy currently in flight (deploy attempt 5)
+  - Attempts 1–2 blocked by stack cleanup
+  - Attempt 3 succeeded for ECR/EFS/SQS infra
+  - Attempt 4 failed because container had bugs (require, src paths)
+  - Attempt 5 deploying corrected image with secret env vars
+
+**Phase 3 / 4 / 5 / 6 — partial scaffolding committed:**
+- Phase 3 packages `@orbital/db`, `@orbital/auth`, `@orbital/domain` exist as re-export shims; Phase 3.6 boundary lint not yet enabled, full file moves pending.
+- Phase 5: `packages/orchestrator-daemon/src/logger.ts` (pino + tenant_id discipline) and `metrics-emf.ts` (EMF helpers) committed; `infra/lib/constructs/auto-dashboard.ts` for Phase 5.6 committed (not yet wired into stack).
+- Phase 6: `.github/workflows/deploy.yml` (full pipeline with quality + synth + deploy + verify) committed; `packages/api-lambda/test/tenant-bleed.integration.test.ts` scaffold for Phase 6.4 committed.
 
 **Resume instructions (see top of file):**
 1. `aws cloudformation wait stack-update-complete --stack-name OrbitalHub-mwitt`
-2. `cd infra && npx cdk deploy --context env=mwitt --require-approval never --output cdk.out.daemon`
-3. Tag + push: `aws ecr get-login-password | docker login --username AWS --password-stdin <account>.dkr.ecr.us-east-1.amazonaws.com && docker tag orbital-daemon:dev <ecr-uri>:1 && docker push <ecr-uri>:1`
-4. Capture digest: `DIGEST=$(aws ecr describe-images --repository-name orbital-mwitt-daemon --image-ids imageTag=1 --query 'imageDetails[0].imageDigest' --output text)`
-5. Re-deploy with image: `ORBITAL_DAEMON_IMAGE_DIGEST="${DIGEST#*sha256:}" npx cdk deploy --context env=mwitt --require-approval never --output cdk.out.daemon`
-6. Verify daemon: `aws ecs describe-services --cluster orbital-mwitt-daemon --services orbital-mwitt-daemon --query 'services[0].{desired:desiredCount,running:runningCount,pending:pendingCount,events:events[0:3]}'`
-7. Watch /health logs in `/orbital/mwitt/daemon` log group.
+2. If stack ROLLBACK: rebuild image, push with new tag (`bash scripts/push-daemon-to-ecr.sh <new-tag>`), retry `ORBITAL_DAEMON_IMAGE_DIGEST=… cdk deploy`
+3. If stack OK: `bash scripts/verify-phase2-daemon.sh` to confirm runningCount=desiredCount, /health logs
+4. Phase 2.9 e2e: enqueue an SNS event with `consumer=daemon` filter, watch daemon log a "received" line
+5. Phase 2.10 e2e: end-to-end browser → DB write → SNS → ws-fanout → API GW Mgmt → connected browser receives the push
+6. Phase 3: actual file moves into the new packages, eslint-plugin-boundaries config to forbid cross-edge imports
+7. Phase 4: split `orbital-hub-stack.ts` into the 7 stacks per the plan
+8. Phase 5: wire `AutoDashboardConstruct` into the stack, ensure all services emit `tenant_id` log lines
+9. Phase 6: configure GitHub Environment for prod approval, run rollback drills, populate tenant-bleed test config
 
 **Recent verifications by orchestrator:**
 - 2026-05-03 ~10:55: Phase 1 endpoints curl-verified 200 — `docs/phase1-verification.log`
 - 2026-05-03 ~10:13: Checkpoint commit `b04168f` clean
 - 2026-05-03 ~10:24: Cold-import guard positive+negative passes — `docs/cold-import-check.log`
+- 2026-05-03 ~11:11: Daemon ECR repo provisioned, image pushed (`docs/deploy-logs/phase2-deploy-3.log`)
+- 2026-05-03 ~11:21: First daemon Fargate task launched, failed to start due to ESM `require` bug — fixed in commit, image rebuilt + pushed
+- 2026-05-03 ~11:29: Deploy 5 in progress with corrected image + secret env
