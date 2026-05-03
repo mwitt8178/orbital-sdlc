@@ -1,5 +1,9 @@
 /**
- * web-stack.ts — CloudFront distribution, S3 UI bucket, WAF WebACL, Route 53 records.
+ * web-stack.ts — WAF WebACL + Route 53 outputs.
+ *
+ * StaticUiConstruct is created in data-stack.ts (before ReplayBucketConstruct)
+ * to preserve CDK singleton provider ordering. This file only provisions WAF
+ * and emits the stack-level CloudFront/S3 outputs.
  *
  * Phase 4 stack split: resources are instantiated directly on the parent scope
  * so logical IDs stay identical to the monolith.
@@ -8,37 +12,29 @@ import * as cdk from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import { StaticUiConstruct } from '../constructs/static-ui'
 import { WafConstruct } from '../constructs/waf'
-import { DnsConstruct } from '../constructs/dns'
 import { ApiGwHttpConstruct } from '../constructs/api-gw-http'
 import { ApiGwWsConstruct } from '../constructs/api-gw-ws'
 import { ObservabilityConstruct } from '../constructs/observability'
 import { EnvConfig } from '../orbital-hub-stack'
 
 export interface WebOutputs {
-  readonly staticUi: StaticUiConstruct
   readonly waf: WafConstruct
 }
 
 /**
- * Provision web resources (CloudFront + S3 UI bucket + WAF) directly on the
- * given scope.
+ * Provision WAF and emit CloudFront + S3 stack outputs directly on the given scope.
+ * StaticUiConstruct (and its S3 bucket) is received as a parameter — it must
+ * already exist (created in data-stack.ts) to preserve logical ID ordering.
  */
 export function buildWebResources(
   scope: Construct,
   envName: string,
   envConfig: EnvConfig,
-  dns: DnsConstruct,
+  staticUi: StaticUiConstruct,
   apiGw: ApiGwHttpConstruct,
   wsApi: ApiGwWsConstruct,
   observability: ObservabilityConstruct,
 ): WebOutputs {
-  const staticUi = new StaticUiConstruct(scope, 'StaticUi', {
-    envName,
-    domain: envConfig.domain,
-    certificate: dns.certificate,
-    hostedZone: dns.hostedZone,
-  })
-
   // HTTP API stage ARN for WAF association
   const httpApiStageArn = cdk.Stack.of(scope).formatArn({
     service: 'apigateway',
@@ -61,7 +57,7 @@ export function buildWebResources(
     alarmTopicArn: observability.alarmTopic.topicArn,
   })
 
-  // Stack-level outputs for CloudFront + S3 (preserved from monolith)
+  // Stack-level outputs (preserved from monolith)
   new cdk.CfnOutput(scope, 'UiBucketName', {
     value: staticUi.bucket.bucketName,
     description: `Orbital ${envName} UI S3 bucket name`,
@@ -74,5 +70,5 @@ export function buildWebResources(
     exportName: `OrbitalHub-${envName}-CloudFrontDomain`,
   })
 
-  return { staticUi, waf }
+  return { waf }
 }

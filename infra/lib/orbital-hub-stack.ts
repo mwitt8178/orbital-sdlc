@@ -19,7 +19,6 @@ import { DynamoDbConnectionsConstruct } from './constructs/dynamodb-connections'
 import { EventBusConstruct } from './constructs/event-bus'
 import { ObservabilityConstruct, type LambdaDescriptor, type SqsQueueDescriptor } from './constructs/observability'
 import { WafConstruct } from './constructs/waf'
-import { DaemonFargateConstruct } from './constructs/daemon-fargate'
 
 // Phase 4 stack split — composition-root delegators
 import { buildNetworkResources } from './stacks/network-stack'
@@ -67,16 +66,16 @@ export interface OrbitalHubStackProps extends cdk.StackProps {
  * Phase 4 stack split: the constructor delegates to 7 build functions in
  * infra/lib/stacks/. Each function instantiates its constructs directly on
  * `this` (the stack), preserving every CDK logical ID bit-for-bit so
- * CloudFormation sees zero changes on cdk diff.
+ * CloudFormation sees zero resource changes on cdk diff.
  *
- * Dependency order:
- *   network → data → auth → api → daemon → events → web
- *   (observability stays inline — out of scope for Phase 4.8)
+ * Dependency order (mirrors original monolith construction order):
+ *   network → data (includes StaticUi to preserve CDK singleton ordering)
+ *   → auth → api → events → daemon → observability (inline) → web
  */
 export class OrbitalHubStack extends cdk.Stack {
   readonly vpc: ec2.IVpc
   readonly cognito: CognitoConstruct
-  readonly dns: DnsConstruct | undefined
+  readonly dns: DnsConstruct
   readonly aurora: AuroraConstruct
   readonly rdsProxy: RdsProxyConstruct
   readonly staticUi: StaticUiConstruct
@@ -116,11 +115,21 @@ export class OrbitalHubStack extends cdk.Stack {
     this.dns = network.dns
 
     // ------------------------------------------------------------------
-    // 4.2 Data — Aurora + RDS Proxy + S3 replay
+    // 4.2 Data — Aurora + RDS Proxy + StaticUi + S3 replay
+    // StaticUiConstruct is intentionally created here (before ReplayBucket)
+    // to preserve CDK singleton provider description ordering.
     // ------------------------------------------------------------------
-    const data = buildDataResources(this, props.envName, props.envConfig, this.vpc)
+    const data = buildDataResources(
+      this,
+      props.envName,
+      props.envConfig,
+      this.vpc,
+      this.dns.certificate,
+      this.dns.hostedZone,
+    )
     this.aurora = data.aurora
     this.rdsProxy = data.rdsProxy
+    this.staticUi = data.staticUi
     this.replayBucket = data.replayBucket
 
     // ------------------------------------------------------------------
@@ -185,9 +194,8 @@ export class OrbitalHubStack extends cdk.Stack {
 
     // ------------------------------------------------------------------
     // 4.6 Events — SNS + SQS + EventBridge + consumer/scheduled Lambdas
-    // Built before daemon because DaemonFargateConstruct needs the SNS topic
-    // to wire its SQS subscription (same order as original monolith).
-    // daemonTaskRole is not yet available; pass a sentinel and wire daemon after.
+    // Built before daemon so the SNS topic exists when DaemonFargateConstruct
+    // wires its SQS subscription. This matches the original monolith order.
     // ------------------------------------------------------------------
     const eventsOut = buildEventsResources(
       this,
@@ -202,7 +210,7 @@ export class OrbitalHubStack extends cdk.Stack {
     // ------------------------------------------------------------------
     // 4.5 Daemon — ECS Fargate + EFS + ECR (after events so we have the topic)
     // ------------------------------------------------------------------
-    const daemonOut = buildDaemonResources(
+    buildDaemonResources(
       this,
       props.envName,
       props.envConfig,
@@ -217,7 +225,7 @@ export class OrbitalHubStack extends cdk.Stack {
     )
 
     // ------------------------------------------------------------------
-    // 4.8 Observability (stays inline — Phase 4.8 out of scope)
+    // Observability (stays inline — Phase 4.8 out of scope)
     // ------------------------------------------------------------------
     const allLambdaDescriptors: LambdaDescriptor[] = [
       { label: 'api-lambda',    fn: this.apiLambda.fn },
@@ -257,18 +265,17 @@ export class OrbitalHubStack extends cdk.Stack {
     })
 
     // ------------------------------------------------------------------
-    // 4.7 Web — CloudFront + S3 UI + WAF
+    // 4.7 Web — WAF + stack-level CloudFront/S3 outputs
     // ------------------------------------------------------------------
     const webOut = buildWebResources(
       this,
       props.envName,
       props.envConfig,
-      this.dns,
+      this.staticUi,
       this.apiGw,
       this.wsApi,
       this.observability,
     )
-    this.staticUi = webOut.staticUi
     this.waf = webOut.waf
 
     // ------------------------------------------------------------------

@@ -98,11 +98,13 @@ export function buildApiResources(
   })
   lambdas.set('tasks', installLambda)
 
-  // API Gateway HTTP
+  // API Gateway HTTP — use apiLambda.invokeTarget (the `live` alias when
+  // PC is enabled, else $LATEST) so Provisioned Concurrency actually
+  // serves browser traffic.
   const routeConfigs = [
-    { routeKey: 'ANY /trpc/{proxy+}',    fn: apiLambda.fn, authType: 'none' as const },
-    { routeKey: 'ANY /public/{proxy+}',  fn: apiLambda.fn, authType: 'none' as const },
-    { routeKey: 'ANY /install/{proxy+}', fn: installLambda.fn, authType: 'install' as const },
+    { routeKey: 'ANY /trpc/{proxy+}',    fn: apiLambda.invokeTarget, authType: 'none' as const },
+    { routeKey: 'ANY /public/{proxy+}',  fn: apiLambda.invokeTarget, authType: 'none' as const },
+    { routeKey: 'ANY /install/{proxy+}', fn: installLambda.fn,        authType: 'install' as const },
   ]
 
   const apiGw = new ApiGwHttpConstruct(scope, 'ApiGw', {

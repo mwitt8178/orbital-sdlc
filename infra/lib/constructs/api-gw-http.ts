@@ -18,9 +18,11 @@ export interface RouteConfig {
    */
   readonly routeKey: string
   /**
-   * Lambda function to integrate with.
+   * Lambda function (or alias) to integrate with. IFunction allows passing
+   * a versioned Alias when Provisioned Concurrency is enabled so PC instances
+   * actually serve traffic.
    */
-  readonly fn: lambda.Function
+  readonly fn: lambda.IFunction
   /**
    * Which authorizer to use on this route.
    * - 'cognito': HTTP JWT authorizer (Cognito user pool) - browser traffic

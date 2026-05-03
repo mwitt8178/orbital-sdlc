@@ -55,6 +55,14 @@ export class ApiLambdaConstruct extends Construct {
   readonly logGroup: logs.LogGroup
   readonly liveAlias: lambda.Alias | undefined
 
+  /**
+   * The IFunction API Gateway integrations should target. When Provisioned
+   * Concurrency is enabled this is the `live` alias (so warm containers
+   * actually serve traffic); otherwise it's the unqualified function ($LATEST).
+   * Callers MUST use this rather than `fn` directly when wiring API GW.
+   */
+  readonly invokeTarget: lambda.IFunction
+
   constructor(scope: Construct, id: string, props: ApiLambdaProps) {
     super(scope, id)
 
@@ -145,9 +153,17 @@ export class ApiLambdaConstruct extends Construct {
         provisionedConcurrentExecutions: 2,
         description: `Orbital ${props.envName} api-lambda — provisioned concurrency=2`,
       })
+      // Route API Gateway traffic through the alias so PC=2 instances
+      // actually serve requests. Without this, PC is provisioned but
+      // every request still hits a cold container at $LATEST.
+      this.invokeTarget = this.liveAlias
     } else {
       this.liveAlias = undefined
+      this.invokeTarget = this.fn
     }
+    // Suppress the "unused" warning when PC is off; the field is part of
+    // the public contract.
+    void this.invokeTarget
 
     new cdk.CfnOutput(this, 'FunctionArn', {
       value: this.fn.functionArn,
