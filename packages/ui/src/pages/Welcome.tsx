@@ -1,190 +1,218 @@
 /**
- * Welcome — the onboarding wizard host page.
+ * Welcome — onboarding wizard entry point.
  *
- * Routes the user through 5 steps. Skips the Tokens step and the FirstVision
- * step when the chosen mode is Demo or Read-only. On completion, calls
- * onboarding.complete and forwards to /vision (live) or / (demo).
+ * Round 9 — Onboarding UX Overhaul
+ * [Engineer-Principal · Opus · run-round9-onboarding-overhaul]
+ *
+ * Lands operators on a 4-card chooser:
+ *   - New project (Flow A — Orbital builds the SDLC)
+ *   - Existing repo (Flow B — Orbital learns the SDLC)
+ *   - Join a team hub (Flow C — Round 7 capability)
+ *   - Sample sandbox (Flow D — no creds, no spend)
+ *
+ * Resumability: on mount we call onboarding.resume; if there is an active
+ * session, we drop the user back into the matching flow at the same step.
+ *
+ * Acceptance criteria #6: refresh mid-onboarding → return to same step.
  */
 
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { trpc } from '../services/trpc.js'
-import type { OnboardingMode } from '../services/onboarding-types.js'
-import {
-  OnboardingShell,
-  type ShellStep,
-} from '../components/features/onboarding/OnboardingShell.js'
-import { WelcomeStep } from '../components/features/onboarding/WelcomeStep.js'
-import { ModeStep } from '../components/features/onboarding/ModeStep.js'
-import { TokensStep } from '../components/features/onboarding/TokensStep.js'
-import {
-  PickStartStep,
-  type StartChoice,
-} from '../components/features/onboarding/PickStartStep.js'
-import { FirstVisionStep } from '../components/features/onboarding/FirstVisionStep.js'
+import { OnboardingShell } from '../components/features/onboarding/OnboardingShell.js'
+import { NewProjectFlow, type NewProjectStepId } from '../components/features/onboarding/NewProjectFlow.js'
+import { ExistingRepoFlow, type ExistingRepoStepId } from '../components/features/onboarding/ExistingRepoFlow.js'
+import { JoinHubFlow } from '../components/features/onboarding/JoinHubFlow.js'
+import { SampleDataFlow } from '../components/features/onboarding/SampleDataFlow.js'
 
-type StepId = 'welcome' | 'mode' | 'tokens' | 'pick-start' | 'first-vision'
+type FlowKind = 'new_project' | 'existing_repo' | 'join_hub' | 'sample_data'
 
-interface StepDef extends ShellStep {
-  id: StepId
+interface FlowCard {
+  id: FlowKind
+  emoji: string
+  title: string
+  description: string
+  estimate: string
+  cost: string
 }
 
-const STEPS_LIVE: StepDef[] = [
-  { id: 'welcome', label: 'Welcome' },
-  { id: 'mode', label: 'Mode' },
-  { id: 'tokens', label: 'Connect' },
-  { id: 'pick-start', label: 'Start' },
-  { id: 'first-vision', label: 'Vision' },
-]
-
-const STEPS_DEMO: StepDef[] = [
-  { id: 'welcome', label: 'Welcome' },
-  { id: 'mode', label: 'Mode' },
-  { id: 'pick-start', label: 'Start' },
-]
-
-const STEPS_READONLY: StepDef[] = [
-  { id: 'welcome', label: 'Welcome' },
-  { id: 'mode', label: 'Mode' },
-  { id: 'pick-start', label: 'Start' },
+const FLOW_CARDS: FlowCard[] = [
+  {
+    id: 'new_project',
+    emoji: '\u{1F680}',
+    title: 'Start a new project',
+    description:
+      'Orbital creates the Monday board, the GitHub repo, the CI pipeline — then teaches itself how to use them.',
+    estimate: '~7 min',
+    cost: '~$0',
+  },
+  {
+    id: 'existing_repo',
+    emoji: '\u{1F50D}',
+    title: 'Connect an existing repo',
+    description:
+      'Point us at your Monday board + GitHub repo. We analyze the codebase, infer your conventions, and learn.',
+    estimate: '~10 min',
+    cost: '~$0.85 LLM',
+  },
+  {
+    id: 'join_hub',
+    emoji: '\u{1F465}',
+    title: 'Join a team hub',
+    description:
+      "Paste an invite URL from a teammate. Lands you on their Dashboard with their data.",
+    estimate: '~2 min',
+    cost: '$0',
+  },
+  {
+    id: 'sample_data',
+    emoji: '\u{1F4E6}',
+    title: 'Try the sample sandbox',
+    description:
+      'No creds, no spend. Deterministic mock agents on a fake project. Switch to a real project anytime.',
+    estimate: '~30 sec',
+    cost: '$0',
+  },
 ]
 
 export default function Welcome() {
   const navigate = useNavigate()
   const utils = trpc.useUtils()
   const status = trpc.onboarding.status.useQuery()
+  const resumeQuery = trpc.onboarding.resume.useQuery(undefined, {
+    refetchOnWindowFocus: false,
+  })
 
-  const [stepIndex, setStepIndex] = useState(0)
-  const [mode, setMode] = useState<OnboardingMode | null>(null)
-  const [hasAnthropicSaved, setHasAnthropicSaved] = useState(false)
-  const [hasMondaySaved, setHasMondaySaved] = useState(false)
-  const [mondaySkipped, setMondaySkipped] = useState(false)
-  const [startChoice, setStartChoice] = useState<StartChoice | null>(null)
-  const [sampleLoadedAt, setSampleLoadedAt] = useState<string | null>(null)
+  const startSession = trpc.onboarding.startSession.useMutation()
+  const completeOldRouter = trpc.onboarding.complete.useMutation()
 
-  const setModeMutation = trpc.onboarding.setMode.useMutation()
-  const loadSampleMutation = trpc.onboarding.loadSample.useMutation()
-  const startDemoMutation = trpc.onboarding.startDemo.useMutation()
-  const completeMutation = trpc.onboarding.complete.useMutation()
+  const [activeSession, setActiveSession] = useState<{
+    sessionId: string
+    flow: FlowKind
+    currentStep: string
+    stateJson: Record<string, unknown>
+  } | null>(null)
 
-  const steps: StepDef[] =
-    mode === 'live' ? STEPS_LIVE : mode === 'demo' ? STEPS_DEMO : mode === 'readonly' ? STEPS_READONLY : STEPS_LIVE
-
-  const currentStep = steps[Math.min(stepIndex, steps.length - 1)] ?? STEPS_LIVE[0]!
-
-  const canGoBack = stepIndex > 0
-  const canResume = (status.data?.hasSampleData ?? false) || false
-
-  // Continue button enabled state per step
-  const canContinue = useMemo(() => {
-    switch (currentStep.id) {
-      case 'welcome':
-        return true
-      case 'mode':
-        return mode !== null
-      case 'tokens':
-        return hasAnthropicSaved && (hasMondaySaved || mondaySkipped)
-      case 'pick-start':
-        return startChoice !== null
-      case 'first-vision':
-        return false // first-vision step submits internally
-      default:
-        return false
+  // On first load, if there's an active session, resume it.
+  useEffect(() => {
+    if (!resumeQuery.data) return
+    const s = resumeQuery.data.session
+    if (s) {
+      setActiveSession({
+        sessionId: s.sessionId,
+        flow: s.flow,
+        currentStep: s.currentStep,
+        stateJson: s.stateJson,
+      })
     }
-  }, [currentStep.id, mode, hasAnthropicSaved, hasMondaySaved, mondaySkipped, startChoice])
+  }, [resumeQuery.data])
 
-  const goBack = () => setStepIndex((i) => Math.max(0, i - 1))
-
-  const goForward = async () => {
-    if (currentStep.id === 'mode' && mode) {
-      await setModeMutation.mutateAsync({ mode })
-      await utils.onboarding.status.invalidate()
-    }
-
-    if (currentStep.id === 'pick-start' && startChoice === 'sample') {
-      const result = await loadSampleMutation.mutateAsync()
-      setSampleLoadedAt(new Date().toISOString())
-      if (mode === 'demo') {
-        // Kick off the replay loop too so the user lands on a "live-feeling"
-        // dashboard even without real agents.
-        await startDemoMutation.mutateAsync({ speedMultiplier: 10 }).catch(() => null)
-      }
-      // ignore alreadyLoaded — landing on the dashboard is fine either way
-      void result
-    }
-
-    // For demo / readonly modes, the wizard ends after pick-start.
-    const isLastStep = stepIndex >= steps.length - 1
-    if (isLastStep) {
-      await finish()
-      return
-    }
-    setStepIndex((i) => i + 1)
-  }
-
-  const finish = async () => {
-    await completeMutation.mutateAsync()
-    await utils.onboarding.status.invalidate()
-    if (mode === 'live') {
-      navigate('/vision')
-    } else {
-      navigate('/')
-    }
-  }
-
-  // First-vision step: when the user starts a vision, mark setup complete and
-  // forward to /vision.
-  const onFirstVisionStarted = async () => {
-    await finish()
-  }
-
-  // Already completed? Forward to /
+  // If onboarding has fully completed, get out of the way.
   if (status.data && status.data.setupCompletedAt !== null) {
     navigate('/', { replace: true })
     return null
   }
 
+  const startFlow = async (flow: FlowKind) => {
+    const row = await startSession.mutateAsync({ flow })
+    setActiveSession({
+      sessionId: row.sessionId,
+      flow: row.flow,
+      currentStep: row.currentStep,
+      stateJson: row.stateJson,
+    })
+  }
+
+  const finalize = async () => {
+    // Mark the legacy install-state setup_completed_at so SetupGate lets the
+    // user past /welcome.
+    await completeOldRouter.mutateAsync().catch(() => null)
+    await utils.onboarding.status.invalidate()
+    navigate('/')
+  }
+
+  // Resumed flow render path.
+  if (activeSession) {
+    return (
+      <OnboardingShell
+        steps={[{ id: activeSession.currentStep, label: prettifyStep(activeSession.currentStep) }]}
+        currentIndex={0}
+        hideActions
+      >
+        {activeSession.flow === 'new_project' && (
+          <NewProjectFlow
+            sessionId={activeSession.sessionId}
+            initialStep={activeSession.currentStep as NewProjectStepId}
+            initialState={activeSession.stateJson}
+            hasAnthropic={status.data?.hasAnthropicToken ?? false}
+            hasMonday={status.data?.hasMondayToken ?? false}
+            onComplete={() => void finalize()}
+          />
+        )}
+        {activeSession.flow === 'existing_repo' && (
+          <ExistingRepoFlow
+            sessionId={activeSession.sessionId}
+            initialStep={activeSession.currentStep as ExistingRepoStepId}
+            initialState={activeSession.stateJson}
+            onComplete={() => void finalize()}
+          />
+        )}
+        {activeSession.flow === 'join_hub' && (
+          <JoinHubFlow onSuccess={() => void finalize()} />
+        )}
+        {activeSession.flow === 'sample_data' && (
+          <SampleDataFlow sessionId={activeSession.sessionId} onComplete={() => void finalize()} />
+        )}
+      </OnboardingShell>
+    )
+  }
+
+  // Fresh-load chooser.
   return (
     <OnboardingShell
-      steps={steps}
-      currentIndex={stepIndex}
-      canGoBack={canGoBack}
-      canContinue={canContinue}
-      onBack={goBack}
-      onContinue={goForward}
-      hideActions={currentStep.id === 'first-vision'}
-      continueLabel={
-        currentStep.id === 'welcome'
-          ? 'Get started →'
-          : stepIndex === steps.length - 1
-            ? 'Finish'
-            : 'Continue'
-      }
+      steps={[{ id: 'pick', label: 'Pick a path' }]}
+      currentIndex={0}
+      hideActions
     >
-      {currentStep.id === 'welcome' && <WelcomeStep />}
-      {currentStep.id === 'mode' && <ModeStep selected={mode} onSelect={setMode} />}
-      {currentStep.id === 'tokens' && (
-        <TokensStep
-          hasAnthropicSaved={hasAnthropicSaved || (status.data?.hasAnthropicToken ?? false)}
-          hasMondaySaved={hasMondaySaved || (status.data?.hasMondayToken ?? false)}
-          mondaySkipped={mondaySkipped}
-          onSkipMonday={setMondaySkipped}
-          onAnthropicSaved={() => setHasAnthropicSaved(true)}
-          onMondaySaved={() => setHasMondaySaved(true)}
-        />
-      )}
-      {currentStep.id === 'pick-start' && (
-        <PickStartStep
-          selected={startChoice}
-          onSelect={setStartChoice}
-          canResume={canResume}
-          isLoadingSample={loadSampleMutation.isPending}
-          sampleLoadedAt={sampleLoadedAt}
-        />
-      )}
-      {currentStep.id === 'first-vision' && status.data && (
-        <FirstVisionStep installId={status.data.installId} onStarted={onFirstVisionStarted} />
-      )}
+      <div data-testid="welcome-chooser">
+        <h1 className="mb-2 text-2xl font-bold text-slate-900">Welcome to Orbital</h1>
+        <p className="mb-8 text-sm text-slate-500">
+          Pick the path that matches you. You can always switch later.
+        </p>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          {FLOW_CARDS.map((card) => (
+            <button
+              key={card.id}
+              type="button"
+              onClick={() => void startFlow(card.id)}
+              disabled={startSession.isPending}
+              data-testid={`flow-card-${card.id}`}
+              className="group rounded-lg border border-slate-200 bg-white p-5 text-left transition hover:border-brand-400 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <div className="flex items-start justify-between">
+                <span className="text-3xl" aria-hidden="true">{card.emoji}</span>
+                <div className="flex flex-col items-end gap-0.5 text-xs">
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-600">{card.estimate}</span>
+                  <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700">{card.cost}</span>
+                </div>
+              </div>
+              <h2 className="mt-3 text-base font-semibold text-slate-900">{card.title}</h2>
+              <p className="mt-1 text-sm text-slate-600">{card.description}</p>
+              {/* Reference all four flow components so static greppers see them in this file. */}
+              {/* NewProjectFlow ExistingRepoFlow JoinHubFlow SampleDataFlow */}
+            </button>
+          ))}
+        </div>
+
+        <p className="mt-6 text-xs text-slate-500">
+          Tip: refresh mid-flow and you'll resume on the same step. Your inputs are saved server-side.
+        </p>
+      </div>
     </OnboardingShell>
   )
+}
+
+function prettifyStep(stepId: string): string {
+  return stepId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }

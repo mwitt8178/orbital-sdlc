@@ -51,7 +51,7 @@ exports[`AuroraConstruct — snapshot mwitt template matches snapshot 1`] = `
   "Resources": {
     "AuroraAuroraSgF83104E3": {
       "Properties": {
-        "GroupDescription": "Orbital mwitt — Aurora cluster SG. Accepts connections from RDS Proxy only.",
+        "GroupDescription": "Orbital mwitt - Aurora cluster SG. Accepts connections from RDS Proxy only.",
         "GroupName": "orbital-mwitt-aurora",
         "SecurityGroupEgress": [
           {
@@ -713,7 +713,7 @@ exports[`AuroraConstruct — snapshot prod template matches snapshot 1`] = `
   "Resources": {
     "AuroraAuroraSgF83104E3": {
       "Properties": {
-        "GroupDescription": "Orbital prod — Aurora cluster SG. Accepts connections from RDS Proxy only.",
+        "GroupDescription": "Orbital prod - Aurora cluster SG. Accepts connections from RDS Proxy only.",
         "GroupName": "orbital-prod-aurora",
         "SecurityGroupEgress": [
           {

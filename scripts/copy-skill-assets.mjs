@@ -40,6 +40,20 @@ async function copyDir(from, to, predicate) {
   }
 }
 
+async function writeDistPackageJson() {
+  // Lambda runtime walks up from a .js file looking for the nearest
+  // package.json to decide ESM vs CJS. The orchestrator package.json is
+  // outside the asset bundle (only dist/ ships to Lambda), so without a
+  // dist/package.json Node falls back to CJS and chokes on `import` syntax.
+  // Write a minimal one each build so cold starts work in cloud.
+  const distDir = path.join(repoRoot, 'packages/orchestrator/dist')
+  await fs.mkdir(distDir, { recursive: true })
+  await fs.writeFile(
+    path.join(distDir, 'package.json'),
+    JSON.stringify({ type: 'module' }, null, 2) + '\n',
+  )
+}
+
 async function main() {
   for (const c of COPIES) {
     try {
@@ -50,6 +64,7 @@ async function main() {
     }
     await copyDir(c.from, c.to, c.glob)
   }
+  await writeDistPackageJson()
 }
 
 main().catch((e) => {

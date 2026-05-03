@@ -4,7 +4,7 @@ exports[`PerTenantKmsConstruct — snapshot template matches snapshot 1`] = `
 {
   "Outputs": {
     "PerTenantKmsTenantKeyAliasPrefix636879E5": {
-      "Description": "Per-tenant CMK alias prefix — mwitt",
+      "Description": "Per-tenant CMK alias prefix - mwitt",
       "Export": {
         "Name": "OrbitalHub-mwitt-TenantKeyAliasPrefix",
       },

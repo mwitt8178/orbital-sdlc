@@ -67,6 +67,8 @@ const envConfig: EnvConfig = {
   auroraMaxAcu: rawConfig.auroraMaxAcu ?? 4,
   logRetentionDays: rawConfig.logRetentionDays ?? 30,
   enableMfa: rawConfig.enableMfa ?? false,
+  // Default true — only set false for envs that explicitly opt out of custom DNS.
+  useCustomDomain: rawConfig.useCustomDomain ?? true,
 }
 
 // ---------------------------------------------------------------------------

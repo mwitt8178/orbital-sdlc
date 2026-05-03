@@ -1,6 +1,6 @@
 // [Engineer-Principal · Opus · run-round8-07-secrets-kms]
 /**
- * secrets.ts — Secrets Manager + KMS for the Orbital Hub.
+ * secrets.ts - Secrets Manager + KMS for the Orbital Hub.
  *
  * SecretsConstruct provisions per-env secrets:
  *   - HubMasterKeySecret      orbital/${env}/hub-master-key
@@ -12,14 +12,14 @@
  *   - DbMasterCredsSecret      orbital/${env}/db-master-creds
  *       Aurora master DB credentials. ATTACHED to the existing
  *       `props.dbMasterSecret` (created by AuroraConstruct in 8-02). We do NOT
- *       create a new secret here — that would duplicate creds. Instead we
+ *       create a new secret here - that would duplicate creds. Instead we
  *       configure auto-rotation on the existing secret using the RDS-built-in
  *       single-user rotation Lambda. Rotation interval: 30 days.
  *
  *   - GithubWebhookSecret      orbital/${env}/github-webhook-secret
  *       Random hex token shared with GitHub for HMAC verification of
  *       inbound webhooks. Rotated on demand from admin UI (no scheduled
- *       rotation Lambda — manual rotation only).
+ *       rotation Lambda - manual rotation only).
  *
  *   - CognitoAppClientSecret   orbital/${env}/cognito-app-client-secret
  *       Holds the Cognito User Pool app client secret IF the app client
@@ -39,7 +39,7 @@
  *   - cdk-nag-clean: every secret is encrypted with a CMK + has explicit
  *     resource policy (default).
  *
- * Per-tenant CMKs are NOT provisioned here — they are minted on demand by
+ * Per-tenant CMKs are NOT provisioned here - they are minted on demand by
  * the onboarding orchestrator. See per-tenant-kms.ts for the IAM permissions
  * granted to the onboarding Lambda.
  */
@@ -68,14 +68,14 @@ export interface SecretsConstructProps {
   readonly dbMasterSecret: secretsmanager.ISecret
   /**
    * Whether to provision the cognito app client secret.
-   * Defaults to false — Round 8-01 created a PKCE SPA client with no secret.
+   * Defaults to false - Round 8-01 created a PKCE SPA client with no secret.
    * Set true if the env uses an OAuth confidential client with a shared secret.
    */
   readonly provisionCognitoClientSecret?: boolean
 }
 
 /**
- * SecretsConstruct — env-level secrets, KMS CMK, and per-Lambda IAM grants.
+ * SecretsConstruct - env-level secrets, KMS CMK, and per-Lambda IAM grants.
  */
 export class SecretsConstruct extends Construct {
   /**
@@ -85,25 +85,25 @@ export class SecretsConstruct extends Construct {
   readonly hubMasterKeyEncryptionKey: kms.Key
 
   /**
-   * orbital/${env}/hub-master-key — Ed25519 keypair JSON.
+   * orbital/${env}/hub-master-key - Ed25519 keypair JSON.
    * Initialized empty; populated post-deploy by KeyRotationLambda.
    */
   readonly hubMasterKeySecret: secretsmanager.Secret
 
   /**
-   * orbital/${env}/db-master-creds — same secret as Aurora's masterSecret.
+   * orbital/${env}/db-master-creds - same secret as Aurora's masterSecret.
    * Exposed as `dbMasterSecret` for symmetry with other secret refs.
    */
   readonly dbMasterSecret: secretsmanager.ISecret
 
   /**
-   * orbital/${env}/github-webhook-secret — random hex token. CDK auto-generates
+   * orbital/${env}/github-webhook-secret - random hex token. CDK auto-generates
    * the initial value via secretStringTemplate; admin can rotate manually later.
    */
   readonly githubWebhookSecret: secretsmanager.Secret
 
   /**
-   * orbital/${env}/cognito-app-client-secret — only created if
+   * orbital/${env}/cognito-app-client-secret - only created if
    * `provisionCognitoClientSecret` is true.
    */
   readonly cognitoAppClientSecret?: secretsmanager.Secret
@@ -120,17 +120,17 @@ export class SecretsConstruct extends Construct {
     const isProd = props.envName === 'prod'
 
     // ------------------------------------------------------------------
-    // KMS CMK — encrypts the hub master key + cognito client secret
+    // KMS CMK - encrypts the hub master key + cognito client secret
     // ------------------------------------------------------------------
     this.hubMasterKeyEncryptionKey = new kms.Key(this, 'HubMasterKeyKmsCmk', {
-      description: `Orbital hub master key + cognito secret CMK — ${props.envName}`,
+      description: `Orbital hub master key + cognito secret CMK - ${props.envName}`,
       alias: `orbital-${props.envName}-hub-secrets`,
       enableKeyRotation: true,
       removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
     })
 
     // ------------------------------------------------------------------
-    // Hub master key — Ed25519 keypair JSON
+    // Hub master key - Ed25519 keypair JSON
     //
     // Initial value is a sentinel that signals "rotate me" to KeyRotationLambda.
     // The first invocation of the rotation Lambda replaces it with a real
@@ -158,7 +158,7 @@ export class SecretsConstruct extends Construct {
     })
 
     // ------------------------------------------------------------------
-    // DB master creds — reuse the secret from AuroraConstruct (8-02)
+    // DB master creds - reuse the secret from AuroraConstruct (8-02)
     // ------------------------------------------------------------------
     this.dbMasterSecret = props.dbMasterSecret
     this.dbRotationDays = 30
@@ -175,7 +175,7 @@ export class SecretsConstruct extends Construct {
       // The hosted-rotation lambda is a singleton inside the Secret; the API
       // requires us to declare it via addRotationSchedule.
       concreteDbSecret.addRotationSchedule('DbMasterCredsRotation', {
-        // Use the AWS-hosted single-user rotation Lambda — supported for PG.
+        // Use the AWS-hosted single-user rotation Lambda - supported for PG.
         hostedRotation: secretsmanager.HostedRotation.postgreSqlSingleUser({
           functionName: `orbital-${props.envName}-db-creds-rotation`,
           // Without a VPC, the hosted rotation Lambda runs in the public AWS
@@ -191,11 +191,11 @@ export class SecretsConstruct extends Construct {
     }
 
     // ------------------------------------------------------------------
-    // GitHub webhook secret — random hex
+    // GitHub webhook secret - random hex
     // ------------------------------------------------------------------
     this.githubWebhookSecret = new secretsmanager.Secret(this, 'GithubWebhookSecret', {
       secretName: `orbital/${props.envName}/github-webhook-secret`,
-      description: `Orbital ${props.envName} — GitHub webhook HMAC verification secret.`,
+      description: `Orbital ${props.envName} - GitHub webhook HMAC verification secret.`,
       encryptionKey: this.hubMasterKeyEncryptionKey,
       generateSecretString: {
         // 64 hex chars = 256-bit HMAC key
@@ -209,7 +209,7 @@ export class SecretsConstruct extends Construct {
     })
 
     // ------------------------------------------------------------------
-    // Cognito app client secret — only when explicitly requested
+    // Cognito app client secret - only when explicitly requested
     // ------------------------------------------------------------------
     if (props.provisionCognitoClientSecret) {
       this.cognitoAppClientSecret = new secretsmanager.Secret(
@@ -265,7 +265,7 @@ export class SecretsConstruct extends Construct {
    * Grant a Lambda role read access to ONLY the listed secrets.
    *
    * This is the principle of least privilege: each Lambda is given the minimum
-   * set of secrets it needs. Wrong scoping = secret leak across boundaries —
+   * set of secrets it needs. Wrong scoping = secret leak across boundaries -
    * tested via `secrets.test.ts` IAM scoping suite.
    *
    * Example:
@@ -318,7 +318,7 @@ export class SecretsConstruct extends Construct {
 }
 
 // ---------------------------------------------------------------------------
-// Helper exports — useful for callers building IAM policies elsewhere.
+// Helper exports - useful for callers building IAM policies elsewhere.
 // ---------------------------------------------------------------------------
 
 /**

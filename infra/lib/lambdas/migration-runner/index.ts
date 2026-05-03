@@ -22,11 +22,12 @@
  *
  * Custom resource protocol:
  *  - Returns { PhysicalResourceId, Data: { MigrationsApplied } } on success.
- *  - Throws on any failure — CDK custom resource framework marks the
+ *  - Throws on any failure - CDK custom resource framework marks the
  *    deployment as failed and rolls back.
  */
 
 import { Signer } from '@aws-sdk/rds-signer'
+import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager'
 import postgres from 'postgres'
 import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
@@ -149,7 +150,7 @@ async function readMigrationFiles(migrationsDir: string): Promise<Array<{ name: 
   const migrations = await Promise.all(
     files.map(async (filename) => {
       const content = await fs.readFile(path.join(migrationsDir, filename), 'utf8')
-      // Hash is the file stem (without .sql) — matches drizzle-orm convention
+      // Hash is the file stem (without .sql) - matches drizzle-orm convention
       const hash = filename.replace(/\.sql$/, '')
       return { name: filename, hash, sql: content }
     }),
@@ -168,7 +169,7 @@ async function applyMigration(
 ): Promise<void> {
   console.log(JSON.stringify({ level: 'info', msg: 'applying migration', migration: migration.name }))
 
-  // Run the migration SQL, then record it as applied — all in one transaction
+  // Run the migration SQL, then record it as applied - all in one transaction
   // so a failed migration does not leave a partial tracking entry.
   await sql.begin(async (tx) => {
     // Execute the migration SQL (may contain multiple statements)
@@ -199,30 +200,47 @@ export async function handler(
     logStream: context.logStreamName,
   }))
 
-  // On Delete: nothing to do — we never roll back migrations
+  // On Delete: nothing to do - we never roll back migrations
   if (event.RequestType === 'Delete') {
-    console.log(JSON.stringify({ level: 'info', msg: 'Delete event — skipping migrations (migrations are never rolled back)' }))
+    console.log(JSON.stringify({ level: 'info', msg: 'Delete event - skipping migrations (migrations are never rolled back)' }))
     return { PhysicalResourceId: physicalId, Data: { MigrationsApplied: 0 } }
   }
 
   // ------------------------------------------------------------------
-  // Connect to Aurora via RDS Proxy with IAM auth
+  // Connect DIRECTLY to Aurora (bypass RDS Proxy) with password auth.
+  //
+  // Why direct + password instead of proxy + IAM:
+  //   - Aurora master user (orbital_admin) can't use IAM auth out of the box;
+  //     it needs `GRANT rds_iam` first, which only the migration runner can do.
+  //   - Chicken-and-egg if we IAM-auth as master through the proxy.
+  //   - Password auth via the master secret is the standard migration-runner
+  //     pattern. Hub Lambdas continue to use proxy + IAM via a non-master
+  //     user this migration bootstraps.
+  //   - The master secret is rotated by AWS; we always read fresh.
   // ------------------------------------------------------------------
-  const hostname = requireEnv('RDS_PROXY_HOSTNAME')
-  const port = parseInt(process.env['RDS_PROXY_PORT'] ?? '5432', 10)
+  const hostname = requireEnv('CLUSTER_ENDPOINT')
+  const port = parseInt(process.env['CLUSTER_PORT'] ?? '5432', 10)
   const database = requireEnv('AURORA_DB_NAME')
-  const username = requireEnv('AURORA_USERNAME')
+  const secretArn = requireEnv('MASTER_SECRET_ARN')
 
-  // Generate IAM auth token (valid for 15 minutes)
-  const token = await getIamAuthToken()
+  // Fetch master credentials from Secrets Manager
+  const sm = new SecretsManagerClient({})
+  const secretRes = await sm.send(new GetSecretValueCommand({ SecretId: secretArn }))
+  const secretJson = JSON.parse(secretRes.SecretString ?? '{}') as {
+    username: string
+    password: string
+  }
+  if (!secretJson.username || !secretJson.password) {
+    throw new Error('MASTER_SECRET_ARN secret missing username or password fields')
+  }
 
   const sql = postgres({
     host: hostname,
     port,
     database,
-    username,
-    password: token,
-    ssl: { rejectUnauthorized: false }, // RDS proxy presents an AWS-managed cert
+    username: secretJson.username,
+    password: secretJson.password,
+    ssl: { rejectUnauthorized: false }, // Aurora presents an AWS-managed cert
     max: 1, // migration runner uses a single connection
     idle_timeout: 30,
     connect_timeout: 15,

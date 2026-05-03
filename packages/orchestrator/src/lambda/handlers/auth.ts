@@ -16,4 +16,6 @@ import { makeHandler } from '../lambda-trpc-adapter.js'
 import { adminRouter as authRouter } from '../../trpc/routers/admin.js'
 
 // Handler exported at module scope — cold start happens once per container
-export const handler = makeHandler(() => authRouter)
+// authRouter is a factory function (() => AdminRouter); call it here so
+// makeHandler receives () => AdminRouter, not () => (() => AdminRouter).
+export const handler = makeHandler(() => authRouter())

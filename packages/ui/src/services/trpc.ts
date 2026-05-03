@@ -61,12 +61,34 @@ function activeProjectHeaders(): Record<string, string> {
   return id ? { 'x-orbital-project-id': id } : {}
 }
 
+/**
+ * Resolve the tRPC URL for browser-side calls.
+ * Order:
+ *   1. VITE_TRPC_URL — explicit absolute URL set at build time
+ *      (e.g. https://hhhfb8pid6.execute-api.us-east-1.amazonaws.com/trpc)
+ *   2. fall back to relative /trpc (works when UI + API are same-origin,
+ *      e.g. self-host or when CloudFront has /trpc/* origin behavior).
+ */
+function trpcUrl(): string {
+  const env = (import.meta as ImportMeta & {
+    env?: Record<string, string | undefined>
+  }).env
+  const fromEnv = env?.['VITE_TRPC_URL']
+  if (fromEnv && fromEnv.length > 0) {
+    return fromEnv.endsWith('/trpc') ? fromEnv : `${fromEnv.replace(/\/$/, '')}/trpc`
+  }
+  return '/trpc'
+}
+
 export function createTrpcClient() {
   return trpcLocal.createClient({
     links: [
       httpBatchLink({
-        url: '/trpc',
+        url: trpcUrl(),
         headers: () => activeProjectHeaders(),
+        fetch(input, init) {
+          return fetch(input, { ...init, credentials: 'omit' })
+        },
       }),
     ],
   })
@@ -84,8 +106,11 @@ export function createTrpcHubClient() {
   return trpcHub.createClient({
     links: [
       httpBatchLink({
-        url: '/trpc',
+        url: trpcUrl(),
         headers: () => activeProjectHeaders(),
+        fetch(input, init) {
+          return fetch(input, { ...init, credentials: 'omit' })
+        },
       }),
     ],
   })

@@ -1,0 +1,614 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ApiGwWsConstruct — snapshot mwitt stack matches snapshot 1`] = `
+{
+  "Outputs": {
+    "WsApiWsApiIdE00A4F1E": {
+      "Description": "Orbital mwitt WebSocket API ID",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-WsApiId",
+      },
+      "Value": {
+        "Ref": "WsApiWebSocketApiCA630F5D",
+      },
+    },
+    "WsApiWsEndpointC1C53AD8": {
+      "Description": "Orbital mwitt WebSocket endpoint",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-WsEndpoint",
+      },
+      "Value": "wss://ws.mwitt.orbital.team.dev",
+    },
+    "WsApiWsMgmtEndpoint79E9006B": {
+      "Description": "Orbital mwitt WebSocket Management API endpoint (for postToConnection)",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-WsMgmtEndpoint",
+      },
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "WsApiWebSocketApiCA630F5D",
+            },
+            ".execute-api.us-east-1.amazonaws.com/$default",
+          ],
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "ConnectFnAllowApiGwConnect4CA71B39": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "ConnectFnEE9A9839",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:aws:execute-api:us-east-1:123456789012:",
+              {
+                "Ref": "WsApiWebSocketApiCA630F5D",
+              },
+              "/*/$connect",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "ConnectFnEE9A9839": {
+      "DependsOn": [
+        "ConnectFnServiceRole552163A9",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({ statusCode: 200 })",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "ConnectFnServiceRole552163A9",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "ConnectFnServiceRole552163A9": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "DefaultFn720B1353": {
+      "DependsOn": [
+        "DefaultFnServiceRoleEFDED6A8",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({ statusCode: 200 })",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "DefaultFnServiceRoleEFDED6A8",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "DefaultFnAllowApiGwDefault1897AEAF": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "DefaultFn720B1353",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:aws:execute-api:us-east-1:123456789012:",
+              {
+                "Ref": "WsApiWebSocketApiCA630F5D",
+              },
+              "/*/*",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "DefaultFnServiceRoleEFDED6A8": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "DisconnectFnAllowApiGwDisconnect65B0508C": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "DisconnectFnBC3B9222",
+            "Arn",
+          ],
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:aws:execute-api:us-east-1:123456789012:",
+              {
+                "Ref": "WsApiWebSocketApiCA630F5D",
+              },
+              "/*/$disconnect",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "DisconnectFnBC3B9222": {
+      "DependsOn": [
+        "DisconnectFnServiceRole124341EF",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({ statusCode: 200 })",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "DisconnectFnServiceRole124341EF",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "DisconnectFnServiceRole124341EF": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "TestCert9C74CCBF": {
+      "Properties": {
+        "DomainName": "mwitt.orbital.team.dev",
+        "DomainValidationOptions": [
+          {
+            "DomainName": "mwitt.orbital.team.dev",
+            "ValidationDomain": "team.dev",
+          },
+          {
+            "DomainName": "*.mwitt.orbital.team.dev",
+            "ValidationDomain": "team.dev",
+          },
+        ],
+        "SubjectAlternativeNames": [
+          "*.mwitt.orbital.team.dev",
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestWs-mwitt/TestCert",
+          },
+        ],
+        "ValidationMethod": "EMAIL",
+      },
+      "Type": "AWS::CertificateManager::Certificate",
+    },
+    "TestZone0C3926D9": {
+      "Properties": {
+        "Name": "mwitt.orbital.team.dev.",
+      },
+      "Type": "AWS::Route53::HostedZone",
+    },
+    "WsApiAccessLogs0BE7AFB4": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "/orbital/mwitt/apigateway/ws-api-access-logs",
+        "RetentionInDays": 30,
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "api-gateway-ws",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "WsApiConnectIntegration51647027": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "WsApiWebSocketApiCA630F5D",
+        },
+        "IntegrationMethod": "POST",
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":apigateway:us-east-1::lambda/path/2015-03-31/functions/",
+              {
+                "Fn::GetAtt": [
+                  "ConnectFnEE9A9839",
+                  "Arn",
+                ],
+              },
+              "/invocations",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "WsApiConnectRoute927A0222": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "WsApiWebSocketApiCA630F5D",
+        },
+        "AuthorizationType": "NONE",
+        "RouteKey": "$connect",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "WsApiConnectIntegration51647027",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "WsApiDefaultIntegration57F7F58C": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "WsApiWebSocketApiCA630F5D",
+        },
+        "IntegrationMethod": "POST",
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":apigateway:us-east-1::lambda/path/2015-03-31/functions/",
+              {
+                "Fn::GetAtt": [
+                  "DefaultFn720B1353",
+                  "Arn",
+                ],
+              },
+              "/invocations",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "WsApiDefaultRoute088E5945": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "WsApiWebSocketApiCA630F5D",
+        },
+        "AuthorizationType": "NONE",
+        "RouteKey": "$default",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "WsApiDefaultIntegration57F7F58C",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "WsApiDeployment159125D7": {
+      "DependsOn": [
+        "WsApiConnectRoute927A0222",
+        "WsApiDefaultRoute088E5945",
+        "WsApiDisconnectRouteBE751042",
+      ],
+      "Properties": {
+        "ApiId": {
+          "Ref": "WsApiWebSocketApiCA630F5D",
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Deployment",
+    },
+    "WsApiDisconnectIntegrationB42DBF5B": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "WsApiWebSocketApiCA630F5D",
+        },
+        "IntegrationMethod": "POST",
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":apigateway:us-east-1::lambda/path/2015-03-31/functions/",
+              {
+                "Fn::GetAtt": [
+                  "DisconnectFnBC3B9222",
+                  "Arn",
+                ],
+              },
+              "/invocations",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Integration",
+    },
+    "WsApiDisconnectRouteBE751042": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "WsApiWebSocketApiCA630F5D",
+        },
+        "AuthorizationType": "NONE",
+        "RouteKey": "$disconnect",
+        "Target": {
+          "Fn::Join": [
+            "",
+            [
+              "integrations/",
+              {
+                "Ref": "WsApiDisconnectIntegrationB42DBF5B",
+              },
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Route",
+    },
+    "WsApiStage72570D1F": {
+      "Properties": {
+        "AccessLogSettings": {
+          "DestinationArn": {
+            "Fn::GetAtt": [
+              "WsApiAccessLogs0BE7AFB4",
+              "Arn",
+            ],
+          },
+          "Format": "{"requestId":"$context.requestId","connectionId":"$context.connectionId","routeKey":"$context.routeKey","status":"$context.status","requestTime":"$context.requestTime","integrationLatency":"$context.integrationLatency","errorMessage":"$context.error.message","errorType":"$context.error.responseType"}",
+        },
+        "ApiId": {
+          "Ref": "WsApiWebSocketApiCA630F5D",
+        },
+        "AutoDeploy": true,
+        "DefaultRouteSettings": {
+          "DataTraceEnabled": false,
+          "DetailedMetricsEnabled": true,
+          "LoggingLevel": "INFO",
+          "ThrottlingBurstLimit": 200,
+          "ThrottlingRateLimit": 100,
+        },
+        "DeploymentId": {
+          "Ref": "WsApiDeployment159125D7",
+        },
+        "StageName": "$default",
+        "Tags": {
+          "orbital:component": "api-gateway-ws",
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Stage",
+    },
+    "WsApiWebSocketApiCA630F5D": {
+      "Properties": {
+        "Description": "Orbital mwitt WebSocket API",
+        "Name": "orbital-mwitt-ws",
+        "ProtocolType": "WEBSOCKET",
+        "RouteSelectionExpression": "$request.body.action",
+        "Tags": {
+          "orbital:component": "api-gateway-ws",
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::Api",
+    },
+    "WsApiWsApiMapping00F00D28": {
+      "Properties": {
+        "ApiId": {
+          "Ref": "WsApiWebSocketApiCA630F5D",
+        },
+        "DomainName": {
+          "Ref": "WsApiWsDomainName598CC8CE",
+        },
+        "Stage": {
+          "Ref": "WsApiStage72570D1F",
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::ApiMapping",
+    },
+    "WsApiWsDnsRecord49D3B968": {
+      "Properties": {
+        "AliasTarget": {
+          "DNSName": {
+            "Fn::GetAtt": [
+              "WsApiWsDomainName598CC8CE",
+              "RegionalDomainName",
+            ],
+          },
+          "EvaluateTargetHealth": false,
+          "HostedZoneId": {
+            "Fn::GetAtt": [
+              "WsApiWsDomainName598CC8CE",
+              "RegionalHostedZoneId",
+            ],
+          },
+        },
+        "HostedZoneId": {
+          "Ref": "TestZone0C3926D9",
+        },
+        "Name": "ws.mwitt.orbital.team.dev.",
+        "Type": "A",
+      },
+      "Type": "AWS::Route53::RecordSet",
+    },
+    "WsApiWsDomainName598CC8CE": {
+      "Properties": {
+        "DomainName": "ws.mwitt.orbital.team.dev",
+        "DomainNameConfigurations": [
+          {
+            "CertificateArn": {
+              "Ref": "TestCert9C74CCBF",
+            },
+            "EndpointType": "REGIONAL",
+            "SecurityPolicy": "TLS_1_2",
+          },
+        ],
+        "Tags": {
+          "orbital:component": "api-gateway-ws",
+        },
+      },
+      "Type": "AWS::ApiGatewayV2::DomainName",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;

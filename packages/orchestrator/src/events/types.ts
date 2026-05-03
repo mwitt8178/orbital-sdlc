@@ -760,6 +760,153 @@ export interface PeerHelpRequestedPayload {
 }
 
 // ---------------------------------------------------------------------------
+// Round 9 — Onboarding UX Overhaul event payload types
+// [Engineer-Principal · Opus · run-round9-onboarding-overhaul]
+// ---------------------------------------------------------------------------
+
+/**
+ * Emitted when an operator opens the welcome screen and picks a flow card.
+ * event_type: 'OnboardingStarted'
+ * aggregate_type: 'install', aggregate_id: install_id
+ */
+export interface OnboardingStartedPayload {
+  session_id: string
+  install_id: string
+  flow: 'new_project' | 'existing_repo' | 'join_hub' | 'sample_data'
+  started_at: string
+}
+
+/**
+ * Emitted after the Monday board (with full SDLC column set) has been created
+ * via Monday API for a new project.
+ * event_type: 'MondayBoardProvisioned'
+ * aggregate_type: 'install', aggregate_id: project_id
+ */
+export interface MondayBoardProvisionedPayload {
+  session_id: string
+  project_id: string
+  monday_board_id: string
+  monday_board_url: string
+  workspace_id: string | null
+  /** Number of canonical columns added to the board. */
+  columns_added: number
+  /** Number of workflow status values configured. */
+  status_values_added: number
+  /** Whether mapping_json was written (true == personas can use this board). */
+  mapping_persisted: boolean
+  provisioned_at: string
+}
+
+/**
+ * Emitted after the GitHub repo + initial CI workflow + first commit have
+ * been created via the GitHub API for a new project.
+ * event_type: 'GitRepoProvisioned'
+ * aggregate_type: 'install', aggregate_id: project_id
+ */
+export interface GitRepoProvisionedPayload {
+  session_id: string
+  project_id: string
+  owner: string
+  repo: string
+  html_url: string
+  default_branch: string
+  is_private: boolean
+  /** Whether the CI workflow file was committed. */
+  ci_workflow_committed: boolean
+  /** Whether the webhook was successfully registered. */
+  webhook_configured: boolean
+  /** Labels created on the repo (enhancement / bug / etc.). */
+  labels_created: string[]
+  provisioned_at: string
+}
+
+/**
+ * Emitted after Flow B's codebase analyzer has run (static + optional LLM).
+ * event_type: 'CodebaseAnalyzed'
+ * aggregate_type: 'install', aggregate_id: project_id
+ */
+export interface CodebaseAnalyzedPayload {
+  session_id: string
+  project_id: string
+  owner: string
+  repo: string
+  /** Detected stack labels (e.g. ['nodejs','typescript','react','tailwind']). */
+  stack: string[]
+  /** Detected test runner if any. */
+  test_runner: string | null
+  /** Detected commit-message convention. */
+  commit_convention: string | null
+  /** Detected branch model. */
+  branch_model: string | null
+  /** Number of CI workflows seen in .github/workflows. */
+  ci_workflow_count: number
+  /** Number of memory entries the seeder will create from this analysis. */
+  memory_entries_inferred: number
+  /** Whether the LLM-assisted step was opted into. */
+  llm_used: boolean
+  /** Approximate spend (USD) of the LLM step. 0 if not used. */
+  llm_cost_usd: number
+  analyzed_at: string
+}
+
+/**
+ * Emitted after the system-teaching step finishes — project CLAUDE.md
+ * generated, project memory seeded, persona-brief project context wired,
+ * skill bundle config written.
+ * event_type: 'ProjectSDLCConfigured'
+ * aggregate_type: 'install', aggregate_id: project_id
+ */
+export interface ProjectSDLCConfiguredPayload {
+  session_id: string
+  project_id: string
+  /** Whether project CLAUDE.md was committed to the repo. */
+  claude_md_committed: boolean
+  /** SHA of the commit that added CLAUDE.md, if any. */
+  claude_md_sha: string | null
+  /** Number of memory entries seeded by the seeder. */
+  memory_entries_seeded: number
+  /** Skills enabled for this project (from skills.json). */
+  skills_enabled: string[]
+  configured_at: string
+}
+
+/**
+ * Emitted when the wizard runs through to "Done". Carries time-per-step + any
+ * step abandonments for telemetry.
+ * event_type: 'OnboardingCompleted'
+ * aggregate_type: 'install', aggregate_id: install_id
+ */
+export interface OnboardingCompletedPayload {
+  session_id: string
+  install_id: string
+  project_id: string | null
+  flow: 'new_project' | 'existing_repo' | 'join_hub' | 'sample_data'
+  /** Map of step_id → ms-on-task. */
+  step_durations: Record<string, number>
+  /** Total wall-clock duration (ms) from session start to complete. */
+  total_duration_ms: number
+  completed_at: string
+}
+
+/**
+ * Emitted when the wizard is abandoned (user navigates away or explicitly
+ * cancels). Helps the team understand drop-off per step.
+ * event_type: 'OnboardingAbandoned'
+ * aggregate_type: 'install', aggregate_id: install_id
+ */
+export interface OnboardingAbandonedPayload {
+  session_id: string
+  install_id: string
+  flow: 'new_project' | 'existing_repo' | 'join_hub' | 'sample_data'
+  /** Last step the user was on before abandoning. */
+  last_step: string
+  /** Reason if explicitly cancelled. 'navigated_away' if implicit. */
+  reason: string
+  step_durations: Record<string, number>
+  abandoned_at: string
+}
+
+// ---------------------------------------------------------------------------
 // Cursor helpers
 // ---------------------------------------------------------------------------
 

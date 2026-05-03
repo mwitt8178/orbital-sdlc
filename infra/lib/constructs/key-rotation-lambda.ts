@@ -2,7 +2,7 @@
 /**
  * key-rotation-lambda.ts
  *
- * KeyRotationLambdaConstruct — Lambda that rotates the hub master Ed25519
+ * KeyRotationLambdaConstruct - Lambda that rotates the hub master Ed25519
  * keypair stored in `orbital/${env}/hub-master-key`, with EventBridge schedule
  * + Secrets Manager rotation wiring.
  *
@@ -51,7 +51,7 @@ export interface KeyRotationLambdaConstructProps {
   readonly encryptionKey: kms.IKey
   /** CloudWatch log retention in days. */
   readonly logRetentionDays: number
-  /** Optional VPC + SG — required if Lambda must reach Secrets Manager via VPC endpoints. */
+  /** Optional VPC + SG - required if Lambda must reach Secrets Manager via VPC endpoints. */
   readonly vpc?: ec2.IVpc
   /** Optional security group for the Lambda. */
   readonly securityGroup?: ec2.ISecurityGroup
@@ -92,7 +92,7 @@ export class KeyRotationLambdaConstruct extends Construct {
     })
 
     // ------------------------------------------------------------------
-    // IAM execution role — least privilege
+    // IAM execution role - least privilege
     // ------------------------------------------------------------------
     const executionRole = new iam.Role(this, 'ExecutionRole', {
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
@@ -107,7 +107,7 @@ export class KeyRotationLambdaConstruct extends Construct {
     props.hubMasterKeySecret.grantWrite(executionRole)
     props.encryptionKey.grantEncryptDecrypt(executionRole)
 
-    // The Lambda also needs to UpdateSecretVersionStage and DescribeSecret —
+    // The Lambda also needs to UpdateSecretVersionStage and DescribeSecret -
     // grantWrite includes PutSecretValue but not UpdateSecretVersionStage on
     // some CDK versions, so add it explicitly.
     executionRole.addToPolicy(
@@ -142,7 +142,7 @@ export class KeyRotationLambdaConstruct extends Construct {
       }),
     )
     // CreateSecret needs `*` resource at the action level since the secret
-    // doesn't exist yet — but we further constrain by name prefix via condition.
+    // doesn't exist yet - but we further constrain by name prefix via condition.
     executionRole.addToPolicy(
       new iam.PolicyStatement({
         actions: ['secretsmanager:CreateSecret'],
@@ -171,20 +171,25 @@ export class KeyRotationLambdaConstruct extends Construct {
               const { execSync } = require('child_process') as typeof import('child_process')
               const fs = require('fs') as typeof import('fs')
               const _path = require('path') as typeof import('path')
+              const cdkSafeEnv = {
+                ...process.env,
+                HOME: process.env.HOME || require('os').homedir(),
+              }
               try {
                 execSync('npm install --omit=dev', {
                   cwd: lambdaSourceDir,
                   stdio: ['ignore', 'inherit', 'inherit'],
+                  env: cdkSafeEnv,
                 })
                 // Quote outputDir to handle paths with spaces (e.g. "AI SDLC").
+                const quotedOut = JSON.stringify(outputDir)
                 execSync(
-                  'npx tsc --target ES2022 --module CommonJS --moduleResolution node ' +
-                    '--esModuleInterop true --skipLibCheck true --outDir "' +
-                    outputDir +
-                    '" index.ts',
+                  `npx tsc --target ES2022 --module CommonJS --moduleResolution node ` +
+                    `--esModuleInterop true --skipLibCheck true --outDir ${quotedOut} index.ts`,
                   {
                     cwd: lambdaSourceDir,
                     stdio: ['ignore', 'inherit', 'inherit'],
+                    env: cdkSafeEnv,
                   },
                 )
                 const srcModules = _path.join(lambdaSourceDir, 'node_modules')
@@ -226,7 +231,7 @@ export class KeyRotationLambdaConstruct extends Construct {
     })
 
     // ------------------------------------------------------------------
-    // EventBridge schedule — every N days
+    // EventBridge schedule - every N days
     //
     // Use a rate expression. Daily resolution is fine for 90-day rotation.
     // ------------------------------------------------------------------

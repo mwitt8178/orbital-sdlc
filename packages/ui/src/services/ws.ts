@@ -46,10 +46,13 @@ class WebSocketClient {
   private doConnect(): void {
     const { setStatus, cursor, reconnectAttempts } = useConnectionStore.getState()
 
-    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const host = window.location.host
-    const cursorParam = cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''
-    const url = `${proto}//${host}/ws${cursorParam}`
+    const url = buildWsUrl(cursor)
+    if (url === null) {
+      // No WS endpoint configured for this build (e.g. CloudFront-only deploy
+      // before VITE_WS_URL is wired). Stop quietly rather than error-looping.
+      setStatus('disconnected')
+      return
+    }
 
     setStatus(reconnectAttempts === 0 ? 'connecting' : 'reconnecting')
 
@@ -412,6 +415,40 @@ function dispatchVisionEvent(env: EventEnvelope, p: Record<string, unknown>): vo
       vision.appendMessage(msg)
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// URL resolution
+// ---------------------------------------------------------------------------
+
+/**
+ * Build the WS URL for this build. Resolution order:
+ *   1. VITE_WS_URL — explicit absolute URL (e.g. wss://abc.execute-api...)
+ *      The build pipeline injects this for AWS deployments.
+ *   2. Same-origin /ws — local-first deploys where the orchestrator serves
+ *      the UI and a same-origin WebSocket on the same port.
+ *
+ * Returns null when there is neither a configured URL nor a usable origin
+ * (e.g. SSR or test). Callers must treat null as "WS disabled for this build".
+ */
+function buildWsUrl(cursor: string | null): string | null {
+  const env = (import.meta as ImportMeta & {
+    env?: Record<string, string | undefined>
+  }).env
+
+  const fromEnv = env?.['VITE_WS_URL']
+  const cursorParam = cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''
+
+  if (fromEnv && fromEnv.length > 0) {
+    const base = fromEnv.replace(/\/$/, '')
+    // Allow either an exact endpoint (wss://host/ws) or a host root (wss://host).
+    const withPath = base.endsWith('/ws') ? base : `${base}/ws`
+    return `${withPath}${cursorParam}`
+  }
+
+  if (typeof window === 'undefined' || !window.location?.host) return null
+  const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${proto}//${window.location.host}/ws${cursorParam}`
 }
 
 // ---------------------------------------------------------------------------

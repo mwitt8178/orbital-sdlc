@@ -1,0 +1,1886 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`EventBusConstruct — snapshot mwitt stack matches snapshot 1`] = `
+{
+  "Outputs": {
+    "EventBusEventBusName84AD2161": {
+      "Description": "Orbital mwitt EventBridge bus name",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-EventBusName",
+      },
+      "Value": {
+        "Ref": "EventBusE9ABF535",
+      },
+    },
+    "EventBusSnsTopicArnA6726405": {
+      "Description": "Orbital mwitt events SNS topic ARN",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-EventsTopicArn",
+      },
+      "Value": {
+        "Ref": "EventBusSnsTopic414A08E1",
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "ConsumerauditindexerC0ABFFCE": {
+      "DependsOn": [
+        "ConsumerauditindexerServiceRoleDefaultPolicy35679785",
+        "ConsumerauditindexerServiceRoleEEE7C1F5",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "ConsumerauditindexerServiceRoleEEE7C1F5",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "ConsumerauditindexerServiceRoleDefaultPolicy35679785": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sqs:ReceiveMessage",
+                "sqs:ChangeMessageVisibility",
+                "sqs:GetQueueUrl",
+                "sqs:DeleteMessage",
+                "sqs:GetQueueAttributes",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "EventBusAuditIndexerQueue9913CBE4",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": "kms:Decrypt",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "EventBusEventBusKeyED41AAAB",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ConsumerauditindexerServiceRoleDefaultPolicy35679785",
+        "Roles": [
+          {
+            "Ref": "ConsumerauditindexerServiceRoleEEE7C1F5",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ConsumerauditindexerServiceRoleEEE7C1F5": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ConsumerauditindexerSqsEventSourceTestEventBusmwittEventBusAuditIndexerQueue8AFD25AADF7681BA": {
+      "Properties": {
+        "BatchSize": 10,
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "EventBusAuditIndexerQueue9913CBE4",
+            "Arn",
+          ],
+        },
+        "FunctionName": {
+          "Ref": "ConsumerauditindexerC0ABFFCE",
+        },
+        "FunctionResponseTypes": [
+          "ReportBatchItemFailures",
+        ],
+        "MaximumBatchingWindowInSeconds": 5,
+      },
+      "Type": "AWS::Lambda::EventSourceMapping",
+    },
+    "Consumerdefectrouter69D073C2": {
+      "DependsOn": [
+        "ConsumerdefectrouterServiceRoleDefaultPolicy07FBD079",
+        "ConsumerdefectrouterServiceRole6CB855D5",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "ConsumerdefectrouterServiceRole6CB855D5",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "ConsumerdefectrouterServiceRole6CB855D5": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ConsumerdefectrouterServiceRoleDefaultPolicy07FBD079": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sqs:ReceiveMessage",
+                "sqs:ChangeMessageVisibility",
+                "sqs:GetQueueUrl",
+                "sqs:DeleteMessage",
+                "sqs:GetQueueAttributes",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "EventBusDefectRouterQueue99EE3ACE",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": "kms:Decrypt",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "EventBusEventBusKeyED41AAAB",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ConsumerdefectrouterServiceRoleDefaultPolicy07FBD079",
+        "Roles": [
+          {
+            "Ref": "ConsumerdefectrouterServiceRole6CB855D5",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ConsumerdefectrouterSqsEventSourceTestEventBusmwittEventBusDefectRouterQueue56C69CF57F7F96C0": {
+      "Properties": {
+        "BatchSize": 10,
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "EventBusDefectRouterQueue99EE3ACE",
+            "Arn",
+          ],
+        },
+        "FunctionName": {
+          "Ref": "Consumerdefectrouter69D073C2",
+        },
+        "FunctionResponseTypes": [
+          "ReportBatchItemFailures",
+        ],
+        "MaximumBatchingWindowInSeconds": 5,
+      },
+      "Type": "AWS::Lambda::EventSourceMapping",
+    },
+    "ConsumermemoryrecorderFD89DB26": {
+      "DependsOn": [
+        "ConsumermemoryrecorderServiceRoleDefaultPolicyCA37C6DB",
+        "ConsumermemoryrecorderServiceRole5CF902C3",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "ConsumermemoryrecorderServiceRole5CF902C3",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "ConsumermemoryrecorderServiceRole5CF902C3": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ConsumermemoryrecorderServiceRoleDefaultPolicyCA37C6DB": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sqs:ReceiveMessage",
+                "sqs:ChangeMessageVisibility",
+                "sqs:GetQueueUrl",
+                "sqs:DeleteMessage",
+                "sqs:GetQueueAttributes",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "EventBusMemoryRecorderQueueB57AE84E",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": "kms:Decrypt",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "EventBusEventBusKeyED41AAAB",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ConsumermemoryrecorderServiceRoleDefaultPolicyCA37C6DB",
+        "Roles": [
+          {
+            "Ref": "ConsumermemoryrecorderServiceRole5CF902C3",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ConsumermemoryrecorderSqsEventSourceTestEventBusmwittEventBusMemoryRecorderQueue1EF6A4D5C551D8C8": {
+      "Properties": {
+        "BatchSize": 10,
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "EventBusMemoryRecorderQueueB57AE84E",
+            "Arn",
+          ],
+        },
+        "FunctionName": {
+          "Ref": "ConsumermemoryrecorderFD89DB26",
+        },
+        "FunctionResponseTypes": [
+          "ReportBatchItemFailures",
+        ],
+        "MaximumBatchingWindowInSeconds": 5,
+      },
+      "Type": "AWS::Lambda::EventSourceMapping",
+    },
+    "Consumerreplayrecorder47DD25DF": {
+      "DependsOn": [
+        "ConsumerreplayrecorderServiceRoleDefaultPolicy171AD617",
+        "ConsumerreplayrecorderServiceRole193CD4A2",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "ConsumerreplayrecorderServiceRole193CD4A2",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "ConsumerreplayrecorderServiceRole193CD4A2": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ConsumerreplayrecorderServiceRoleDefaultPolicy171AD617": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sqs:ReceiveMessage",
+                "sqs:ChangeMessageVisibility",
+                "sqs:GetQueueUrl",
+                "sqs:DeleteMessage",
+                "sqs:GetQueueAttributes",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "EventBusReplayRecorderQueue5C868DF5",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": "kms:Decrypt",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "EventBusEventBusKeyED41AAAB",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ConsumerreplayrecorderServiceRoleDefaultPolicy171AD617",
+        "Roles": [
+          {
+            "Ref": "ConsumerreplayrecorderServiceRole193CD4A2",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ConsumerreplayrecorderSqsEventSourceTestEventBusmwittEventBusReplayRecorderQueue950B8B387BB43953": {
+      "Properties": {
+        "BatchSize": 10,
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "EventBusReplayRecorderQueue5C868DF5",
+            "Arn",
+          ],
+        },
+        "FunctionName": {
+          "Ref": "Consumerreplayrecorder47DD25DF",
+        },
+        "FunctionResponseTypes": [
+          "ReportBatchItemFailures",
+        ],
+        "MaximumBatchingWindowInSeconds": 5,
+      },
+      "Type": "AWS::Lambda::EventSourceMapping",
+    },
+    "EventBusAuditIndexerDlq3AA16EB1": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "KmsMasterKeyId": {
+          "Fn::GetAtt": [
+            "EventBusEventBusKeyED41AAAB",
+            "Arn",
+          ],
+        },
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "orbital-mwitt-audit-indexer-dlq",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "event-bus",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "EventBusAuditIndexerDlqAlarm8AFE277C": {
+      "Properties": {
+        "AlarmDescription": "DLQ for audit-indexer consumer has messages - check for processing failures",
+        "AlarmName": "orbital-mwitt-audit-indexer-dlq-depth",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": {
+              "Fn::GetAtt": [
+                "EventBusAuditIndexerDlq3AA16EB1",
+                "QueueName",
+              ],
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "ApproximateNumberOfMessagesVisible",
+        "Namespace": "AWS/SQS",
+        "Period": 60,
+        "Statistic": "Maximum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "event-bus",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "EventBusAuditIndexerQueue9913CBE4": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "KmsMasterKeyId": {
+          "Fn::GetAtt": [
+            "EventBusEventBusKeyED41AAAB",
+            "Arn",
+          ],
+        },
+        "MessageRetentionPeriod": 345600,
+        "QueueName": "orbital-mwitt-audit-indexer",
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "EventBusAuditIndexerDlq3AA16EB1",
+              "Arn",
+            ],
+          },
+          "maxReceiveCount": 3,
+        },
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "event-bus",
+          },
+        ],
+        "VisibilityTimeout": 60,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "EventBusAuditIndexerQueuePolicy7B53CB12": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Ref": "EventBusSnsTopic414A08E1",
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sns.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "EventBusAuditIndexerQueue9913CBE4",
+                  "Arn",
+                ],
+              },
+              "Sid": "AllowSnsPublish",
+            },
+            {
+              "Action": "sqs:SendMessage",
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Ref": "EventBusSnsTopic414A08E1",
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sns.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "EventBusAuditIndexerQueue9913CBE4",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Queues": [
+          {
+            "Ref": "EventBusAuditIndexerQueue9913CBE4",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::QueuePolicy",
+    },
+    "EventBusAuditIndexerQueueTestEventBusmwittEventBusSnsTopic5D884EBFDF266373": {
+      "DependsOn": [
+        "EventBusAuditIndexerQueuePolicy7B53CB12",
+      ],
+      "Properties": {
+        "Endpoint": {
+          "Fn::GetAtt": [
+            "EventBusAuditIndexerQueue9913CBE4",
+            "Arn",
+          ],
+        },
+        "FilterPolicy": {
+          "event_type": [
+            {
+              "exists": true,
+            },
+          ],
+        },
+        "Protocol": "sqs",
+        "RawMessageDelivery": false,
+        "TopicArn": {
+          "Ref": "EventBusSnsTopic414A08E1",
+        },
+      },
+      "Type": "AWS::SNS::Subscription",
+    },
+    "EventBusDefectRouterDlqAlarm708BD533": {
+      "Properties": {
+        "AlarmDescription": "DLQ for defect-router consumer has messages - check for processing failures",
+        "AlarmName": "orbital-mwitt-defect-router-dlq-depth",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": {
+              "Fn::GetAtt": [
+                "EventBusDefectRouterDlqBFDE2E85",
+                "QueueName",
+              ],
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "ApproximateNumberOfMessagesVisible",
+        "Namespace": "AWS/SQS",
+        "Period": 60,
+        "Statistic": "Maximum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "event-bus",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "EventBusDefectRouterDlqBFDE2E85": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "KmsMasterKeyId": {
+          "Fn::GetAtt": [
+            "EventBusEventBusKeyED41AAAB",
+            "Arn",
+          ],
+        },
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "orbital-mwitt-defect-router-dlq",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "event-bus",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "EventBusDefectRouterQueue99EE3ACE": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "KmsMasterKeyId": {
+          "Fn::GetAtt": [
+            "EventBusEventBusKeyED41AAAB",
+            "Arn",
+          ],
+        },
+        "MessageRetentionPeriod": 345600,
+        "QueueName": "orbital-mwitt-defect-router",
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "EventBusDefectRouterDlqBFDE2E85",
+              "Arn",
+            ],
+          },
+          "maxReceiveCount": 3,
+        },
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "event-bus",
+          },
+        ],
+        "VisibilityTimeout": 60,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "EventBusDefectRouterQueuePolicyBB4D4897": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Ref": "EventBusSnsTopic414A08E1",
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sns.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "EventBusDefectRouterQueue99EE3ACE",
+                  "Arn",
+                ],
+              },
+              "Sid": "AllowSnsPublish",
+            },
+            {
+              "Action": "sqs:SendMessage",
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Ref": "EventBusSnsTopic414A08E1",
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sns.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "EventBusDefectRouterQueue99EE3ACE",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Queues": [
+          {
+            "Ref": "EventBusDefectRouterQueue99EE3ACE",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::QueuePolicy",
+    },
+    "EventBusDefectRouterQueueTestEventBusmwittEventBusSnsTopic5D884EBF090012F8": {
+      "DependsOn": [
+        "EventBusDefectRouterQueuePolicyBB4D4897",
+      ],
+      "Properties": {
+        "Endpoint": {
+          "Fn::GetAtt": [
+            "EventBusDefectRouterQueue99EE3ACE",
+            "Arn",
+          ],
+        },
+        "FilterPolicy": {
+          "event_type": [
+            "DefectReported",
+          ],
+        },
+        "Protocol": "sqs",
+        "RawMessageDelivery": false,
+        "TopicArn": {
+          "Ref": "EventBusSnsTopic414A08E1",
+        },
+      },
+      "Type": "AWS::SNS::Subscription",
+    },
+    "EventBusE9ABF535": {
+      "Properties": {
+        "Name": "orbital-mwitt",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "event-bus",
+          },
+        ],
+      },
+      "Type": "AWS::Events::EventBus",
+    },
+    "EventBusEventBusKeyAliasAA92FEF1": {
+      "Properties": {
+        "AliasName": "alias/orbital-mwitt-event-bus",
+        "TargetKeyId": {
+          "Fn::GetAtt": [
+            "EventBusEventBusKeyED41AAAB",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::KMS::Alias",
+    },
+    "EventBusEventBusKeyED41AAAB": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Description": "Orbital mwitt - SQS queues + DLQs encryption key",
+        "EnableKeyRotation": true,
+        "KeyPolicy": {
+          "Statement": [
+            {
+              "Action": "kms:*",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":iam::123456789012:root",
+                    ],
+                  ],
+                },
+              },
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "kms:GenerateDataKey*",
+                "kms:Decrypt",
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "scheduler.amazonaws.com",
+              },
+              "Resource": "*",
+              "Sid": "AllowEventBridgeScheduler",
+            },
+            {
+              "Action": [
+                "kms:Decrypt",
+                "kms:GenerateDataKey",
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sns.amazonaws.com",
+              },
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "event-bus",
+          },
+        ],
+      },
+      "Type": "AWS::KMS::Key",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "EventBusHygieneSweepDlqBD9899E4": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "KmsMasterKeyId": {
+          "Fn::GetAtt": [
+            "EventBusEventBusKeyED41AAAB",
+            "Arn",
+          ],
+        },
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "orbital-mwitt-hygiene-sweep-dlq",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "event-bus",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "EventBusHygieneSweepDlqPolicy1CA7A656": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Fn::GetAtt": [
+                      "EventBusHygieneSweepRuleE5521C6D",
+                      "Arn",
+                    ],
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "EventBusHygieneSweepDlqBD9899E4",
+                  "Arn",
+                ],
+              },
+              "Sid": "AllowEventRuleTestEventBusmwittEventBusHygieneSweepRuleA756F89A",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Queues": [
+          {
+            "Ref": "EventBusHygieneSweepDlqBD9899E4",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::QueuePolicy",
+    },
+    "EventBusHygieneSweepRuleAllowEventRuleTestEventBusmwittHygieneSweepD2DAACBC324FDC03": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "HygieneSweepD58E2A97",
+            "Arn",
+          ],
+        },
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "EventBusHygieneSweepRuleE5521C6D",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "EventBusHygieneSweepRuleE5521C6D": {
+      "Properties": {
+        "Description": "Orbital mwitt - hourly stale worker + expired session cleanup",
+        "Name": "hygiene-sweep-mwitt",
+        "ScheduleExpression": "rate(1 hour)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "HygieneSweepD58E2A97",
+                "Arn",
+              ],
+            },
+            "DeadLetterConfig": {
+              "Arn": {
+                "Fn::GetAtt": [
+                  "EventBusHygieneSweepDlqBD9899E4",
+                  "Arn",
+                ],
+              },
+            },
+            "Id": "Target0",
+            "RetryPolicy": {
+              "MaximumRetryAttempts": 2,
+            },
+          },
+        ],
+      },
+      "Type": "AWS::Events::Rule",
+    },
+    "EventBusMemoryRecorderDlq20E993C7": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "KmsMasterKeyId": {
+          "Fn::GetAtt": [
+            "EventBusEventBusKeyED41AAAB",
+            "Arn",
+          ],
+        },
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "orbital-mwitt-memory-recorder-dlq",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "event-bus",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "EventBusMemoryRecorderDlqAlarm3CCFCA6F": {
+      "Properties": {
+        "AlarmDescription": "DLQ for memory-recorder consumer has messages - check for processing failures",
+        "AlarmName": "orbital-mwitt-memory-recorder-dlq-depth",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": {
+              "Fn::GetAtt": [
+                "EventBusMemoryRecorderDlq20E993C7",
+                "QueueName",
+              ],
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "ApproximateNumberOfMessagesVisible",
+        "Namespace": "AWS/SQS",
+        "Period": 60,
+        "Statistic": "Maximum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "event-bus",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "EventBusMemoryRecorderQueueB57AE84E": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "KmsMasterKeyId": {
+          "Fn::GetAtt": [
+            "EventBusEventBusKeyED41AAAB",
+            "Arn",
+          ],
+        },
+        "MessageRetentionPeriod": 345600,
+        "QueueName": "orbital-mwitt-memory-recorder",
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "EventBusMemoryRecorderDlq20E993C7",
+              "Arn",
+            ],
+          },
+          "maxReceiveCount": 3,
+        },
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "event-bus",
+          },
+        ],
+        "VisibilityTimeout": 60,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "EventBusMemoryRecorderQueuePolicy6DEBA29D": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Ref": "EventBusSnsTopic414A08E1",
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sns.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "EventBusMemoryRecorderQueueB57AE84E",
+                  "Arn",
+                ],
+              },
+              "Sid": "AllowSnsPublish",
+            },
+            {
+              "Action": "sqs:SendMessage",
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Ref": "EventBusSnsTopic414A08E1",
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sns.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "EventBusMemoryRecorderQueueB57AE84E",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Queues": [
+          {
+            "Ref": "EventBusMemoryRecorderQueueB57AE84E",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::QueuePolicy",
+    },
+    "EventBusMemoryRecorderQueueTestEventBusmwittEventBusSnsTopic5D884EBF1E446317": {
+      "DependsOn": [
+        "EventBusMemoryRecorderQueuePolicy6DEBA29D",
+      ],
+      "Properties": {
+        "Endpoint": {
+          "Fn::GetAtt": [
+            "EventBusMemoryRecorderQueueB57AE84E",
+            "Arn",
+          ],
+        },
+        "FilterPolicy": {
+          "event_type": [
+            "MemoryEntryRecorded",
+            "MemoryRetrievedForBrief",
+          ],
+        },
+        "Protocol": "sqs",
+        "RawMessageDelivery": false,
+        "TopicArn": {
+          "Ref": "EventBusSnsTopic414A08E1",
+        },
+      },
+      "Type": "AWS::SNS::Subscription",
+    },
+    "EventBusReplayRecorderDlq3D57CCB1": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "KmsMasterKeyId": {
+          "Fn::GetAtt": [
+            "EventBusEventBusKeyED41AAAB",
+            "Arn",
+          ],
+        },
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "orbital-mwitt-replay-recorder-dlq",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "event-bus",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "EventBusReplayRecorderDlqAlarm3FE30882": {
+      "Properties": {
+        "AlarmDescription": "DLQ for replay-recorder consumer has messages - check for processing failures",
+        "AlarmName": "orbital-mwitt-replay-recorder-dlq-depth",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": {
+              "Fn::GetAtt": [
+                "EventBusReplayRecorderDlq3D57CCB1",
+                "QueueName",
+              ],
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "ApproximateNumberOfMessagesVisible",
+        "Namespace": "AWS/SQS",
+        "Period": 60,
+        "Statistic": "Maximum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "event-bus",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "EventBusReplayRecorderQueue5C868DF5": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "KmsMasterKeyId": {
+          "Fn::GetAtt": [
+            "EventBusEventBusKeyED41AAAB",
+            "Arn",
+          ],
+        },
+        "MessageRetentionPeriod": 345600,
+        "QueueName": "orbital-mwitt-replay-recorder",
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "EventBusReplayRecorderDlq3D57CCB1",
+              "Arn",
+            ],
+          },
+          "maxReceiveCount": 3,
+        },
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "event-bus",
+          },
+        ],
+        "VisibilityTimeout": 60,
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "EventBusReplayRecorderQueuePolicyEF8EE15A": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Ref": "EventBusSnsTopic414A08E1",
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sns.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "EventBusReplayRecorderQueue5C868DF5",
+                  "Arn",
+                ],
+              },
+              "Sid": "AllowSnsPublish",
+            },
+            {
+              "Action": "sqs:SendMessage",
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Ref": "EventBusSnsTopic414A08E1",
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sns.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "EventBusReplayRecorderQueue5C868DF5",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Queues": [
+          {
+            "Ref": "EventBusReplayRecorderQueue5C868DF5",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::QueuePolicy",
+    },
+    "EventBusReplayRecorderQueueTestEventBusmwittEventBusSnsTopic5D884EBF6C87BC72": {
+      "DependsOn": [
+        "EventBusReplayRecorderQueuePolicyEF8EE15A",
+      ],
+      "Properties": {
+        "Endpoint": {
+          "Fn::GetAtt": [
+            "EventBusReplayRecorderQueue5C868DF5",
+            "Arn",
+          ],
+        },
+        "FilterPolicy": {
+          "event_type": [
+            "ReplayCaptureCompleted",
+          ],
+        },
+        "Protocol": "sqs",
+        "RawMessageDelivery": false,
+        "TopicArn": {
+          "Ref": "EventBusSnsTopic414A08E1",
+        },
+      },
+      "Type": "AWS::SNS::Subscription",
+    },
+    "EventBusRetroRunnerDlq66FB4349": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "KmsMasterKeyId": {
+          "Fn::GetAtt": [
+            "EventBusEventBusKeyED41AAAB",
+            "Arn",
+          ],
+        },
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "orbital-mwitt-retro-runner-dlq",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "event-bus",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "EventBusRetroRunnerDlqPolicy2093475D": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Fn::GetAtt": [
+                      "EventBusRetroRunnerRule100D08C8",
+                      "Arn",
+                    ],
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "EventBusRetroRunnerDlq66FB4349",
+                  "Arn",
+                ],
+              },
+              "Sid": "AllowEventRuleTestEventBusmwittEventBusRetroRunnerRuleE5CDE2CF",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Queues": [
+          {
+            "Ref": "EventBusRetroRunnerDlq66FB4349",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::QueuePolicy",
+    },
+    "EventBusRetroRunnerRule100D08C8": {
+      "Properties": {
+        "Description": "Orbital mwitt - trigger per-tenant 5pm retro ceremony check",
+        "Name": "retro-runner-mwitt",
+        "ScheduleExpression": "cron(0 17 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "RetroRunner8C75D1AC",
+                "Arn",
+              ],
+            },
+            "DeadLetterConfig": {
+              "Arn": {
+                "Fn::GetAtt": [
+                  "EventBusRetroRunnerDlq66FB4349",
+                  "Arn",
+                ],
+              },
+            },
+            "Id": "Target0",
+            "RetryPolicy": {
+              "MaximumRetryAttempts": 2,
+            },
+          },
+        ],
+      },
+      "Type": "AWS::Events::Rule",
+    },
+    "EventBusRetroRunnerRuleAllowEventRuleTestEventBusmwittRetroRunner27AB6E2B14E33E89": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "RetroRunner8C75D1AC",
+            "Arn",
+          ],
+        },
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "EventBusRetroRunnerRule100D08C8",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "EventBusSnsKey52D3B57B": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Description": "Orbital mwitt - SNS topic encryption key",
+        "EnableKeyRotation": true,
+        "KeyPolicy": {
+          "Statement": [
+            {
+              "Action": "kms:*",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":iam::123456789012:root",
+                    ],
+                  ],
+                },
+              },
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "event-bus",
+          },
+        ],
+      },
+      "Type": "AWS::KMS::Key",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "EventBusSnsKeyAlias2E4DBCB2": {
+      "Properties": {
+        "AliasName": "alias/orbital-mwitt-event-bus-sns",
+        "TargetKeyId": {
+          "Fn::GetAtt": [
+            "EventBusSnsKey52D3B57B",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::KMS::Alias",
+    },
+    "EventBusSnsTopic414A08E1": {
+      "Properties": {
+        "DisplayName": "Orbital mwitt events",
+        "KmsMasterKeyId": {
+          "Fn::GetAtt": [
+            "EventBusSnsKey52D3B57B",
+            "Arn",
+          ],
+        },
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "event-bus",
+          },
+        ],
+        "TopicName": "orbital-events-mwitt",
+      },
+      "Type": "AWS::SNS::Topic",
+    },
+    "EventBusSprintPlanningDlqBE9FB581": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "KmsMasterKeyId": {
+          "Fn::GetAtt": [
+            "EventBusEventBusKeyED41AAAB",
+            "Arn",
+          ],
+        },
+        "MessageRetentionPeriod": 1209600,
+        "QueueName": "orbital-mwitt-sprint-planning-dlq",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "event-bus",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::Queue",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "EventBusSprintPlanningDlqPolicy8B00DFF2": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Fn::GetAtt": [
+                      "EventBusSprintPlanningRule14EB4472",
+                      "Arn",
+                    ],
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "EventBusSprintPlanningDlqBE9FB581",
+                  "Arn",
+                ],
+              },
+              "Sid": "AllowEventRuleTestEventBusmwittEventBusSprintPlanningRule2BBD4DDD",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Queues": [
+          {
+            "Ref": "EventBusSprintPlanningDlqBE9FB581",
+          },
+        ],
+      },
+      "Type": "AWS::SQS::QueuePolicy",
+    },
+    "EventBusSprintPlanningRule14EB4472": {
+      "Properties": {
+        "Description": "Orbital mwitt - trigger per-tenant 9am sprint-planning ceremony check",
+        "Name": "sprint-planning-mwitt",
+        "ScheduleExpression": "cron(0 9 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "SprintPlanning4BFBFBE9",
+                "Arn",
+              ],
+            },
+            "DeadLetterConfig": {
+              "Arn": {
+                "Fn::GetAtt": [
+                  "EventBusSprintPlanningDlqBE9FB581",
+                  "Arn",
+                ],
+              },
+            },
+            "Id": "Target0",
+            "RetryPolicy": {
+              "MaximumRetryAttempts": 2,
+            },
+          },
+        ],
+      },
+      "Type": "AWS::Events::Rule",
+    },
+    "EventBusSprintPlanningRuleAllowEventRuleTestEventBusmwittSprintPlanningD6B11F4EF8647BC8": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "SprintPlanning4BFBFBE9",
+            "Arn",
+          ],
+        },
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "EventBusSprintPlanningRule14EB4472",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "HygieneSweepD58E2A97": {
+      "DependsOn": [
+        "HygieneSweepServiceRole4C907F32",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "HygieneSweepServiceRole4C907F32",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "HygieneSweepServiceRole4C907F32": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "RetroRunner8C75D1AC": {
+      "DependsOn": [
+        "RetroRunnerServiceRole841D2DD1",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "RetroRunnerServiceRole841D2DD1",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "RetroRunnerServiceRole841D2DD1": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "SprintPlanning4BFBFBE9": {
+      "DependsOn": [
+        "SprintPlanningServiceRoleBCBBBF6B",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "SprintPlanningServiceRoleBCBBBF6B",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "SprintPlanningServiceRoleBCBBBF6B": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "WsFanout6F588812": {
+      "DependsOn": [
+        "WsFanoutServiceRoleC26DDBE4",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "WsFanoutServiceRoleC26DDBE4",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "WsFanoutAllowInvokeTestEventBusmwittEventBusSnsTopic5D884EBF245925E9": {
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "WsFanout6F588812",
+            "Arn",
+          ],
+        },
+        "Principal": "sns.amazonaws.com",
+        "SourceArn": {
+          "Ref": "EventBusSnsTopic414A08E1",
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "WsFanoutServiceRoleC26DDBE4": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "WsFanoutSnsTopic821C4D07": {
+      "Properties": {
+        "Endpoint": {
+          "Fn::GetAtt": [
+            "WsFanout6F588812",
+            "Arn",
+          ],
+        },
+        "Protocol": "lambda",
+        "TopicArn": {
+          "Ref": "EventBusSnsTopic414A08E1",
+        },
+      },
+      "Type": "AWS::SNS::Subscription",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;

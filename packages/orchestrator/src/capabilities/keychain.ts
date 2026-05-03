@@ -167,6 +167,27 @@ class KeytarKeychain implements Keychain {
 }
 
 // ---------------------------------------------------------------------------
+// AWS / cloud noop keychain
+// ---------------------------------------------------------------------------
+
+class NoopKeychain implements Keychain {
+  async setPassword(): Promise<void> {
+    throw new Error(
+      'keychain: setPassword is unavailable in AWS deploy mode (no OS keychain in Lambda); use Secrets Manager',
+    )
+  }
+  async getPassword(): Promise<string | null> {
+    return null
+  }
+  async deletePassword(): Promise<boolean> {
+    return false
+  }
+  async listAccounts(): Promise<string[]> {
+    return []
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Factory
 // ---------------------------------------------------------------------------
 
@@ -174,7 +195,8 @@ let cached: Keychain | null = null
 
 /**
  * Get the active keychain. Returns the file shim when ORBITAL_TEST_KEYCHAIN=1,
- * otherwise the real keytar-backed keychain.
+ * a noop in AWS deploy mode (no OS keychain in Lambda), otherwise the real
+ * keytar-backed keychain.
  *
  * The first call instantiates and caches the result. Production startup is
  * expected to call this once at boot to surface keytar load errors.
@@ -192,8 +214,13 @@ export async function getKeychain(): Promise<Keychain> {
     cached = new FileShimKeychain(overridePath)
     return cached
   }
+  if (env.ORBITAL_DEPLOY_TARGET === 'aws') {
+    logger.warn('keychain: AWS deploy mode — using noop keychain (no OS credential service in Lambda)')
+    cached = new NoopKeychain()
+    return cached
+  }
   // Lazy-load keytar so test environments without the native build still work.
-  // Production paths require this to succeed.
+  // Production (desktop) paths require this to succeed.
   const mod = (await import('keytar')) as unknown as KeytarLib | { default: KeytarLib }
   const keytar = ('default' in mod ? mod.default : mod) as KeytarLib
   cached = new KeytarKeychain(keytar)

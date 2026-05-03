@@ -165,6 +165,8 @@ export class DefaultProjectsService implements ProjectsService {
         github_owner: parsed.githubOwner ?? null,
         github_repo: parsed.githubRepo ?? null,
         github_default_branch: parsed.githubDefaultBranch ?? DEFAULT_BRANCH,
+        // Round 9 — record onboarding provisioning intent for audit.
+        provisioning: parsed.provisioning ?? null,
       },
       actor,
       trace_id: traceId,

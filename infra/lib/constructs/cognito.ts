@@ -6,7 +6,7 @@ import { Construct } from 'constructs'
 
 export interface CognitoConstructProps {
   /**
-   * Environment name — used to name the user pool and app client.
+   * Environment name - used to name the user pool and app client.
    */
   readonly envName: string
   /**
@@ -15,12 +15,16 @@ export interface CognitoConstructProps {
   readonly enableMfa: boolean
   /**
    * Domain for the Cognito Hosted UI. Auth UI lives at auth.{domain}.
+   * Used in app client callback/logout URLs regardless of useCustomDomain.
    */
   readonly domain: string
   /**
    * Hosted zone for the auth subdomain A-record.
+   * When undefined (useCustomDomain=false), the Route 53 A-record is skipped.
+   * Cognito uses the AWS-provided prefix domain instead
+   * (orbital-{envName}.auth.{region}.amazoncognito.com).
    */
-  readonly hostedZone: route53.IHostedZone
+  readonly hostedZone: route53.IHostedZone | undefined
 }
 
 /**
@@ -43,7 +47,7 @@ export interface CognitoConstructProps {
  *  - Sign-out: https://{domain}/auth/signed-out
  *
  * Security notes:
- *  - Account recovery via email only (NO SMS — social engineering risk)
+ *  - Account recovery via email only (NO SMS - social engineering risk)
  *  - Password policy: 12+ chars, upper, lower, digit, symbol
  *  - Pre-sign-up Lambda trigger placeholder wired; implement in 8-03
  *  - Post-confirmation Lambda trigger placeholder wired; implement in 8-03
@@ -97,7 +101,7 @@ export class CognitoConstruct extends Construct {
       // MFA: required in prod, optional in dev/staging
       mfa: mfaMode,
       mfaSecondFactor: {
-        sms: false, // SMS disabled — social engineering risk
+        sms: false, // SMS disabled - social engineering risk
         otp: true, // TOTP (Authenticator app)
       },
 
@@ -119,7 +123,7 @@ export class CognitoConstruct extends Construct {
           'Hello {username}, you have been invited to Orbital. Your temporary password is {####}.',
       },
 
-      // Advanced security — log user activity, detect compromised credentials
+      // Advanced security - log user activity, detect compromised credentials
       advancedSecurityMode: cognito.AdvancedSecurityMode.ENFORCED,
 
       // Deletion protection for prod; retain data on stack removal
@@ -131,7 +135,7 @@ export class CognitoConstruct extends Construct {
 
     // -----------------------------------------------------------------------
     // Optional external identity providers
-    // Credentials must be injected at synth via env vars — never hardcoded.
+    // Credentials must be injected at synth via env vars - never hardcoded.
     // -----------------------------------------------------------------------
     const googleClientId = process.env['ORBITAL_GOOGLE_CLIENT_ID']
     const googleClientSecret = process.env['ORBITAL_GOOGLE_CLIENT_SECRET']
@@ -201,7 +205,7 @@ export class CognitoConstruct extends Construct {
     })
 
     // -----------------------------------------------------------------------
-    // App Client — SPA with PKCE OAuth code flow
+    // App Client - SPA with PKCE OAuth code flow
     // -----------------------------------------------------------------------
     this.appClient = this.userPool.addClient('SpaClient', {
       userPoolClientName: `orbital-${props.envName}-spa`,
@@ -209,11 +213,11 @@ export class CognitoConstruct extends Construct {
       // OAuth code flow with PKCE (no client secret exposed to browser)
       authFlows: {
         userSrp: true, // SRP for email/password
-        userPassword: false, // plain password — disabled for security
+        userPassword: false, // plain password - disabled for security
         adminUserPassword: false,
         custom: false,
       },
-      generateSecret: false, // SPA — secret would be exposed in browser
+      generateSecret: false, // SPA - secret would be exposed in browser
 
       oAuth: {
         flows: {
@@ -254,15 +258,20 @@ export class CognitoConstruct extends Construct {
 
     // -----------------------------------------------------------------------
     // Route 53: A-record for auth.{domain} → Cognito Hosted UI
+    // Only created when a hosted zone is provided (useCustomDomain=true).
+    // When useCustomDomain=false, Cognito uses the AWS-provided prefix domain:
+    //   orbital-{envName}.auth.{region}.amazoncognito.com
     // -----------------------------------------------------------------------
-    new route53.ARecord(this, 'AuthDomainRecord', {
-      zone: props.hostedZone,
-      recordName: `auth.${props.domain}`,
-      target: route53.RecordTarget.fromAlias(
-        new route53targets.UserPoolDomainTarget(this.userPoolDomain),
-      ),
-      comment: `Orbital ${props.envName} — Cognito hosted UI`,
-    })
+    if (props.hostedZone !== undefined) {
+      new route53.ARecord(this, 'AuthDomainRecord', {
+        zone: props.hostedZone,
+        recordName: `auth.${props.domain}`,
+        target: route53.RecordTarget.fromAlias(
+          new route53targets.UserPoolDomainTarget(this.userPoolDomain),
+        ),
+        comment: `Orbital ${props.envName} - Cognito hosted UI`,
+      })
+    }
 
     // -----------------------------------------------------------------------
     // Outputs

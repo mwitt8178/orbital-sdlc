@@ -10,7 +10,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda'
 import { Construct } from 'constructs'
 
 /**
- * Route definition — one per logical group of tRPC routes.
+ * Route definition - one per logical group of tRPC routes.
  */
 export interface RouteConfig {
   /**
@@ -23,37 +23,40 @@ export interface RouteConfig {
   readonly fn: lambda.Function
   /**
    * Which authorizer to use on this route.
-   * - 'cognito': HTTP JWT authorizer (Cognito user pool) — browser traffic
-   * - 'install': Custom Lambda authorizer (PKI envelope) — install traffic
-   * - 'none': no authorizer (public — e.g. health check)
+   * - 'cognito': HTTP JWT authorizer (Cognito user pool) - browser traffic
+   * - 'install': Custom Lambda authorizer (PKI envelope) - install traffic
+   * - 'none': no authorizer (public - e.g. health check)
    */
   readonly authType: 'cognito' | 'install' | 'none'
 }
 
 export interface ApiGwHttpProps {
   /**
-   * Environment name — used in naming and CORS origin.
+   * Environment name - used in naming and CORS origin.
    */
   readonly envName: string
   /**
    * Base domain for the environment, e.g. "mwitt.orbital.team.dev".
-   * API domain will be api.{domain}.
+   * API domain will be api.{domain} when useCustomDomain=true.
    */
   readonly domain: string
   /**
    * ACM certificate for the custom domain (wildcard cert from DnsConstruct).
+   * When undefined (useCustomDomain=false), no custom domain is created and
+   * the API uses the AWS-generated execute-api endpoint.
    */
-  readonly certificate: acm.ICertificate
+  readonly certificate: acm.ICertificate | undefined
   /**
    * Route 53 hosted zone for the api.{domain} A-record.
+   * When undefined (useCustomDomain=false), no Route 53 record is created.
    */
-  readonly hostedZone: route53.IHostedZone
+  readonly hostedZone: route53.IHostedZone | undefined
   /**
-   * Cognito JWT authorizer — points at the Cognito issuer.
+   * Cognito JWT authorizer - points at the Cognito issuer.
    */
   readonly cognitoAuthorizer: apigatewayv2.IHttpRouteAuthorizer
   /**
-   * Install Lambda authorizer — verifies PKI envelope.
+   * Install Lambda authorizer - verifies PKI envelope.
    */
   readonly installAuthorizer: apigatewayv2.IHttpRouteAuthorizer
   /**
@@ -77,10 +80,10 @@ export interface ApiGwHttpProps {
 }
 
 /**
- * ApiGwHttpConstruct — HTTP API Gateway for the Orbital tRPC Hub.
+ * ApiGwHttpConstruct - HTTP API Gateway for the Orbital tRPC Hub.
  *
  * Features:
- *  - HTTP API (not REST API) — lower latency, native Lambda proxy integration
+ *  - HTTP API (not REST API) - lower latency, native Lambda proxy integration
  *  - Custom domain: api.{domain}
  *  - CORS: allows https://{domain} + localhost:3000 for dev
  *  - Default throttle: 100 req/sec per route, 200 burst
@@ -111,13 +114,15 @@ export class ApiGwHttpConstruct extends Construct {
 
   /**
    * The custom domain name resource.
+   * Undefined when useCustomDomain=false (no certificate/hostedZone provided).
    */
-  readonly customDomain: apigatewayv2.DomainName
+  readonly customDomain: apigatewayv2.DomainName | undefined
 
   constructor(scope: Construct, id: string, props: ApiGwHttpProps) {
     super(scope, id)
 
     const isProd = props.envName === 'prod'
+    const useCustomDomain = props.certificate !== undefined && props.hostedZone !== undefined
     const apiDomain = `api.${props.domain}`
     const throttleRateLimit = props.defaultThrottleRateLimit ?? 100
     const throttleBurstLimit = props.defaultThrottleBurstLimit ?? 200
@@ -132,12 +137,16 @@ export class ApiGwHttpConstruct extends Construct {
     })
 
     // ------------------------------------------------------------------
-    // Custom domain
+    // Custom domain (only when certificate + hostedZone provided)
     // ------------------------------------------------------------------
-    this.customDomain = new apigatewayv2.DomainName(this, 'CustomDomain', {
-      domainName: apiDomain,
-      certificate: props.certificate,
-    })
+    if (useCustomDomain) {
+      this.customDomain = new apigatewayv2.DomainName(this, 'CustomDomain', {
+        domainName: apiDomain,
+        certificate: props.certificate!,
+      })
+    } else {
+      this.customDomain = undefined
+    }
 
     // ------------------------------------------------------------------
     // HTTP API
@@ -147,16 +156,24 @@ export class ApiGwHttpConstruct extends Construct {
       description: `Orbital ${props.envName} tRPC HTTP API`,
 
       // CORS configuration
+      // Non-prod: wildcard origin so a CloudFront-served UI (which has a
+      // generated *.cloudfront.net domain unknown at synth time) can call
+      // the API without CORS preflight failures. Safe because we use
+      // Authorization-header auth (Cognito JWT / PKI envelope), not
+      // credentialed cookies, so 'allowOrigins: *' is compatible.
+      // Prod: lock to the configured custom domain only.
       corsPreflight: {
-        allowOrigins: [
-          `https://${props.domain}`,
-          // Allow localhost for local dev against the cloud API
-          'http://localhost:3000',
-          'http://localhost:5173',
-        ],
+        allowOrigins:
+          props.envName === 'prod'
+            ? [`https://${props.domain}`]
+            : ['*'],
         allowMethods: [
           apigatewayv2.CorsHttpMethod.GET,
           apigatewayv2.CorsHttpMethod.POST,
+          apigatewayv2.CorsHttpMethod.PUT,
+          apigatewayv2.CorsHttpMethod.PATCH,
+          apigatewayv2.CorsHttpMethod.DELETE,
+          apigatewayv2.CorsHttpMethod.HEAD,
           apigatewayv2.CorsHttpMethod.OPTIONS,
         ],
         allowHeaders: [
@@ -168,21 +185,25 @@ export class ApiGwHttpConstruct extends Construct {
           'X-Orbital-Sig-Body',
           'X-Orbital-Tenant-ID',
         ],
-        allowCredentials: true,
+        // allowCredentials cannot be true when allowOrigins includes '*'.
+        // Auth uses Authorization header (Cognito JWT / PKI envelope), not
+        // credentialed cookies, so disabling credentials is safe.
+        allowCredentials: props.envName === 'prod',
         maxAge: cdk.Duration.hours(1),
       },
 
-      // Default stage with auto-deploy
-      defaultDomainMapping: {
-        domainName: this.customDomain,
-      },
+      // Default domain mapping - only when custom domain is configured
+      ...(this.customDomain !== undefined
+        ? { defaultDomainMapping: { domainName: this.customDomain } }
+        : {}),
 
-      // Disable execute-api endpoint in prod (force custom domain)
-      disableExecuteApiEndpoint: isProd,
+      // Disable execute-api endpoint in prod (force custom domain).
+      // When useCustomDomain=false we keep execute-api enabled (it's the only endpoint).
+      disableExecuteApiEndpoint: isProd && useCustomDomain,
     })
 
     // ------------------------------------------------------------------
-    // Stage throttling — default stage ($default) is created automatically;
+    // Stage throttling - default stage ($default) is created automatically;
     // we configure it via CfnStage override.
     // ------------------------------------------------------------------
     const cfnStage = this.api.defaultStage?.node.defaultChild as
@@ -194,8 +215,9 @@ export class ApiGwHttpConstruct extends Construct {
         ThrottlingRateLimit: throttleRateLimit,
         ThrottlingBurstLimit: throttleBurstLimit,
         DetailedMetricsEnabled: true,
-        LoggingLevel: 'INFO',
-        DataTraceEnabled: false, // avoid logging request bodies (may contain PII)
+        // NOTE: API Gateway HTTP API (V2) does NOT support execution logs
+        // (LoggingLevel / DataTraceEnabled are REST/WebSocket-only). Use
+        // AccessLogSettings below for request-level logging.
       })
 
       cfnStage.addPropertyOverride('AccessLogSettings', {
@@ -237,7 +259,7 @@ export class ApiGwHttpConstruct extends Construct {
           ? props.cognitoAuthorizer
           : routeCfg.authType === 'install'
           ? props.installAuthorizer
-          : undefined // 'none' — no authorizer (e.g. health check)
+          : undefined // 'none' - no authorizer (e.g. health check)
 
       this.api.addRoutes({
         path: parseRoutePath(routeCfg.routeKey),
@@ -249,18 +271,21 @@ export class ApiGwHttpConstruct extends Construct {
 
     // ------------------------------------------------------------------
     // Route 53 A-record: api.{domain} → API GW custom domain
+    // Only when custom domain is configured.
     // ------------------------------------------------------------------
-    new route53.ARecord(this, 'ApiDnsRecord', {
-      zone: props.hostedZone,
-      recordName: `api.${props.domain}`,
-      target: route53.RecordTarget.fromAlias(
-        new route53targets.ApiGatewayv2DomainProperties(
-          this.customDomain.regionalDomainName,
-          this.customDomain.regionalHostedZoneId,
+    if (useCustomDomain && this.customDomain !== undefined && props.hostedZone !== undefined) {
+      new route53.ARecord(this, 'ApiDnsRecord', {
+        zone: props.hostedZone,
+        recordName: `api.${props.domain}`,
+        target: route53.RecordTarget.fromAlias(
+          new route53targets.ApiGatewayv2DomainProperties(
+            this.customDomain.regionalDomainName,
+            this.customDomain.regionalHostedZoneId,
+          ),
         ),
-      ),
-      comment: `Orbital ${props.envName} — HTTP API custom domain`,
-    })
+        comment: `Orbital ${props.envName} - HTTP API custom domain`,
+      })
+    }
 
     // ------------------------------------------------------------------
     // Outputs
@@ -271,9 +296,14 @@ export class ApiGwHttpConstruct extends Construct {
       exportName: `OrbitalHub-${props.envName}-HttpApiId`,
     })
 
+    // ApiEndpoint: custom domain URL when available, otherwise execute-api URL
+    const apiEndpointValue = useCustomDomain
+      ? `https://${apiDomain}`
+      : this.api.url ?? `https://${this.api.apiId}.execute-api.${cdk.Stack.of(this).region}.amazonaws.com`
+
     new cdk.CfnOutput(this, 'ApiEndpoint', {
-      value: `https://${apiDomain}`,
-      description: `Orbital ${props.envName} API endpoint (custom domain)`,
+      value: apiEndpointValue,
+      description: `Orbital ${props.envName} API endpoint`,
       exportName: `OrbitalHub-${props.envName}-ApiEndpoint`,
     })
 
@@ -322,6 +352,17 @@ function parseMethods(routeKey: string): apigatewayv2.HttpMethod[] {
       return [apigatewayv2.HttpMethod.PATCH]
     case 'ANY':
     default:
-      return [apigatewayv2.HttpMethod.ANY]
+      // We deliberately enumerate methods instead of using HttpMethod.ANY so
+      // that OPTIONS is NOT matched by these auth-protected routes. API
+      // Gateway then auto-handles OPTIONS preflight at the API level using
+      // the corsPreflight config (returns 204 + CORS headers, no auth).
+      return [
+        apigatewayv2.HttpMethod.GET,
+        apigatewayv2.HttpMethod.POST,
+        apigatewayv2.HttpMethod.PUT,
+        apigatewayv2.HttpMethod.PATCH,
+        apigatewayv2.HttpMethod.DELETE,
+        apigatewayv2.HttpMethod.HEAD,
+      ]
   }
 }

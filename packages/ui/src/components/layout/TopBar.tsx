@@ -11,6 +11,9 @@ import type { CostLedgerAppendedPayload } from '../../types/events.js'
 // Round 7-02 — hub status indicator in topbar
 // [Engineer-Sr · Sonnet · run-round7-02-local-hub-split]
 import { HubStatusIndicator } from './HubStatusIndicator.js'
+// Round 9 — persistent Tour button in topbar
+// [Engineer-Principal · Opus · run-round9-onboarding-overhaul]
+import { TourButton } from '../ui/TourButton.js'
 
 /** Orbital logo box — indigo→violet gradient, 28×28. */
 function LogoBox() {
@@ -91,10 +94,24 @@ function LiveBurnWidget() {
     },
   )
 
-  // Subscribe to WS cost events for live updates
+  // Subscribe to WS cost events for live updates.
+  // Mirror services/ws.ts URL resolution so CloudFront-only builds (no
+  // same-origin /ws) skip the connection rather than error-loop.
   useEffect(() => {
     if (!activeProjectId) return
-    const ws = new WebSocket(`ws://${window.location.host}/ws`)
+    const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env
+    const fromEnv = env?.['VITE_WS_URL']
+    let url: string
+    if (fromEnv && fromEnv.length > 0) {
+      const base = fromEnv.replace(/\/$/, '')
+      url = base.endsWith('/ws') ? base : `${base}/ws`
+    } else if (typeof window !== 'undefined' && window.location?.host) {
+      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      url = `${proto}//${window.location.host}/ws`
+    } else {
+      return
+    }
+    const ws = new WebSocket(url)
     wsRef.current = ws
     ws.onmessage = (ev) => {
       try {
@@ -223,6 +240,10 @@ export function TopBar() {
           <HubStatusIndicator />
 
           <SprintStatusPill />
+
+          {/* Round 9 — persistent Tour button */}
+          {/* [Engineer-Principal · Opus · run-round9-onboarding-overhaul] */}
+          <TourButton />
 
           {/* User avatar */}
           <div

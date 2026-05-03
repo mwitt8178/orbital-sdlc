@@ -1,0 +1,4416 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ObservabilityConstruct — Snapshot mwitt stack template matches snapshot 1`] = `
+{
+  "Outputs": {
+    "ObservabilityAlarmTopicArn388C6399": {
+      "Description": "Orbital mwitt alarm SNS topic ARN",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-AlarmTopicArn",
+      },
+      "Value": {
+        "Ref": "ObservabilityAlarmTopicF724909D",
+      },
+    },
+    "ObservabilityDashboardName6EFA87E0": {
+      "Description": "Orbital mwitt CloudWatch dashboard name",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-DashboardName",
+      },
+      "Value": {
+        "Ref": "ObservabilityDashboard9A1D08B3",
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "FnconsumerauditindexerA45CCCCD": {
+      "DependsOn": [
+        "FnconsumerauditindexerServiceRole3C17F69E",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FnconsumerauditindexerServiceRole3C17F69E",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FnconsumerauditindexerServiceRole3C17F69E": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "Fnconsumerdefectrouter6B367090": {
+      "DependsOn": [
+        "FnconsumerdefectrouterServiceRole3397CF68",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FnconsumerdefectrouterServiceRole3397CF68",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FnconsumerdefectrouterServiceRole3397CF68": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "Fnconsumermemoryrecorder064E0A3A": {
+      "DependsOn": [
+        "FnconsumermemoryrecorderServiceRole9E6479A3",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FnconsumermemoryrecorderServiceRole9E6479A3",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FnconsumermemoryrecorderServiceRole9E6479A3": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "FnconsumerreplayrecorderD1B0DEE3": {
+      "DependsOn": [
+        "FnconsumerreplayrecorderServiceRole3835F91E",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FnconsumerreplayrecorderServiceRole3835F91E",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FnconsumerreplayrecorderServiceRole3835F91E": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "Fnscheduledhygienesweep2166C9A5": {
+      "DependsOn": [
+        "FnscheduledhygienesweepServiceRole3DBD63E1",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FnscheduledhygienesweepServiceRole3DBD63E1",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FnscheduledhygienesweepServiceRole3DBD63E1": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "FnscheduledretrorunnerF31187E5": {
+      "DependsOn": [
+        "FnscheduledretrorunnerServiceRole1D6156B4",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FnscheduledretrorunnerServiceRole1D6156B4",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FnscheduledretrorunnerServiceRole1D6156B4": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "FnscheduledsprintplanningFDA258C1": {
+      "DependsOn": [
+        "FnscheduledsprintplanningServiceRole13EEA0C1",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FnscheduledsprintplanningServiceRole13EEA0C1",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FnscheduledsprintplanningServiceRole13EEA0C1": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "Fntrpcaudit8AB14FC7": {
+      "DependsOn": [
+        "FntrpcauditServiceRoleCE8E9F3B",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FntrpcauditServiceRoleCE8E9F3B",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FntrpcauditServiceRoleCE8E9F3B": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "Fntrpcauth0F992585": {
+      "DependsOn": [
+        "FntrpcauthServiceRole14B3D228",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FntrpcauthServiceRole14B3D228",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FntrpcauthServiceRole14B3D228": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "Fntrpccomms5F3BE639": {
+      "DependsOn": [
+        "FntrpccommsServiceRoleB19F2AAC",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FntrpccommsServiceRoleB19F2AAC",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FntrpccommsServiceRoleB19F2AAC": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "Fntrpccost71D1D524": {
+      "DependsOn": [
+        "FntrpccostServiceRoleE875E303",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FntrpccostServiceRoleE875E303",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FntrpccostServiceRoleE875E303": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "FntrpcdefectsD95C6FD0": {
+      "DependsOn": [
+        "FntrpcdefectsServiceRole83BF908F",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FntrpcdefectsServiceRole83BF908F",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FntrpcdefectsServiceRole83BF908F": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "FntrpcmemoryE0EE1874": {
+      "DependsOn": [
+        "FntrpcmemoryServiceRole9D1BC9E8",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FntrpcmemoryServiceRole9D1BC9E8",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FntrpcmemoryServiceRole9D1BC9E8": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "FntrpconboardingEC57AFB2": {
+      "DependsOn": [
+        "FntrpconboardingServiceRoleB0FC85C9",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FntrpconboardingServiceRoleB0FC85C9",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FntrpconboardingServiceRoleB0FC85C9": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "Fntrpcproviders7915FF47": {
+      "DependsOn": [
+        "FntrpcprovidersServiceRoleD3FBE748",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FntrpcprovidersServiceRoleD3FBE748",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FntrpcprovidersServiceRoleD3FBE748": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "Fntrpcprs40AB8CD0": {
+      "DependsOn": [
+        "FntrpcprsServiceRole458FE159",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FntrpcprsServiceRole458FE159",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FntrpcprsServiceRole458FE159": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "Fntrpctasks4E6FDD14": {
+      "DependsOn": [
+        "FntrpctasksServiceRole32F0E023",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FntrpctasksServiceRole32F0E023",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FntrpctasksServiceRole32F0E023": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "Fntrpcteam3F26878D": {
+      "DependsOn": [
+        "FntrpcteamServiceRole2578444C",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FntrpcteamServiceRole2578444C",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FntrpcteamServiceRole2578444C": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "Fnwsconnect64CE29D7": {
+      "DependsOn": [
+        "FnwsconnectServiceRoleA83DB1CC",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FnwsconnectServiceRoleA83DB1CC",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FnwsconnectServiceRoleA83DB1CC": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "Fnwsdefault20B305C8": {
+      "DependsOn": [
+        "FnwsdefaultServiceRole8988551E",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FnwsdefaultServiceRole8988551E",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FnwsdefaultServiceRole8988551E": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "Fnwsdisconnect749949FE": {
+      "DependsOn": [
+        "FnwsdisconnectServiceRoleB39DC98B",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FnwsdisconnectServiceRoleB39DC98B",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FnwsdisconnectServiceRoleB39DC98B": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "Fnwsfanout5079AB36": {
+      "DependsOn": [
+        "FnwsfanoutServiceRoleFCEC189A",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "exports.handler = async () => ({})",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FnwsfanoutServiceRoleFCEC189A",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "FnwsfanoutServiceRoleFCEC189A": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ObservabilityAlarmTopicF724909D": {
+      "Properties": {
+        "DisplayName": "Orbital mwitt - Operational Alarms",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "TopicName": "orbital-alarms-mwitt",
+      },
+      "Type": "AWS::SNS::Topic",
+    },
+    "ObservabilityApi5xxRateAlarm420AC84B": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "HTTP API 5xx error rate exceeded 1% - check Lambda function logs",
+        "AlarmName": "orbital-mwitt-api-5xx-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / total) * 100",
+            "Id": "expr_1",
+            "Label": "API 5xx Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "ApiId",
+                    "Value": "httpapi123",
+                  },
+                ],
+                "MetricName": "5XXError",
+                "Namespace": "AWS/ApiGateway",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "total",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "ApiId",
+                    "Value": "httpapi123",
+                  },
+                ],
+                "MetricName": "Count",
+                "Namespace": "AWS/ApiGateway",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 1,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityAuroraConnectionsAlarm260152B1": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Aurora connection count is high - RDS Proxy pool may be exhausted",
+        "AlarmName": "orbital-mwitt-aurora-connections",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "DBClusterIdentifier",
+            "Value": "orbital-mwitt-aurora",
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "DatabaseConnections",
+        "Namespace": "AWS/RDS",
+        "Period": 300,
+        "Statistic": "Maximum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 180,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityAuroraCpuAlarm6E1123B0": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Aurora CPU utilization exceeds 80% - consider scaling ACUs",
+        "AlarmName": "orbital-mwitt-aurora-cpu",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "DBClusterIdentifier",
+            "Value": "orbital-mwitt-aurora",
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "CPUUtilization",
+        "Namespace": "AWS/RDS",
+        "Period": 300,
+        "Statistic": "Average",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 80,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityCognitoSignInFailuresAlarm8A8B81AF": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Cognito sign-in failures rate elevated - possible credential stuffing",
+        "AlarmName": "orbital-mwitt-cognito-signin-failures",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "UserPool",
+            "Value": "us-east-1_TestPool",
+          },
+          {
+            "Name": "UserPoolClient",
+            "Value": "ALL",
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "SignInSuccesses",
+        "Namespace": "AWS/Cognito",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 10,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityDashboard9A1D08B3": {
+      "Properties": {
+        "DashboardBody": {
+          "Fn::Join": [
+            "",
+            [
+              "{"widgets":[{"type":"text","width":24,"height":1,"x":0,"y":0,"properties":{"markdown":"## 1. API Health - orbital-mwitt"}},{"type":"metric","width":8,"height":6,"x":0,"y":1,"properties":{"view":"timeSeries","title":"HTTP API Request Count","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/ApiGateway","Count","ApiId","httpapi123",{"label":"Requests","period":60,"stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":8,"y":1,"properties":{"view":"timeSeries","title":"HTTP API 4xx / 5xx Error Rate","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/ApiGateway","4XXError","ApiId","httpapi123",{"color":"#FF9900","label":"4xx Errors","period":60,"stat":"Sum"}],["AWS/ApiGateway","5XXError","ApiId","httpapi123",{"color":"#D13212","label":"5xx Errors","period":60,"stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":16,"y":1,"properties":{"view":"timeSeries","title":"HTTP API Latency p50 / p99","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/ApiGateway","Latency","ApiId","httpapi123",{"label":"p50 Latency","period":60,"stat":"p50"}],["AWS/ApiGateway","Latency","ApiId","httpapi123",{"color":"#D13212","label":"p99 Latency","period":60,"stat":"p99"}]],"yAxis":{}}},{"type":"text","width":24,"height":1,"x":0,"y":7,"properties":{"markdown":"## 2. WebSocket Health - orbital-mwitt"}},{"type":"metric","width":8,"height":6,"x":0,"y":8,"properties":{"view":"timeSeries","title":"WS Connection Count","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/ApiGateway","ConnectCount","ApiId","wsapi456","Stage","$default",{"label":"Connects","period":60,"stat":"Sum"}],["AWS/ApiGateway","DisconnectCount","ApiId","wsapi456","Stage","$default",{"color":"#FF9900","label":"Disconnects","period":60,"stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":8,"y":8,"properties":{"view":"timeSeries","title":"WS Message Throughput","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/ApiGateway","MessageCount","ApiId","wsapi456","Stage","$default",{"label":"Messages","period":60,"stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":16,"y":8,"properties":{"view":"timeSeries","title":"WS Fanout Latency (Lambda Duration)","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Duration","FunctionName","orbital-mwitt-ws-fanout",{"label":"Fanout p99 Duration (ms)","period":60,"stat":"p99"}]],"yAxis":{}}},{"type":"text","width":24,"height":1,"x":0,"y":14,"properties":{"markdown":"## 3. Lambda - orbital-mwitt"}},{"type":"metric","width":8,"height":6,"x":0,"y":15,"properties":{"view":"timeSeries","title":"Lambda trpc-auth - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "Fntrpcauth0F992585",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "Fntrpcauth0F992585",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "Fntrpcauth0F992585",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":8,"y":15,"properties":{"view":"timeSeries","title":"Lambda trpc-tasks - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "Fntrpctasks4E6FDD14",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "Fntrpctasks4E6FDD14",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "Fntrpctasks4E6FDD14",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":16,"y":15,"properties":{"view":"timeSeries","title":"Lambda trpc-memory - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "FntrpcmemoryE0EE1874",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "FntrpcmemoryE0EE1874",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "FntrpcmemoryE0EE1874",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":0,"y":21,"properties":{"view":"timeSeries","title":"Lambda trpc-comms - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "Fntrpccomms5F3BE639",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "Fntrpccomms5F3BE639",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "Fntrpccomms5F3BE639",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":8,"y":21,"properties":{"view":"timeSeries","title":"Lambda trpc-defects - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "FntrpcdefectsD95C6FD0",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "FntrpcdefectsD95C6FD0",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "FntrpcdefectsD95C6FD0",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":16,"y":21,"properties":{"view":"timeSeries","title":"Lambda trpc-audit - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "Fntrpcaudit8AB14FC7",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "Fntrpcaudit8AB14FC7",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "Fntrpcaudit8AB14FC7",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":0,"y":27,"properties":{"view":"timeSeries","title":"Lambda trpc-prs - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "Fntrpcprs40AB8CD0",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "Fntrpcprs40AB8CD0",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "Fntrpcprs40AB8CD0",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":8,"y":27,"properties":{"view":"timeSeries","title":"Lambda trpc-cost - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "Fntrpccost71D1D524",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "Fntrpccost71D1D524",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "Fntrpccost71D1D524",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":16,"y":27,"properties":{"view":"timeSeries","title":"Lambda trpc-providers - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "Fntrpcproviders7915FF47",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "Fntrpcproviders7915FF47",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "Fntrpcproviders7915FF47",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":0,"y":33,"properties":{"view":"timeSeries","title":"Lambda trpc-team - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "Fntrpcteam3F26878D",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "Fntrpcteam3F26878D",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "Fntrpcteam3F26878D",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":8,"y":33,"properties":{"view":"timeSeries","title":"Lambda trpc-onboarding - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "FntrpconboardingEC57AFB2",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "FntrpconboardingEC57AFB2",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "FntrpconboardingEC57AFB2",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":16,"y":33,"properties":{"view":"timeSeries","title":"Lambda ws-connect - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "Fnwsconnect64CE29D7",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "Fnwsconnect64CE29D7",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "Fnwsconnect64CE29D7",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":0,"y":39,"properties":{"view":"timeSeries","title":"Lambda ws-disconnect - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "Fnwsdisconnect749949FE",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "Fnwsdisconnect749949FE",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "Fnwsdisconnect749949FE",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":8,"y":39,"properties":{"view":"timeSeries","title":"Lambda ws-default - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "Fnwsdefault20B305C8",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "Fnwsdefault20B305C8",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "Fnwsdefault20B305C8",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":16,"y":39,"properties":{"view":"timeSeries","title":"Lambda ws-fanout - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "Fnwsfanout5079AB36",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "Fnwsfanout5079AB36",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "Fnwsfanout5079AB36",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":0,"y":45,"properties":{"view":"timeSeries","title":"Lambda consumer-memory-recorder - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "Fnconsumermemoryrecorder064E0A3A",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "Fnconsumermemoryrecorder064E0A3A",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "Fnconsumermemoryrecorder064E0A3A",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":8,"y":45,"properties":{"view":"timeSeries","title":"Lambda consumer-defect-router - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "Fnconsumerdefectrouter6B367090",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "Fnconsumerdefectrouter6B367090",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "Fnconsumerdefectrouter6B367090",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":16,"y":45,"properties":{"view":"timeSeries","title":"Lambda consumer-audit-indexer - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "FnconsumerauditindexerA45CCCCD",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "FnconsumerauditindexerA45CCCCD",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "FnconsumerauditindexerA45CCCCD",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":0,"y":51,"properties":{"view":"timeSeries","title":"Lambda consumer-replay-recorder - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "FnconsumerreplayrecorderD1B0DEE3",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "FnconsumerreplayrecorderD1B0DEE3",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "FnconsumerreplayrecorderD1B0DEE3",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":8,"y":51,"properties":{"view":"timeSeries","title":"Lambda scheduled-sprint-planning - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "FnscheduledsprintplanningFDA258C1",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "FnscheduledsprintplanningFDA258C1",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "FnscheduledsprintplanningFDA258C1",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":16,"y":51,"properties":{"view":"timeSeries","title":"Lambda scheduled-retro-runner - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "FnscheduledretrorunnerF31187E5",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "FnscheduledretrorunnerF31187E5",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "FnscheduledretrorunnerF31187E5",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":0,"y":57,"properties":{"view":"timeSeries","title":"Lambda scheduled-hygiene-sweep - Errors + Duration","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Lambda","Errors","FunctionName","",
+              {
+                "Ref": "Fnscheduledhygienesweep2166C9A5",
+              },
+              "",{"color":"#D13212","label":"Errors","period":60,"stat":"Sum"}],["AWS/Lambda","Throttles","FunctionName","",
+              {
+                "Ref": "Fnscheduledhygienesweep2166C9A5",
+              },
+              "",{"color":"#FF9900","label":"Throttles","period":60,"stat":"Sum"}],["AWS/Lambda","Duration","FunctionName","",
+              {
+                "Ref": "Fnscheduledhygienesweep2166C9A5",
+              },
+              "",{"label":"p99 Duration (ms)","period":60,"stat":"p99","yAxis":"right"}]],"yAxis":{}}},{"type":"text","width":24,"height":1,"x":0,"y":63,"properties":{"markdown":"## 4. Aurora - orbital-mwitt"}},{"type":"metric","width":8,"height":6,"x":0,"y":64,"properties":{"view":"timeSeries","title":"Aurora CPU Utilization","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/RDS","CPUUtilization","DBClusterIdentifier","orbital-mwitt-aurora",{"label":"CPU %","period":60}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":8,"y":64,"properties":{"view":"timeSeries","title":"Aurora Database Connections","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/RDS","DatabaseConnections","DBClusterIdentifier","orbital-mwitt-aurora",{"label":"Connections","period":60,"stat":"Maximum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":16,"y":64,"properties":{"view":"timeSeries","title":"Aurora Replication Lag + Slow Queries","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/RDS","AuroraReplicaLag","DBClusterIdentifier","orbital-mwitt-aurora",{"label":"Replica Lag (ms)","period":60,"stat":"Maximum"}]],"yAxis":{}}},{"type":"text","width":24,"height":1,"x":0,"y":70,"properties":{"markdown":"## 5. RDS Proxy - orbital-mwitt"}},{"type":"metric","width":8,"height":6,"x":0,"y":71,"properties":{"view":"timeSeries","title":"RDS Proxy Client Connections","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/RDS","ClientConnectionsReceived","ProxyName","orbital-mwitt-proxy",{"label":"Connections Received","period":60,"stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":8,"y":71,"properties":{"view":"timeSeries","title":"RDS Proxy Query Rate","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/RDS","QueryRequests","ProxyName","orbital-mwitt-proxy",{"label":"Query Requests","period":60,"stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":16,"y":71,"properties":{"view":"timeSeries","title":"RDS Proxy Connection Setup Failures","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/RDS","DatabaseConnectionsSetupFailed","ProxyName","orbital-mwitt-proxy",{"color":"#D13212","label":"Setup Failures","period":60,"stat":"Sum"}]],"yAxis":{}}},{"type":"text","width":24,"height":1,"x":0,"y":77,"properties":{"markdown":"## 6. SQS - orbital-mwitt"}},{"type":"metric","width":8,"height":6,"x":0,"y":78,"properties":{"view":"timeSeries","title":"SQS memory-recorder - Queue Depth","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/SQS","ApproximateNumberOfMessagesVisible","QueueName","orbital-mwitt-memory-recorder",{"label":"Queue Depth","period":60,"stat":"Maximum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":8,"y":78,"properties":{"view":"timeSeries","title":"SQS memory-recorder - Oldest Message Age","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/SQS","ApproximateAgeOfOldestMessage","QueueName","orbital-mwitt-memory-recorder",{"label":"Oldest Message Age (s)","period":60,"stat":"Maximum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":16,"y":78,"properties":{"view":"timeSeries","title":"SQS memory-recorder - DLQ Depth","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/SQS","ApproximateNumberOfMessagesVisible","QueueName","orbital-mwitt-memory-recorder-dlq",{"color":"#D13212","label":"DLQ Depth","period":60,"stat":"Maximum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":0,"y":84,"properties":{"view":"timeSeries","title":"SQS defect-router - Queue Depth","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/SQS","ApproximateNumberOfMessagesVisible","QueueName","orbital-mwitt-defect-router",{"label":"Queue Depth","period":60,"stat":"Maximum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":8,"y":84,"properties":{"view":"timeSeries","title":"SQS defect-router - Oldest Message Age","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/SQS","ApproximateAgeOfOldestMessage","QueueName","orbital-mwitt-defect-router",{"label":"Oldest Message Age (s)","period":60,"stat":"Maximum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":16,"y":84,"properties":{"view":"timeSeries","title":"SQS defect-router - DLQ Depth","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/SQS","ApproximateNumberOfMessagesVisible","QueueName","orbital-mwitt-defect-router-dlq",{"color":"#D13212","label":"DLQ Depth","period":60,"stat":"Maximum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":0,"y":90,"properties":{"view":"timeSeries","title":"SQS audit-indexer - Queue Depth","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/SQS","ApproximateNumberOfMessagesVisible","QueueName","orbital-mwitt-audit-indexer",{"label":"Queue Depth","period":60,"stat":"Maximum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":8,"y":90,"properties":{"view":"timeSeries","title":"SQS audit-indexer - Oldest Message Age","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/SQS","ApproximateAgeOfOldestMessage","QueueName","orbital-mwitt-audit-indexer",{"label":"Oldest Message Age (s)","period":60,"stat":"Maximum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":16,"y":90,"properties":{"view":"timeSeries","title":"SQS audit-indexer - DLQ Depth","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/SQS","ApproximateNumberOfMessagesVisible","QueueName","orbital-mwitt-audit-indexer-dlq",{"color":"#D13212","label":"DLQ Depth","period":60,"stat":"Maximum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":0,"y":96,"properties":{"view":"timeSeries","title":"SQS replay-recorder - Queue Depth","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/SQS","ApproximateNumberOfMessagesVisible","QueueName","orbital-mwitt-replay-recorder",{"label":"Queue Depth","period":60,"stat":"Maximum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":8,"y":96,"properties":{"view":"timeSeries","title":"SQS replay-recorder - Oldest Message Age","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/SQS","ApproximateAgeOfOldestMessage","QueueName","orbital-mwitt-replay-recorder",{"label":"Oldest Message Age (s)","period":60,"stat":"Maximum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":16,"y":96,"properties":{"view":"timeSeries","title":"SQS replay-recorder - DLQ Depth","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/SQS","ApproximateNumberOfMessagesVisible","QueueName","orbital-mwitt-replay-recorder-dlq",{"color":"#D13212","label":"DLQ Depth","period":60,"stat":"Maximum"}]],"yAxis":{}}},{"type":"text","width":24,"height":1,"x":0,"y":102,"properties":{"markdown":"## 7. SNS - orbital-mwitt"}},{"type":"metric","width":12,"height":6,"x":0,"y":103,"properties":{"view":"timeSeries","title":"SNS Publish Rate","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/SNS","NumberOfMessagesPublished","TopicName","orbital-events-mwitt",{"label":"Published","period":60,"stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":12,"y":103,"properties":{"view":"timeSeries","title":"SNS Delivery Failures","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/SNS","NumberOfNotificationsFailed","TopicName","orbital-events-mwitt",{"color":"#D13212","label":"Delivery Failures","period":60,"stat":"Sum"}]],"yAxis":{}}},{"type":"text","width":24,"height":1,"x":0,"y":109,"properties":{"markdown":"## 8. Cognito - orbital-mwitt"}},{"type":"metric","width":8,"height":6,"x":0,"y":110,"properties":{"view":"timeSeries","title":"Cognito Sign-in Rate","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Cognito","SignInSuccesses","UserPool","us-east-1_TestPool","UserPoolClient","ALL",{"label":"Sign-in Successes","period":60,"stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":8,"y":110,"properties":{"view":"timeSeries","title":"Cognito Sign-up Rate","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Cognito","SignUpSuccesses","UserPool","us-east-1_TestPool","UserPoolClient","ALL",{"label":"Sign-up Successes","period":60,"stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":8,"height":6,"x":16,"y":110,"properties":{"view":"timeSeries","title":"Cognito Token Refreshes","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/Cognito","TokenRefreshSuccesses","UserPool","us-east-1_TestPool","UserPoolClient","ALL",{"label":"Token Refreshes","period":60,"stat":"Sum"}]],"yAxis":{}}},{"type":"text","width":24,"height":1,"x":0,"y":116,"properties":{"markdown":"## 9. WAF - orbital-mwitt"}},{"type":"metric","width":12,"height":6,"x":0,"y":117,"properties":{"view":"timeSeries","title":"WAF Blocked Requests by Rule","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/WAFV2","BlockedRequests","Region","us-east-1","Rule","AWSManagedRulesCommonRuleSet","WebACL","orbital-mwitt-acl",{"label":"CommonRuleSet Blocks","period":60,"stat":"Sum"}],["AWS/WAFV2","BlockedRequests","Region","us-east-1","Rule","GeneralRateLimit","WebACL","orbital-mwitt-acl",{"color":"#FF9900","label":"Rate Limit Blocks","period":60,"stat":"Sum"}],["AWS/WAFV2","BlockedRequests","Region","us-east-1","Rule","AuthEndpointRateLimit","WebACL","orbital-mwitt-acl",{"color":"#D13212","label":"Auth Rate Limit Blocks","period":60,"stat":"Sum"}]],"yAxis":{}}},{"type":"metric","width":12,"height":6,"x":12,"y":117,"properties":{"view":"timeSeries","title":"WAF Allowed vs Blocked","region":"",
+              {
+                "Ref": "AWS::Region",
+              },
+              "","metrics":[["AWS/WAFV2","AllowedRequests","Region","us-east-1","Rule","ALL","WebACL","orbital-mwitt-acl",{"label":"Allowed","period":60,"stat":"Sum"}],["AWS/WAFV2","BlockedRequests","Region","us-east-1","Rule","ALL","WebACL","orbital-mwitt-acl",{"color":"#D13212","label":"Blocked","period":60,"stat":"Sum"}]],"yAxis":{}}}]}",
+            ],
+          ],
+        },
+        "DashboardName": "orbital-mwitt",
+      },
+      "Type": "AWS::CloudWatch::Dashboard",
+    },
+    "ObservabilityLambdaconsumerauditindexerErrorRateAlarm83471EDB": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda consumer-audit-indexer error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-consumer-audit-indexer-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "consumer-audit-indexer Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "FnconsumerauditindexerA45CCCCD",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "FnconsumerauditindexerA45CCCCD",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdaconsumerauditindexerThrottleAlarmC1377716": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda consumer-audit-indexer is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-consumer-audit-indexer-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "FnconsumerauditindexerA45CCCCD",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdaconsumerdefectrouterErrorRateAlarm3C1CB0CA": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda consumer-defect-router error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-consumer-defect-router-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "consumer-defect-router Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fnconsumerdefectrouter6B367090",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fnconsumerdefectrouter6B367090",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdaconsumerdefectrouterThrottleAlarm2A1A02DF": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda consumer-defect-router is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-consumer-defect-router-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "Fnconsumerdefectrouter6B367090",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdaconsumermemoryrecorderErrorRateAlarm9B73FCE6": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda consumer-memory-recorder error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-consumer-memory-recorder-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "consumer-memory-recorder Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fnconsumermemoryrecorder064E0A3A",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fnconsumermemoryrecorder064E0A3A",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdaconsumermemoryrecorderThrottleAlarm6B8B17CB": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda consumer-memory-recorder is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-consumer-memory-recorder-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "Fnconsumermemoryrecorder064E0A3A",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdaconsumerreplayrecorderErrorRateAlarmA61DE8B2": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda consumer-replay-recorder error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-consumer-replay-recorder-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "consumer-replay-recorder Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "FnconsumerreplayrecorderD1B0DEE3",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "FnconsumerreplayrecorderD1B0DEE3",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdaconsumerreplayrecorderThrottleAlarmD5C110AC": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda consumer-replay-recorder is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-consumer-replay-recorder-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "FnconsumerreplayrecorderD1B0DEE3",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdascheduledhygienesweepErrorRateAlarm165E96FD": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda scheduled-hygiene-sweep error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-scheduled-hygiene-sweep-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "scheduled-hygiene-sweep Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fnscheduledhygienesweep2166C9A5",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fnscheduledhygienesweep2166C9A5",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdascheduledhygienesweepThrottleAlarm540B07C2": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda scheduled-hygiene-sweep is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-scheduled-hygiene-sweep-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "Fnscheduledhygienesweep2166C9A5",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdascheduledretrorunnerErrorRateAlarm1FC0DCDC": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda scheduled-retro-runner error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-scheduled-retro-runner-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "scheduled-retro-runner Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "FnscheduledretrorunnerF31187E5",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "FnscheduledretrorunnerF31187E5",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdascheduledretrorunnerThrottleAlarm66A5136A": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda scheduled-retro-runner is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-scheduled-retro-runner-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "FnscheduledretrorunnerF31187E5",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdascheduledsprintplanningErrorRateAlarm58F4D3B4": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda scheduled-sprint-planning error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-scheduled-sprint-planning-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "scheduled-sprint-planning Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "FnscheduledsprintplanningFDA258C1",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "FnscheduledsprintplanningFDA258C1",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdascheduledsprintplanningThrottleAlarmD0033020": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda scheduled-sprint-planning is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-scheduled-sprint-planning-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "FnscheduledsprintplanningFDA258C1",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpcauditErrorRateAlarmEAEC0AC4": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-audit error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-trpc-audit-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "trpc-audit Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fntrpcaudit8AB14FC7",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fntrpcaudit8AB14FC7",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpcauditThrottleAlarm177478B3": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-audit is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-trpc-audit-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "Fntrpcaudit8AB14FC7",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpcauthErrorRateAlarm1439B9CC": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-auth error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-trpc-auth-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "trpc-auth Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fntrpcauth0F992585",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fntrpcauth0F992585",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpcauthThrottleAlarmB664C0FC": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-auth is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-trpc-auth-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "Fntrpcauth0F992585",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpccommsErrorRateAlarm1D6B5901": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-comms error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-trpc-comms-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "trpc-comms Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fntrpccomms5F3BE639",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fntrpccomms5F3BE639",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpccommsThrottleAlarm37A84AC4": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-comms is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-trpc-comms-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "Fntrpccomms5F3BE639",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpccostErrorRateAlarm9AF51B13": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-cost error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-trpc-cost-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "trpc-cost Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fntrpccost71D1D524",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fntrpccost71D1D524",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpccostThrottleAlarm6641B7A0": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-cost is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-trpc-cost-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "Fntrpccost71D1D524",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpcdefectsErrorRateAlarmFAE5FC7B": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-defects error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-trpc-defects-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "trpc-defects Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "FntrpcdefectsD95C6FD0",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "FntrpcdefectsD95C6FD0",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpcdefectsThrottleAlarmC6F869BA": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-defects is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-trpc-defects-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "FntrpcdefectsD95C6FD0",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpcmemoryErrorRateAlarmFA96996F": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-memory error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-trpc-memory-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "trpc-memory Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "FntrpcmemoryE0EE1874",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "FntrpcmemoryE0EE1874",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpcmemoryThrottleAlarm0D0AD3E6": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-memory is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-trpc-memory-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "FntrpcmemoryE0EE1874",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpconboardingErrorRateAlarm2EB98C42": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-onboarding error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-trpc-onboarding-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "trpc-onboarding Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "FntrpconboardingEC57AFB2",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "FntrpconboardingEC57AFB2",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpconboardingThrottleAlarm501D5FCB": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-onboarding is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-trpc-onboarding-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "FntrpconboardingEC57AFB2",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpcprovidersErrorRateAlarm56BB02D2": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-providers error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-trpc-providers-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "trpc-providers Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fntrpcproviders7915FF47",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fntrpcproviders7915FF47",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpcprovidersThrottleAlarm0B3B1ECA": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-providers is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-trpc-providers-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "Fntrpcproviders7915FF47",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpcprsErrorRateAlarm24E3365E": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-prs error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-trpc-prs-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "trpc-prs Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fntrpcprs40AB8CD0",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fntrpcprs40AB8CD0",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpcprsThrottleAlarm6EEF73FF": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-prs is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-trpc-prs-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "Fntrpcprs40AB8CD0",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpctasksErrorRateAlarm38FF7177": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-tasks error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-trpc-tasks-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "trpc-tasks Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fntrpctasks4E6FDD14",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fntrpctasks4E6FDD14",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpctasksThrottleAlarmEA2FFE0C": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-tasks is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-trpc-tasks-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "Fntrpctasks4E6FDD14",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpcteamErrorRateAlarm2F5EB9F7": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-team error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-trpc-team-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "trpc-team Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fntrpcteam3F26878D",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fntrpcteam3F26878D",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdatrpcteamThrottleAlarm6B47EA1C": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda trpc-team is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-trpc-team-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "Fntrpcteam3F26878D",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdawsconnectErrorRateAlarm389125FF": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda ws-connect error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-ws-connect-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "ws-connect Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fnwsconnect64CE29D7",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fnwsconnect64CE29D7",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdawsconnectThrottleAlarm9915002E": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda ws-connect is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-ws-connect-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "Fnwsconnect64CE29D7",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdawsdefaultErrorRateAlarm63523243": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda ws-default error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-ws-default-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "ws-default Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fnwsdefault20B305C8",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fnwsdefault20B305C8",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdawsdefaultThrottleAlarm3CC7DCAB": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda ws-default is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-ws-default-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "Fnwsdefault20B305C8",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdawsdisconnectErrorRateAlarm43D814F1": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda ws-disconnect error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-ws-disconnect-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "ws-disconnect Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fnwsdisconnect749949FE",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fnwsdisconnect749949FE",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdawsdisconnectThrottleAlarm58A32444": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda ws-disconnect is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-ws-disconnect-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "Fnwsdisconnect749949FE",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdawsfanoutErrorRateAlarmA7424547": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda ws-fanout error rate exceeded 5% - check function logs",
+        "AlarmName": "orbital-mwitt-lambda-ws-fanout-error-rate",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Expression": "(errors / invocations) * 100",
+            "Id": "expr_1",
+            "Label": "ws-fanout Error Rate (%)",
+          },
+          {
+            "Id": "errors",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fnwsfanout5079AB36",
+                    },
+                  },
+                ],
+                "MetricName": "Errors",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+          {
+            "Id": "invocations",
+            "MetricStat": {
+              "Metric": {
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Fnwsfanout5079AB36",
+                    },
+                  },
+                ],
+                "MetricName": "Invocations",
+                "Namespace": "AWS/Lambda",
+              },
+              "Period": 300,
+              "Stat": "Sum",
+            },
+            "ReturnData": false,
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 5,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityLambdawsfanoutThrottleAlarmDA62D379": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "Lambda ws-fanout is being throttled - check concurrency limits",
+        "AlarmName": "orbital-mwitt-lambda-ws-fanout-throttles",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "Fnwsfanout5079AB36",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "Throttles",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityRdsProxyConnectionsAlarm4B17CA11": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "RDS Proxy connection setup failures - pool may be exhausted",
+        "AlarmName": "orbital-mwitt-rds-proxy-connection-failures",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "ProxyName",
+            "Value": "orbital-mwitt-proxy",
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "DatabaseConnectionsSetupFailed",
+        "Namespace": "AWS/RDS",
+        "Period": 300,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilitySqsauditindexerDlqDepthAlarm7FB8C606": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "SQS DLQ orbital-mwitt-audit-indexer-dlq has messages - audit-indexer consumer may be failing",
+        "AlarmName": "orbital-mwitt-sqs-audit-indexer-dlq-depth",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": "orbital-mwitt-audit-indexer-dlq",
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "ApproximateNumberOfMessagesVisible",
+        "Namespace": "AWS/SQS",
+        "Period": 60,
+        "Statistic": "Maximum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilitySqsauditindexerOldestMessageAlarm45C14C58": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "SQS queue orbital-mwitt-audit-indexer has messages older than 5 min - audit-indexer consumer may be stuck",
+        "AlarmName": "orbital-mwitt-sqs-audit-indexer-oldest-message",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": "orbital-mwitt-audit-indexer",
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "ApproximateAgeOfOldestMessage",
+        "Namespace": "AWS/SQS",
+        "Period": 60,
+        "Statistic": "Maximum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 300,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilitySqsdefectrouterDlqDepthAlarmEADE5FDD": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "SQS DLQ orbital-mwitt-defect-router-dlq has messages - defect-router consumer may be failing",
+        "AlarmName": "orbital-mwitt-sqs-defect-router-dlq-depth",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": "orbital-mwitt-defect-router-dlq",
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "ApproximateNumberOfMessagesVisible",
+        "Namespace": "AWS/SQS",
+        "Period": 60,
+        "Statistic": "Maximum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilitySqsdefectrouterOldestMessageAlarm69373663": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "SQS queue orbital-mwitt-defect-router has messages older than 5 min - defect-router consumer may be stuck",
+        "AlarmName": "orbital-mwitt-sqs-defect-router-oldest-message",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": "orbital-mwitt-defect-router",
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "ApproximateAgeOfOldestMessage",
+        "Namespace": "AWS/SQS",
+        "Period": 60,
+        "Statistic": "Maximum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 300,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilitySqsmemoryrecorderDlqDepthAlarm8C5974FF": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "SQS DLQ orbital-mwitt-memory-recorder-dlq has messages - memory-recorder consumer may be failing",
+        "AlarmName": "orbital-mwitt-sqs-memory-recorder-dlq-depth",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": "orbital-mwitt-memory-recorder-dlq",
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "ApproximateNumberOfMessagesVisible",
+        "Namespace": "AWS/SQS",
+        "Period": 60,
+        "Statistic": "Maximum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilitySqsmemoryrecorderOldestMessageAlarm257E764A": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "SQS queue orbital-mwitt-memory-recorder has messages older than 5 min - memory-recorder consumer may be stuck",
+        "AlarmName": "orbital-mwitt-sqs-memory-recorder-oldest-message",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": "orbital-mwitt-memory-recorder",
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "ApproximateAgeOfOldestMessage",
+        "Namespace": "AWS/SQS",
+        "Period": 60,
+        "Statistic": "Maximum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 300,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilitySqsreplayrecorderDlqDepthAlarm3D680253": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "SQS DLQ orbital-mwitt-replay-recorder-dlq has messages - replay-recorder consumer may be failing",
+        "AlarmName": "orbital-mwitt-sqs-replay-recorder-dlq-depth",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": "orbital-mwitt-replay-recorder-dlq",
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "ApproximateNumberOfMessagesVisible",
+        "Namespace": "AWS/SQS",
+        "Period": 60,
+        "Statistic": "Maximum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilitySqsreplayrecorderOldestMessageAlarm68DB3B85": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "SQS queue orbital-mwitt-replay-recorder has messages older than 5 min - replay-recorder consumer may be stuck",
+        "AlarmName": "orbital-mwitt-sqs-replay-recorder-oldest-message",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": "orbital-mwitt-replay-recorder",
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "ApproximateAgeOfOldestMessage",
+        "Namespace": "AWS/SQS",
+        "Period": 60,
+        "Statistic": "Maximum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 300,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ObservabilityWsFanoutDlqAlarmB7DF7E9F": {
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "ObservabilityAlarmTopicF724909D",
+          },
+        ],
+        "AlarmDescription": "WS fanout DLQ has messages - fanout Lambda is failing; real-time push degraded",
+        "AlarmName": "orbital-mwitt-ws-fanout-dlq-depth",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": "orbital-mwitt-ws-fanout-dlq",
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "ApproximateNumberOfMessagesVisible",
+        "Namespace": "AWS/SQS",
+        "Period": 60,
+        "Statistic": "Maximum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "observability",
+          },
+        ],
+        "Threshold": 0,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;

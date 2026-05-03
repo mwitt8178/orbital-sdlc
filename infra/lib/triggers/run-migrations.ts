@@ -27,7 +27,7 @@ export interface RunMigrationsProps {
    */
   readonly proxyEndpoint: string
   /**
-   * Aurora cluster — migration runner calls grantConnect on this.
+   * Aurora cluster - migration runner calls grantConnect on this.
    */
   readonly cluster: rds.DatabaseCluster
   /**
@@ -49,7 +49,7 @@ export interface RunMigrationsProps {
 }
 
 /**
- * RunMigrationsTrigger — CDK custom resource that invokes the migration runner
+ * RunMigrationsTrigger - CDK custom resource that invokes the migration runner
  * Lambda on every `cdk deploy`.
  *
  * How it works:
@@ -75,7 +75,7 @@ export class RunMigrationsTrigger extends Construct {
     const isProd = props.envName === 'prod'
 
     // ------------------------------------------------------------------
-    // CloudWatch log group — explicit retention
+    // CloudWatch log group - explicit retention
     // ------------------------------------------------------------------
     const logGroup = new logs.LogGroup(this, 'LogGroup', {
       logGroupName: `/orbital/${props.envName}/lambda/migration-runner`,
@@ -97,11 +97,23 @@ export class RunMigrationsTrigger extends Construct {
       ],
     })
 
-    // Grant RDS IAM authentication (rds-db:connect)
+    // Grant RDS IAM authentication (rds-db:connect) — kept for future use
+    // even though the migration runner now uses password auth direct to
+    // the cluster. Hub Lambdas (Round 8-03) still IAM-auth via the proxy.
     props.proxy.grantConnect(executionRole, 'orbital_admin')
 
-    // Grant read access to the master secret (to retrieve username)
+    // Grant read access to the master secret (password auth direct path).
     props.masterSecret.grantRead(executionRole)
+
+    // Allow the migration runner Lambda SG to connect directly to Aurora
+    // on port 5432 (in addition to the RDS Proxy SG already in place).
+    // The migration runner bypasses the proxy because the master user
+    // cannot IAM-auth on a fresh cluster.
+    props.cluster.connections.allowFrom(
+      props.lambdaSg,
+      ec2.Port.tcp(5432),
+      'Migration runner direct connect (password auth)',
+    )
 
     // ------------------------------------------------------------------
     // Migration runner Lambda
@@ -116,7 +128,8 @@ export class RunMigrationsTrigger extends Construct {
     // ------------------------------------------------------------------
     const migrationsSourceDir = path.resolve(
       __dirname,
-      '../../../../packages/orchestrator/src/db/migrations',
+      // Path from infra/lib/triggers/ → orbital/ = 3 levels up.
+      '../../../packages/orchestrator/src/db/migrations',
     )
 
     const lambdaSourceDir = path.resolve(__dirname, '../lambdas/migration-runner')
@@ -126,8 +139,14 @@ export class RunMigrationsTrigger extends Construct {
       runtime: lambda.Runtime.NODEJS_22_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset(lambdaSourceDir, {
+        // Hash based on the BUNDLED OUTPUT so changes to migration SQL files
+        // (which live outside lambdaSourceDir but are copied into the bundle)
+        // trigger a new asset hash and a re-deploy of the Lambda. Without
+        // this, edits to the SQL would be invisible to CDK and Lambda code
+        // would stay at the previously-deployed version.
+        assetHashType: cdk.AssetHashType.OUTPUT,
         bundling: {
-          // Use local bundling — runs on the host machine at synth time.
+          // Use local bundling - runs on the host machine at synth time.
           // This avoids needing Docker for CDK bundling.
           local: {
             tryBundle(outputDir: string): boolean {
@@ -135,20 +154,31 @@ export class RunMigrationsTrigger extends Construct {
               const fs = require('fs') as typeof import('fs')
               const path = require('path') as typeof import('path')
 
+              // Force HOME to a writable location so npm doesn't try to use
+              // /.npm when invoked from a CDK subprocess that loses HOME.
+              const cdkSafeEnv = {
+                ...process.env,
+                HOME: process.env.HOME || require('os').homedir(),
+              }
+
               try {
                 // Install npm deps for the Lambda function
                 execSync('npm install --omit=dev', {
                   cwd: lambdaSourceDir,
                   stdio: ['ignore', 'inherit', 'inherit'],
+                  env: cdkSafeEnv,
                 })
 
-                // Compile TypeScript to JavaScript
+                // Compile TypeScript to JavaScript.
+                // Use shell-quoted outputDir (it can contain spaces, e.g. "AI SDLC").
+                const quotedOut = JSON.stringify(outputDir) // double-quoted, escapes safely
                 execSync(
-                  'npx tsc --target ES2022 --module CommonJS --moduleResolution node ' +
-                  '--esModuleInterop true --skipLibCheck true --outDir ' + outputDir + ' index.ts',
+                  `npx tsc --target ES2022 --module CommonJS --moduleResolution node ` +
+                  `--esModuleInterop true --skipLibCheck true --outDir ${quotedOut} index.ts`,
                   {
                     cwd: lambdaSourceDir,
                     stdio: ['ignore', 'inherit', 'inherit'],
+                    env: cdkSafeEnv,
                   },
                 )
 
@@ -205,9 +235,18 @@ export class RunMigrationsTrigger extends Construct {
       timeout: cdk.Duration.minutes(10), // large migration sets can take a few minutes
       memorySize: 256,
       environment: {
+        // Migration runner connects DIRECTLY to Aurora (bypass proxy) using
+        // password auth from the master secret — see the comment in
+        // index.ts for the rationale (master user can't IAM-auth without
+        // first being granted rds_iam, which only the migration runner
+        // can do).
+        CLUSTER_ENDPOINT: props.cluster.clusterEndpoint.hostname,
+        CLUSTER_PORT: cdk.Token.asString(props.cluster.clusterEndpoint.port),
+        AURORA_DB_NAME: 'orbital_hub',
+        MASTER_SECRET_ARN: props.masterSecret.secretArn,
+        // Kept for legacy reference; not used by the new connection path.
         RDS_PROXY_HOSTNAME: props.proxyEndpoint,
         RDS_PROXY_PORT: '5432',
-        AURORA_DB_NAME: 'orbital_hub',
         AURORA_USERNAME: 'orbital_admin',
       },
       logGroup,
@@ -216,7 +255,7 @@ export class RunMigrationsTrigger extends Construct {
     })
 
     // ------------------------------------------------------------------
-    // CDK Custom Resource — invokes the Lambda on every deploy
+    // CDK Custom Resource - invokes the Lambda on every deploy
     //
     // ServiceToken is the Lambda ARN.
     // CDK calls Create on first deploy, Update on subsequent deploys.

@@ -31,7 +31,7 @@ export interface AuthorizersConstructProps {
    */
   readonly appClientId: string
   /**
-   * AWS region — needed to build the Cognito issuer URL.
+   * AWS region - needed to build the Cognito issuer URL.
    */
   readonly region: string
 
@@ -47,7 +47,7 @@ export interface AuthorizersConstructProps {
    */
   readonly lambdaSg: ec2.ISecurityGroup
   /**
-   * RDS Proxy — install authorizer reads known_installs.public_key to verify.
+   * RDS Proxy - install authorizer reads known_installs.public_key to verify.
    */
   readonly rdsProxy: rds.DatabaseProxy
   /**
@@ -61,7 +61,7 @@ export interface AuthorizersConstructProps {
 }
 
 /**
- * AuthorizersConstruct — provisions both API Gateway HTTP authorizers.
+ * AuthorizersConstruct - provisions both API Gateway HTTP authorizers.
  *
  * **cognito-auth**: HttpJwtAuthorizer
  *   - Validates Cognito access tokens via Cognito's JWKS endpoint
@@ -84,12 +84,12 @@ export interface AuthorizersConstructProps {
  */
 export class AuthorizersConstruct extends Construct {
   /**
-   * Cognito JWT authorizer — use on browser-facing routes.
+   * Cognito JWT authorizer - use on browser-facing routes.
    */
   readonly cognitoAuthorizer: apigatewayv2.IHttpRouteAuthorizer
 
   /**
-   * PKI envelope Lambda authorizer — use on install-to-hub routes.
+   * PKI envelope Lambda authorizer - use on install-to-hub routes.
    */
   readonly installAuthorizer: apigatewayv2.IHttpRouteAuthorizer
 
@@ -133,7 +133,7 @@ export class AuthorizersConstruct extends Construct {
       removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
     })
 
-    // IAM role — least-privilege: VPC execution + Aurora IAM auth
+    // IAM role - least-privilege: VPC execution + Aurora IAM auth
     const authorizerRole = new iam.Role(this, 'InstallAuthRole', {
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
       description: `Orbital ${props.envName} install Lambda authorizer execution role`,
@@ -187,7 +187,7 @@ export class AuthorizersConstruct extends Construct {
       tracing: lambda.Tracing.ACTIVE,
     })
 
-    // HTTP Lambda authorizer — simple (not IAM policy) response type
+    // HTTP Lambda authorizer - simple (not IAM policy) response type
     // Cache TTL = 0 because envelope nonces are single-use; caching would
     // allow replay within the TTL window.
     this.installAuthorizer = new authorizersLib.HttpLambdaAuthorizer(
@@ -200,7 +200,7 @@ export class AuthorizersConstruct extends Construct {
           '$request.header.X-Orbital-Sig',
           '$request.header.X-Orbital-Sig-Body',
         ],
-        resultsCacheTtl: cdk.Duration.seconds(0), // no cache — nonces are single-use
+        resultsCacheTtl: cdk.Duration.seconds(0), // no cache - nonces are single-use
         responseTypes: [authorizersLib.HttpLambdaResponseType.SIMPLE],
       },
     )

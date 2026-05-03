@@ -142,6 +142,23 @@ export interface GithubClient {
     body: string
     comments?: Array<{ path: string; line: number; body: string }>
   }): Promise<{ id: number }>
+
+  // ---------------------------------------------------------------------------
+  // Round 9 — Low-level passthrough for the onboarding github-provisioner.
+  // [Engineer-Principal · Opus · run-round9-onboarding-overhaul]
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Generic authenticated GitHub REST request — used by the onboarding
+   * github-provisioner to call Contents API, labels, hooks, etc. without
+   * widening the high-level interface for each new endpoint.
+   */
+  rawRequest<T>(
+    method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
+    path: string,
+    body?: unknown,
+    options?: { allow404?: boolean },
+  ): Promise<T | null>
 }
 
 // ---------------------------------------------------------------------------
@@ -605,6 +622,121 @@ export class DefaultGithubClient implements GithubClient {
     await this.request<unknown>(
       'POST',
       `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/check-runs/${checkRunId}/rerequest`,
+    )
+  }
+
+  // ---------------------------------------------------------------------------
+  // Round 9 — Low-level passthrough for the onboarding github-provisioner.
+  // [Engineer-Principal · Opus · run-round9-onboarding-overhaul]
+  //
+  // The provisioner needs endpoints (Contents API, labels, hooks) that the
+  // high-level interface does not expose. Rather than widening the interface
+  // and impacting every caller, we expose a thin generic request method that
+  // reuses this client's auth + retry pipeline.
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Generic authenticated GitHub REST request. Public so the onboarding
+   * provisioner can call Contents API / Labels / Hooks endpoints without
+   * each-method boilerplate. Returns the parsed JSON body, null for
+   * 204 / 404 (with allow404), throws OrbitalError otherwise.
+   */
+  public async rawRequest<T>(
+    method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
+    path: string,
+    body?: unknown,
+    options: { allow404?: boolean } = {},
+  ): Promise<T | null> {
+    // The private request method only handles GET/POST/PATCH/DELETE; PUT is
+    // additive for the Contents API. Forward via a small adapter.
+    if (method === 'PUT') {
+      return this.requestPut<T>(path, body)
+    }
+    return this.request<T>(method as 'GET' | 'POST' | 'PATCH' | 'DELETE', path, body, options)
+  }
+
+  /**
+   * PUT support — the Contents API requires PUT for create/update file. We
+   * implement it inline (the bulk of request() is GET/POST/PATCH paths and
+   * we don't want to invasively touch that). Token resolution + headers are
+   * shared via the same fetch pipeline.
+   */
+  private async requestPut<T>(path: string, body?: unknown): Promise<T | null> {
+    const token = await this.resolveToken()
+    const url = `${this.apiUrl}${path}`
+    let lastErr: unknown = null
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      try {
+        const res = await this.fetchImpl(url, {
+          method: 'PUT',
+          headers: {
+            Accept: 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28',
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'User-Agent': 'orbital-orchestrator',
+          },
+          body: body !== undefined ? JSON.stringify(body) : undefined,
+        })
+        if (res.status === 401 || res.status === 403) {
+          throw new OrbitalError(
+            GITHUB_ERROR_CODES.INTEGRATION_GITHUB_AUTH,
+            `Github auth failed: HTTP ${res.status}`,
+            { status: res.status },
+          )
+        }
+        if (res.status >= 500) {
+          if (attempt >= this.maxRetries) {
+            throw new OrbitalError(
+              GITHUB_ERROR_CODES.INTEGRATION_GITHUB_DOWN,
+              `Github ${res.status} after ${this.maxRetries} retries`,
+              { status: res.status },
+            )
+          }
+          await this.sleepFn(this.computeBackoff(attempt))
+          continue
+        }
+        if (!res.ok) {
+          const text = await res.text().catch(() => '')
+          throw new OrbitalError(
+            GITHUB_ERROR_CODES.INTEGRATION_GITHUB_DOWN,
+            `Github PUT failed: HTTP ${res.status} ${text || ''}`.trim(),
+            { status: res.status, retryable: false },
+          )
+        }
+        if (res.status === 204) return null as T | null
+        const json = (await res.json()) as T
+        return json
+      } catch (err) {
+        lastErr = err
+        if (err instanceof OrbitalError) {
+          if (
+            err.code === GITHUB_ERROR_CODES.INTEGRATION_GITHUB_AUTH ||
+            err.code === GITHUB_ERROR_CODES.STARTUP_ERROR ||
+            err.code === GITHUB_ERROR_CODES.RATE_LIMIT_GITHUB_API
+          ) {
+            throw err
+          }
+          if (
+            err.code === GITHUB_ERROR_CODES.INTEGRATION_GITHUB_DOWN &&
+            err.details?.['retryable'] === false
+          ) {
+            throw err
+          }
+        }
+        if (attempt >= this.maxRetries) {
+          throw new OrbitalError(
+            GITHUB_ERROR_CODES.INTEGRATION_GITHUB_DOWN,
+            `Github PUT failed after ${this.maxRetries} retries: ${(err as Error).message}`,
+            { cause: (err as Error).message },
+          )
+        }
+        await this.sleepFn(this.computeBackoff(attempt))
+      }
+    }
+    throw new OrbitalError(
+      GITHUB_ERROR_CODES.INTEGRATION_GITHUB_DOWN,
+      `Github PUT loop exited unexpectedly: ${(lastErr as Error)?.message ?? 'unknown'}`,
     )
   }
 

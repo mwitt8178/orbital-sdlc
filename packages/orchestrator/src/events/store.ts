@@ -352,6 +352,125 @@ export function createEventStore(db: DB, sql: postgres.Sql): EventStore {
 
 import { sanitizeForHub, LocalDataLeakError } from '../hub-client/sanitize.js'
 
+// ---------------------------------------------------------------------------
+// Round 8-05 — AWS SNS publish path
+// [Engineer-Sr · Sonnet · run-round8-05-event-bus]
+//
+// When ORBITAL_DEPLOY_TARGET=aws, after the local DB commit + sanitize pass,
+// publish the event to the SNS topic so all downstream consumers receive it.
+// Local-mode LISTEN/NOTIFY path is unchanged.
+//
+// Chain (AWS mode): local DB commit → sanitize → SNS publish
+// Chain (local mode): local DB commit → LISTEN/NOTIFY (unchanged)
+// ---------------------------------------------------------------------------
+
+import { SNSClient, PublishCommand } from '@aws-sdk/client-sns'
+import { env } from '../config/env.js'
+
+let _snsClient: SNSClient | null = null
+
+function getSnsClient(): SNSClient {
+  if (!_snsClient) {
+    _snsClient = new SNSClient({
+      region: process.env['AWS_REGION'] ?? process.env['AWS_DEFAULT_REGION'] ?? 'us-east-1',
+    })
+  }
+  return _snsClient
+}
+
+/** Reset SNS client for tests. */
+export function _resetSnsClientForTests(): void {
+  _snsClient = null
+}
+
+/**
+ * publishToSns — publish a stored event envelope to the SNS topic.
+ *
+ * Called after appendToDb() succeeds AND the sanitize check passes.
+ * Fire-and-forget from the caller's perspective: errors are logged but do NOT
+ * roll back the local DB write (the local write is the source of truth).
+ *
+ * Message attributes carry tenant_id, aggregate_type, event_type so SNS
+ * subscription filter policies can route to the correct SQS consumer queues.
+ *
+ * @param envelope  The stored EventEnvelope (fully written, with event_id).
+ * @param topicArn  The SNS topic ARN (from EVENTS_TOPIC_ARN env var).
+ */
+async function publishToSns(envelope: EventEnvelope, topicArn: string): Promise<void> {
+  const tenantId =
+    typeof (envelope.payload as Record<string, unknown>)['tenant_id'] === 'string'
+      ? ((envelope.payload as Record<string, unknown>)['tenant_id'] as string)
+      : ''
+
+  await getSnsClient().send(
+    new PublishCommand({
+      TopicArn: topicArn,
+      Message: JSON.stringify(envelope),
+      MessageAttributes: {
+        tenant_id: { DataType: 'String', StringValue: tenantId },
+        aggregate_type: { DataType: 'String', StringValue: envelope.aggregate_type },
+        event_type: { DataType: 'String', StringValue: envelope.event_type },
+      },
+    }),
+  )
+}
+
+/**
+ * appendAndPublish — append event to local DB, then publish to SNS if in AWS mode.
+ *
+ * Usage (AWS mode hub Lambda):
+ *   import { appendAndPublish } from '../events/store.js'
+ *   const envelope = await appendAndPublish(store, eventInput)
+ *
+ * The SNS publish error does NOT throw — the local write is authoritative.
+ * SNS failures are logged as errors so alarms can detect persistent publish failures.
+ */
+export async function appendAndPublish(
+  store: PostgresEventStore,
+  input: EventInput,
+): Promise<EventEnvelope> {
+  // Step 1: local DB write — always authoritative.
+  const envelope = await store.append(input)
+
+  // Step 2: SNS publish — only in AWS mode.
+  if (env.ORBITAL_DEPLOY_TARGET === 'aws') {
+    const topicArn = env.EVENTS_TOPIC_ARN
+    if (!topicArn) {
+      logger.error(
+        { event_id: envelope.event_id },
+        'events/store: ORBITAL_DEPLOY_TARGET=aws but EVENTS_TOPIC_ARN is not set — SNS publish skipped',
+      )
+      return envelope
+    }
+
+    // Sanitize before publishing to SNS (same guard as hub fanout).
+    const sanitised = sanitizeEventForHubFanout(envelope)
+    if (!sanitised.ok) {
+      logger.warn(
+        { event_id: envelope.event_id, event_type: envelope.event_type },
+        'events/store: sanitizer blocked SNS publish — local write kept, SNS skipped',
+      )
+      return envelope
+    }
+
+    try {
+      await publishToSns(envelope, topicArn)
+      logger.debug(
+        { event_id: envelope.event_id, event_type: envelope.event_type },
+        'events/store: SNS publish succeeded',
+      )
+    } catch (err) {
+      // SNS publish error is NOT fatal — local write is the source of truth.
+      logger.error(
+        { event_id: envelope.event_id, event_type: envelope.event_type, err },
+        'events/store: SNS publish failed — event persisted locally but not sent to SNS',
+      )
+    }
+  }
+
+  return envelope
+}
+
 /**
  * Sanitise an outbound event payload before fanout to the hub.
  *

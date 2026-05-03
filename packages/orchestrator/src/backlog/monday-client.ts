@@ -66,6 +66,15 @@ export interface MondayClient {
     columnId: string
     value: string
   }): Promise<{ id: string }>
+  /**
+   * Round 9 — generic GraphQL passthrough for the onboarding Monday
+   * provisioner. Reuses the same auth + retry + 429-backoff pipeline as the
+   * high-level methods. Public so callers needing endpoints not exposed by
+   * the high-level surface (create_board, create_column, etc.) can issue
+   * arbitrary queries without bypassing the auth/retry pipeline.
+   * [Engineer-Principal · Opus · run-round9-onboarding-overhaul]
+   */
+  graphql<T = unknown>(query: string, variables?: Record<string, unknown>): Promise<T>
 }
 
 // ---------------------------------------------------------------------------

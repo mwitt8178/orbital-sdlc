@@ -36,7 +36,7 @@ exports[`AuthorizersConstruct — snapshot mwitt stack matches snapshot 1`] = `
       "Properties": {
         "Code": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+          "S3Key": "3a92841cde6649818eb54dd2222d128676a330c337d170ba9c01af57e73399d5.zip",
         },
         "Environment": {
           "Variables": {

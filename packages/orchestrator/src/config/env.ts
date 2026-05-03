@@ -156,6 +156,15 @@ const envSchema = z.object({
   ORBITAL_REPLAY_KMS_KEY_ARN: z.string().optional(),
 
   /**
+   * Round 8-05 — SNS topic ARN for event fanout.
+   * Required when ORBITAL_DEPLOY_TARGET=aws.
+   * Set from CDK stack output OrbitalHub-<env>-EventsTopicArn.
+   * Example: arn:aws:sns:us-east-1:111111111111:orbital-events-mwitt
+   * [Engineer-Sr · Sonnet · run-round8-05-event-bus]
+   */
+  EVENTS_TOPIC_ARN: z.string().optional(),
+
+  /**
    * Round 6 #1 — GitHub PR loop feature flag.
    * When 'on', post-task hook pushes branch and opens PR after verifier passes.
    * Default 'off' — safe to ship without a GitHub remote configured.

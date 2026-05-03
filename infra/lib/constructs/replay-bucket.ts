@@ -1,5 +1,5 @@
 /**
- * replay-bucket.ts — Replay blob S3 bucket with SSE-KMS + lifecycle + Object Lock.
+ * replay-bucket.ts - Replay blob S3 bucket with SSE-KMS + lifecycle + Object Lock.
  *
  * [Engineer-Sr · Sonnet · run-round8-06-s3-cloudfront]
  *
@@ -8,13 +8,13 @@
  *   - Public access fully blocked.
  *   - Encryption: SSE-KMS via a stack-level CMK (per-tenant CMK wired in 8-07).
  *   - Versioning: enabled (required for Object Lock + forensic recovery).
- *   - Object Lock: governance mode for prod (WORM — prevents deletion during retention window).
+ *   - Object Lock: governance mode for prod (WORM - prevents deletion during retention window).
  *   - Lifecycle:
- *       Day 0–30:  STANDARD
- *       Day 30–90: STANDARD_IA (transition at day 30)
+ *       Day 0-30:  STANDARD
+ *       Day 30-90: STANDARD_IA (transition at day 30)
  *       Day 90+:   GLACIER_IR  (transition at day 90)
  *       Day 2555:  DELETE       (7 years = 2555 days)
- *   - Enforce SSL — no plain HTTP access.
+ *   - Enforce SSL - no plain HTTP access.
  *   - KMS key: stack-level CMK with automatic rotation, used as the bucket default.
  *     8-07 (Secrets Manager + per-tenant CMK round) will supply per-tenant keys;
  *     the store-s3.ts driver already accepts a `kmsKeyArnFor` resolver.
@@ -61,10 +61,10 @@ export class ReplayBucketConstruct extends Construct {
     const retentionDays = (props.retentionYears ?? 7) * 365
 
     // ------------------------------------------------------------------
-    // KMS CMK — stack-level key (per-tenant keys added in 8-07)
+    // KMS CMK - stack-level key (per-tenant keys added in 8-07)
     // ------------------------------------------------------------------
     this.encryptionKey = new kms.Key(this, 'EncryptionKey', {
-      description: `Orbital replay blob encryption key — ${props.envName}`,
+      description: `Orbital replay blob encryption key - ${props.envName}`,
       alias: `orbital-replays-${props.envName}`,
       enableKeyRotation: true,
       // Non-prod can be torn down; prod key is retained for legal hold
@@ -78,7 +78,7 @@ export class ReplayBucketConstruct extends Construct {
     this.bucket = new s3.Bucket(this, 'Bucket', {
       bucketName: `orbital-replays-${props.envName}-${cdk.Stack.of(this).account}`,
 
-      // Block all public access — never publicly readable
+      // Block all public access - never publicly readable
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
 
       // SSE-KMS with the stack-level CMK
@@ -130,7 +130,7 @@ export class ReplayBucketConstruct extends Construct {
     })
 
     // ------------------------------------------------------------------
-    // Object Lock (prod only) — governance mode via CfnBucket escape hatch
+    // Object Lock (prod only) - governance mode via CfnBucket escape hatch
     //
     // Object Lock must be enabled at bucket creation via CloudFormation.
     // CDK high-level Bucket does not expose ObjectLockEnabled directly, so
@@ -157,13 +157,13 @@ export class ReplayBucketConstruct extends Construct {
     // ------------------------------------------------------------------
     new cdk.CfnOutput(this, 'ReplayBucketName', {
       value: this.bucket.bucketName,
-      description: `Orbital replay blob S3 bucket — ${props.envName}`,
+      description: `Orbital replay blob S3 bucket - ${props.envName}`,
       exportName: `OrbitalHub-${props.envName}-ReplayBucketName`,
     })
 
     new cdk.CfnOutput(this, 'ReplayKmsKeyArn', {
       value: this.encryptionKey.keyArn,
-      description: `Orbital replay blob KMS key ARN — ${props.envName}`,
+      description: `Orbital replay blob KMS key ARN - ${props.envName}`,
       exportName: `OrbitalHub-${props.envName}-ReplayKmsKeyArn`,
     })
 

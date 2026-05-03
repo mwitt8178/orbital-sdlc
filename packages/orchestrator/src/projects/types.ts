@@ -33,6 +33,19 @@ export const CreateProjectInputSchema = z.object({
   githubOwner: z.string().min(1).max(100).optional(),
   githubRepo: z.string().min(1).max(100).optional(),
   githubDefaultBranch: z.string().min(1).max(255).optional(),
+  /**
+   * Round 9 — onboarding flow A. Captures the operator's intent for the
+   * router's provisioner step (the router does the actual Monday + GitHub
+   * API calls; this flag is recorded on the ProjectCreated event for audit
+   * traceability).
+   * [Engineer-Principal · Opus · run-round9-onboarding-overhaul]
+   */
+  provisioning: z
+    .object({
+      monday: z.boolean().default(false),
+      github: z.boolean().default(false),
+    })
+    .optional(),
 })
 
 export type CreateProjectInput = z.infer<typeof CreateProjectInputSchema>

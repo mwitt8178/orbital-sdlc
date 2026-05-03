@@ -259,14 +259,218 @@ aws cloudformation describe-stacks \
 
 ---
 
+## One-command Deploy + Teardown (Round 8-09)
+
+Once prereqs are in place, the deploy/teardown lifecycle is two scripts:
+
+### `scripts/deploy-env.sh <env>`
+
+```bash
+# Interactive: prompts for confirmation after showing the cdk diff
+AWS_PROFILE=orbital-mwitt ./scripts/deploy-env.sh mwitt
+
+# Non-interactive (CI):
+ORBITAL_AUTO_APPROVE_DEPLOY=1 AWS_PROFILE=orbital-mwitt ./scripts/deploy-env.sh mwitt
+
+# Production: requires the explicit guardrail flag + double confirmation
+ALLOW_PROD_DEPLOY=1 AWS_PROFILE=orbital-prod ./scripts/deploy-env.sh prod
+```
+
+What it does:
+1. Validates the env name (mwitt | rreed | prod).
+2. Refuses prod unless `ALLOW_PROD_DEPLOY=1`.
+3. Verifies `node`, `npm`, `aws`, `npx` are on PATH and Node >= 22.
+4. Runs `aws sts get-caller-identity` to confirm credentials.
+5. Runs `npm ci` then `cdk synth` (no AWS calls).
+6. Runs `cdk diff` so the operator sees exactly what will change.
+7. Prompts for confirmation (skipped if `ORBITAL_AUTO_APPROVE_DEPLOY=1`).
+8. Runs `cdk deploy --context env=<env> --require-approval never` and writes outputs to `infra/cdk.out/outputs-<env>.json`.
+9. Runs `scripts/aws-smoke-test.sh <env>` (skip with `ORBITAL_SKIP_SMOKE=1`).
+
+### `scripts/teardown-env.sh <env>`
+
+```bash
+# Interactive only — there is no auto-approve for teardown
+AWS_PROFILE=orbital-mwitt ./scripts/teardown-env.sh mwitt
+```
+
+What it does:
+1. Refuses if `env=prod`. Production teardown is a manual procedure documented in `docs/aws-rollback.md` (Production Teardown).
+2. Cross-checks that `aws sts get-caller-identity` returns the same account as the env config in `cdk.json` (refuses if mismatched).
+3. Requires the operator to retype the env name AND type the word `destroy`.
+4. Runs `cdk destroy --context env=<env> --force`.
+5. Verifies no `OrbitalHub-<env>` stack remains in CloudFormation.
+
+Note: Aurora final snapshots, CloudWatch logs, and (in prod) ObjectLocked S3 objects are retained per their individual retention policies; teardown does not delete them.
+
+---
+
+## Smoke Test (`scripts/aws-smoke-test.sh`)
+
+Runs 7 end-to-end health checks against a deployed env:
+
+| # | Check |
+|---|---|
+| 1 | `GET /health` returns 200 |
+| 2 | Cognito sign-up + sign-in produces a valid IdToken (uses `admin-create-user` + `admin-initiate-auth`; throwaway user is deleted after) |
+| 3 | Authenticated tRPC `GET /trpc/team.members` returns 200 with the JWT from check 2 |
+| 4 | WebSocket `wss://ws.<domain>/`: connect → subscribe → receive within timeout |
+| 5 | Replay capture roundtrip: PUT a JSON blob to the replay bucket, GET it back, assert SHA-256 match |
+| 6 | SNS publish → SQS receive: publish a smoke event, poll the audit-indexer queue, assert the event is delivered |
+| 7 | CloudWatch alarms with prefix `orbital-<env>-` exist and are queryable |
+
+Usage:
+
+```bash
+./scripts/aws-smoke-test.sh mwitt
+
+# Skip specific checks (e.g., 2 and 4 for environments where Cognito or WS aren't ready):
+ORBITAL_SMOKE_SKIP_LIST=2,4 ./scripts/aws-smoke-test.sh mwitt
+```
+
+The smoke deletes the throwaway Cognito user on exit (via a bash trap). All other resources remain.
+
+---
+
+## Cutover Playbook — Self-Host Hub → AWS
+
+Cutover migrates an existing Round 7 self-host Orbital Hub (Postgres in Docker) to its AWS counterpart. The playbook below assumes the AWS env (`mwitt` here) has already been deployed via `deploy-env.sh` and that smoke checks pass.
+
+**Risk Tier: High — getting cutover wrong = downtime or data loss.**
+
+### Pre-cutover (1 day before)
+
+1. Deploy AWS env via `deploy-env.sh mwitt` and confirm `aws-smoke-test.sh mwitt` is green.
+2. Lower the self-host DNS TTL on the existing record. The current record will be referenced by every operator's local install. Lower TTL to 60 seconds at least 24h before cutover so caches drain.
+   ```bash
+   # Example (Cloudflare):
+   curl -X PATCH "https://api.cloudflare.com/client/v4/zones/<zoneid>/dns_records/<recordid>" \
+     -H "Authorization: Bearer ${CF_TOKEN}" \
+     -H "Content-Type: application/json" \
+     --data '{"ttl":60}'
+   ```
+3. Schedule a maintenance window. Typical cutover takes 5–15 minutes depending on data size.
+4. Notify operators: brief unavailability + their `orbital` CLI may need a `orbital reconnect` after.
+5. Test the cutover script in `--dump-only` mode against a staging copy.
+
+### Cutover window
+
+```bash
+# Required env vars
+export AWS_PROFILE=orbital-mwitt
+export ORBITAL_HUB_URL=https://hub.example.com
+export ORBITAL_HUB_OWNER_TOKEN=<owner-token>
+export ORBITAL_SELFHOST_PG_URL=postgres://orbital:<pw>@localhost:5433/orbital_hub
+export ORBITAL_AURORA_PG_URL=postgres://admin:<pw>@orbital-mwitt-rds-proxy.proxy-...rds.amazonaws.com:5432/orbital_hub
+
+# Run the cutover (interactive — confirms before each destructive step)
+./scripts/cutover-from-self-host.sh mwitt
+```
+
+The script walks these steps automatically:
+
+1. **Set self-host hub to read-only mode.** Calls `POST /admin/readonly { "readonly": true }`. This makes the `EVENT_APPEND` path return 503 to clients; reads still work. If your hub doesn't support that endpoint yet, set `ORBITAL_HUB_READONLY=1` in its `.env` and restart the container manually, then re-run with `--skip-readonly`.
+2. **`pg_dump` the self-host Postgres** to `backups/cutover/orbital-cutover-<env>-<ts>.sql`. Source row count for the `events` table is captured to `<file>.events-count` for verification.
+3. **Restore the dump into Aurora via psql.** Restore is wrapped in a single transaction (`--single-transaction`) so a partial load rolls back cleanly. Aurora DSQL hard-no rules (no FKs, no sequences, no triggers) apply — the dump should not contain those because Round 7 schema already follows DSQL conventions.
+4. **Verify event count parity.** If source != target, the script aborts with exit 5 and the DNS cutover should NOT proceed.
+5. **Print DNS cutover instructions.** The script does not flip DNS automatically — that step is operator-driven so you can timebox the propagation window precisely.
+
+### DNS cutover
+
+Get the AWS endpoint:
+
+```bash
+aws cloudformation describe-stacks \
+  --stack-name OrbitalHub-mwitt \
+  --query "Stacks[0].Outputs[?OutputKey=='ApiEndpoint'].OutputValue" \
+  --output text
+# → d-abc123.execute-api.us-east-1.amazonaws.com (or the custom domain)
+```
+
+Update your DNS provider:
+
+```
+hub.example.com   CNAME   <api-endpoint>   TTL=60
+```
+
+Wait 30–60 seconds for propagation. Verify:
+
+```bash
+dig +short hub.example.com
+# Should resolve to the new endpoint
+```
+
+Run the smoke against the new endpoint:
+
+```bash
+./scripts/aws-smoke-test.sh mwitt
+```
+
+### Verify post-cutover
+
+1. **Operators reconnect.** Existing Round 7 PKI signed envelopes still work because the install_id and pubkey haven't changed; the hub is just at a new IP.
+2. **WS subscriptions re-establish.** Browser clients holding a Cognito session must re-acquire WS tokens; CLI installs automatically reconnect via `wss://ws.<domain>`.
+3. **Sample events match.** Compare 10 random `event_id` values between source (read-only) and target:
+   ```bash
+   psql "$ORBITAL_SELFHOST_PG_URL" -At \
+     -c "SELECT event_id FROM events ORDER BY random() LIMIT 10" \
+     | while read id; do
+         echo -n "$id  src="
+         psql "$ORBITAL_SELFHOST_PG_URL" -At -c "SELECT md5(content::text) FROM events WHERE event_id='$id'"
+         echo -n "          tgt="
+         psql "$ORBITAL_AURORA_PG_URL" -At -c "SELECT md5(content::text) FROM events WHERE event_id='$id'"
+       done
+   ```
+4. **Watch alarms for 24h.** CloudWatch alarms (5xx rate, Lambda errors, SQS DLQ depth, Aurora CPU, RDS Proxy connection-pool exhaustion) should remain in `OK`.
+
+### Decommission self-host (after 7-day soak)
+
+Only after 7 days of clean operation on AWS:
+
+```bash
+# Stop the self-host container
+docker compose -f docker-compose.hub.yml down
+
+# Archive the local Postgres dump to encrypted offsite storage
+aws s3 cp \
+  ./backups/cutover/orbital-cutover-mwitt-<ts>.sql \
+  s3://orbital-archive/cutovers/ \
+  --sse aws:kms --sse-kms-key-id alias/orbital-archive
+
+# Tear down docker-compose
+docker compose -f docker-compose.hub.yml rm -f
+```
+
+Keep the dump file at least one year for forensics + regulatory compliance.
+
+### Rollback (within 5 minutes of DNS cutover)
+
+If post-cutover smoke fails:
+
+1. Revert DNS — point `hub.example.com` back at the self-host IP.
+2. Set `ORBITAL_HUB_READONLY=0` in the self-host `.env` and restart the container.
+3. The `events` written to AWS during the brief AWS-active window must be replayed back. See `docs/aws-rollback.md` section "Cutover rollback".
+
+The 5-minute window is constrained by the original DNS TTL (60s) plus a margin for resolver caches.
+
+---
+
 ## Teardown (non-prod only)
+
+Use the deploy script's companion:
 
 ```bash
 # WARNING: destroys all resources including data. Use only on dev envs.
+AWS_PROFILE=orbital-mwitt ./scripts/teardown-env.sh mwitt
+```
+
+Or the underlying CDK command if you have a non-standard need:
+
+```bash
 AWS_PROFILE=orbital-mwitt npm run destroy -- --context env=mwitt
 ```
 
-Prod stack has termination protection enabled and will refuse to be destroyed without first disabling termination protection manually.
+Prod stack has termination protection enabled and will refuse to be destroyed without first disabling termination protection manually. See `docs/aws-rollback.md` for the production teardown procedure.
 
 ---
 

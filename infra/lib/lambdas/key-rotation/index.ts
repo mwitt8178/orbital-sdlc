@@ -69,7 +69,7 @@ interface PrevKeypairJson extends KeypairJson {
 const PREV_RETENTION_HOURS = 24
 
 // ---------------------------------------------------------------------------
-// Required by @noble/ed25519 v2 — synchronous SHA-512 implementation.
+// Required by @noble/ed25519 v2 - synchronous SHA-512 implementation.
 // ---------------------------------------------------------------------------
 ed.etc.sha512Sync = (...m: Uint8Array[]): Uint8Array =>
   sha512(ed.etc.concatBytes(...m))
@@ -93,7 +93,7 @@ function fromHex(hex: string): Uint8Array {
 }
 
 async function generateKeypair(): Promise<KeypairJson> {
-  // Use crypto.randomBytes for a 32-byte private key seed — Ed25519 standard.
+  // Use crypto.randomBytes for a 32-byte private key seed - Ed25519 standard.
   const privateKey = new Uint8Array(randomBytes(32))
   const publicKey = await ed.getPublicKeyAsync(privateKey)
   return {
@@ -104,7 +104,7 @@ async function generateKeypair(): Promise<KeypairJson> {
 }
 
 async function verifyProbe(keypair: KeypairJson): Promise<boolean> {
-  // Sign a deterministic probe and verify — confirms the keypair is well-formed.
+  // Sign a deterministic probe and verify - confirms the keypair is well-formed.
   const probe = new TextEncoder().encode('orbital-rotation-probe')
   const sig = await ed.signAsync(probe, fromHex(keypair.privateKey))
   return ed.verifyAsync(sig, probe, fromHex(keypair.publicKey))
@@ -131,7 +131,7 @@ async function stepCreateSecret(
     // already exists; nothing to do
     return
   } catch {
-    // version doesn't exist — proceed to create
+    // version doesn't exist - proceed to create
   }
 
   const newKeypair = await generateKeypair()
@@ -188,7 +188,7 @@ async function stepFinishSecret(
       prevKeypair = JSON.parse(cur.SecretString)
     }
   } catch {
-    // No AWSCURRENT yet (first rotation) — nothing to retain.
+    // No AWSCURRENT yet (first rotation) - nothing to retain.
   }
 
   // Find the previous AWSCURRENT version id for stage move.
@@ -241,7 +241,7 @@ async function stashPrev(
         await client.send(
           new CreateSecretCommand({
             Name: prevSecretId,
-            Description: 'Orbital hub master key — previous version (24h verification window)',
+            Description: 'Orbital hub master key - previous version (24h verification window)',
             SecretString: JSON.stringify(prevValue),
           }),
         )

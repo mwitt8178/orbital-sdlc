@@ -53,7 +53,7 @@ exports[`RunMigrationsTrigger — snapshot mwitt migration runner stack matches 
       },
     },
     "RdsProxyLambdaSecurityGroupId51DE2A7F": {
-      "Description": "Orbital mwitt placeholder Lambda SG ID — imported by 8-03",
+      "Description": "Orbital mwitt placeholder Lambda SG ID - imported by 8-03",
       "Export": {
         "Name": "OrbitalHub-mwitt-LambdaSgId",
       },
@@ -99,7 +99,7 @@ exports[`RunMigrationsTrigger — snapshot mwitt migration runner stack matches 
   "Resources": {
     "AuroraAuroraSgF83104E3": {
       "Properties": {
-        "GroupDescription": "Orbital mwitt — Aurora cluster SG. Accepts connections from RDS Proxy only.",
+        "GroupDescription": "Orbital mwitt - Aurora cluster SG. Accepts connections from RDS Proxy only.",
         "GroupName": "orbital-mwitt-aurora",
         "SecurityGroupEgress": [
           {
@@ -587,7 +587,7 @@ exports[`RunMigrationsTrigger — snapshot mwitt migration runner stack matches 
       "Properties": {
         "Code": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "4ba7c197ec8bc40b12f0cbdcb2938245c58ee17718bcfbb30b71911eaca42a3e.zip",
+          "S3Key": "210095144a31663f146cc6dfe44bdb9e608ebef910aaef293aeaf355956a766f.zip",
         },
         "Environment": {
           "Variables": {
@@ -956,7 +956,7 @@ exports[`RunMigrationsTrigger — snapshot mwitt migration runner stack matches 
     },
     "RdsProxyLambdaSg1E2C3BBF": {
       "Properties": {
-        "GroupDescription": "Orbital mwitt — placeholder Lambda SG. 8-03 (Lambda) will attach this SG to Lambda functions. This SG is granted ingress to the RDS Proxy.",
+        "GroupDescription": "Orbital mwitt - placeholder Lambda SG. 8-03 (Lambda) will attach this SG to Lambda functions. This SG is granted ingress to the RDS Proxy.",
         "GroupName": "orbital-mwitt-lambda",
         "SecurityGroupEgress": [
           {
@@ -991,7 +991,7 @@ exports[`RunMigrationsTrigger — snapshot mwitt migration runner stack matches 
           ],
           "Version": "2012-10-17",
         },
-        "Description": "Orbital mwitt RDS Proxy — Secrets Manager reader",
+        "Description": "Orbital mwitt RDS Proxy - Secrets Manager reader",
         "Tags": [
           {
             "Key": "orbital:component",

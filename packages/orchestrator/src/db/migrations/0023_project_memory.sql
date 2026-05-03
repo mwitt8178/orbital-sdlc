@@ -52,11 +52,19 @@ CREATE INDEX IF NOT EXISTS pm_entries_project_idx ON project_memory_entries (pro
 CREATE INDEX IF NOT EXISTS pm_entries_kind_idx ON project_memory_entries (project_id, kind, status);
 
 --> statement-breakpoint
--- pgvector ivfflat index — only created when vector extension is available.
+-- pgvector ivfflat index - only created when vector extension is fully usable.
+-- We wrap in an EXCEPTION block so partial-pgvector environments (where
+-- pg_extension has a row but the type/operator-class is not yet usable in
+-- the parser, e.g. Aurora Postgres without the parameter-group-level pgvector
+-- enable) fall back gracefully to the tag-based retrieval path.
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector') THEN
-    EXECUTE 'CREATE INDEX IF NOT EXISTS pm_entries_embedding_idx ON project_memory_entries USING ivfflat (embedding::vector vector_cosine_ops) WITH (lists=100)';
+    BEGIN
+      EXECUTE 'CREATE INDEX IF NOT EXISTS pm_entries_embedding_idx ON project_memory_entries USING ivfflat (embedding::vector vector_cosine_ops) WITH (lists=100)';
+    EXCEPTION WHEN OTHERS THEN
+      RAISE NOTICE 'pgvector ivfflat index skipped (%); tag-based retrieval still works', SQLERRM;
+    END;
   END IF;
 END;
 $$;

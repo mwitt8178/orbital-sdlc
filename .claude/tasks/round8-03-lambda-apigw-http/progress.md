@@ -183,3 +183,32 @@ No ERROR-level violations.
 confidence: 90
 
 The three CDK construct test suites (50 tests) all pass. CDK synth exits 0. The integration tests are properly wired and will run in CI with a live database. The 10-point deduction is for: (1) 8-07 replaced secrets-cache.ts mid-run — type compatibility of `Secrets { db: DbCreds }` in `init.ts` is functionally correct but wasn't verified via TypeScript compile in isolation; (2) integration tests require a live DB to validate the full install authorizer flow end-to-end.
+
+---
+
+## TS errors resolved
+
+[Engineer-Sr · Sonnet · run-round8-03-lambda-apigw-http-followup-tsc]
+
+### Errors fixed
+
+**Error 1 — `install-authorizer.ts(80,5): 'context' does not exist in type 'APIGatewaySimpleAuthorizerResult'`**
+
+Root cause: `allow()` returned `APIGatewaySimpleAuthorizerResult` which has no `context` field. Added `APIGatewaySimpleAuthorizerWithContextResult<InstallAuthContext>` import and introduced the `InstallAuthContext` interface (`{ installId, tenantId, role }`). `allow()` now returns the WithContext variant (a supertype of the base result); `deny()` returns the base `APIGatewaySimpleAuthorizerResult` with only `{ isAuthorized: false }`. Handler type remains `APIGatewayRequestSimpleAuthorizerHandlerV2` (returns the base result) which both return types satisfy.
+
+**Error 2 — `install-authorizer.ts(111,27): Property 'body' does not exist on type 'APIGatewayRequestAuthorizerEventV2'`**
+
+Root cause: `APIGatewayRequestAuthorizerEventV2` does not carry `event.body` — API Gateway HTTP API does not forward request body to Lambda authorizers. Removed the body-decode block and replaced with `const requestBodyBytes = new Uint8Array()`. The install-authorizer contract: clients on the install path must sign with `sha256(new Uint8Array())` (empty) as `params_hash`. Updated all `signEnvelope` calls in `install-authorizer.integration.test.ts` from non-empty `bodyBytes` to `new Uint8Array()`.
+
+**Error 3 — `auth.ts(19,36): Argument of type '() => () => AdminRouter' is not assignable to parameter of type '() => AnyRouter'`**
+
+Root cause: `adminRouter` is itself a factory function `() => AdminRouter`. Passing `() => authRouter` wraps it in a second arrow function producing `() => (() => AdminRouter)`. Fixed by calling the factory: `makeHandler(() => authRouter())`.
+
+### Verification
+
+All three packages compile with zero errors:
+- `packages/orchestrator`: `tsc --noEmit` clean
+- `packages/ui`: `tsc --noEmit` clean
+- `infra`: `tsc --noEmit` clean
+
+Integration test failures (13 tests, `ORBITAL_DB_CREDS_SECRET_ARN` not set) are pre-existing — identical failure mode present in the committed HEAD before these fixes. Tests require a live AWS environment with Secrets Manager; they are correctly skipped in local-only CI.

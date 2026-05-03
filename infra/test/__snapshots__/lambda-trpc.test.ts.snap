@@ -172,7 +172,7 @@ exports[`LambdaTrpcConstruct — snapshot mwitt stack with all 11 router groups 
       "Properties": {
         "Code": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+          "S3Key": "3a92841cde6649818eb54dd2222d128676a330c337d170ba9c01af57e73399d5.zip",
         },
         "Environment": {
           "Variables": {
@@ -357,7 +357,7 @@ exports[`LambdaTrpcConstruct — snapshot mwitt stack with all 11 router groups 
       "Properties": {
         "Code": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+          "S3Key": "3a92841cde6649818eb54dd2222d128676a330c337d170ba9c01af57e73399d5.zip",
         },
         "Environment": {
           "Variables": {
@@ -420,7 +420,7 @@ exports[`LambdaTrpcConstruct — snapshot mwitt stack with all 11 router groups 
       },
       "Type": "AWS::Lambda::Function",
     },
-    "LambdaauthFnCurrentVersion2C8EC88F1b890a22b0b0d51e6745acddcc42dbb8": {
+    "LambdaauthFnCurrentVersion2C8EC88Fb262475d4fd7b2953eff175ba8833fe3": {
       "DeletionPolicy": "Retain",
       "DependsOn": [
         "TestVpcprivateSubnet1DefaultRouteE55BA5B9",
@@ -450,7 +450,7 @@ exports[`LambdaTrpcConstruct — snapshot mwitt stack with all 11 router groups 
         "MaximumRetryAttempts": 1,
         "Qualifier": {
           "Fn::GetAtt": [
-            "LambdaauthFnCurrentVersion2C8EC88F1b890a22b0b0d51e6745acddcc42dbb8",
+            "LambdaauthFnCurrentVersion2C8EC88Fb262475d4fd7b2953eff175ba8833fe3",
             "Version",
           ],
         },
@@ -459,13 +459,13 @@ exports[`LambdaTrpcConstruct — snapshot mwitt stack with all 11 router groups 
     },
     "LambdaauthLiveAliasB61C7D46": {
       "Properties": {
-        "Description": "Orbital mwitt tRPC auth — provisioned concurrency=2",
+        "Description": "Orbital mwitt tRPC auth - provisioned concurrency=2",
         "FunctionName": {
           "Ref": "LambdaauthFnC4E70A51",
         },
         "FunctionVersion": {
           "Fn::GetAtt": [
-            "LambdaauthFnCurrentVersion2C8EC88F1b890a22b0b0d51e6745acddcc42dbb8",
+            "LambdaauthFnCurrentVersion2C8EC88Fb262475d4fd7b2953eff175ba8833fe3",
             "Version",
           ],
         },
@@ -598,7 +598,7 @@ exports[`LambdaTrpcConstruct — snapshot mwitt stack with all 11 router groups 
       "Properties": {
         "Code": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+          "S3Key": "3a92841cde6649818eb54dd2222d128676a330c337d170ba9c01af57e73399d5.zip",
         },
         "Environment": {
           "Variables": {
@@ -783,7 +783,7 @@ exports[`LambdaTrpcConstruct — snapshot mwitt stack with all 11 router groups 
       "Properties": {
         "Code": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+          "S3Key": "3a92841cde6649818eb54dd2222d128676a330c337d170ba9c01af57e73399d5.zip",
         },
         "Environment": {
           "Variables": {
@@ -968,7 +968,7 @@ exports[`LambdaTrpcConstruct — snapshot mwitt stack with all 11 router groups 
       "Properties": {
         "Code": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+          "S3Key": "3a92841cde6649818eb54dd2222d128676a330c337d170ba9c01af57e73399d5.zip",
         },
         "Environment": {
           "Variables": {
@@ -1153,7 +1153,7 @@ exports[`LambdaTrpcConstruct — snapshot mwitt stack with all 11 router groups 
       "Properties": {
         "Code": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+          "S3Key": "3a92841cde6649818eb54dd2222d128676a330c337d170ba9c01af57e73399d5.zip",
         },
         "Environment": {
           "Variables": {
@@ -1338,7 +1338,7 @@ exports[`LambdaTrpcConstruct — snapshot mwitt stack with all 11 router groups 
       "Properties": {
         "Code": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+          "S3Key": "3a92841cde6649818eb54dd2222d128676a330c337d170ba9c01af57e73399d5.zip",
         },
         "Environment": {
           "Variables": {
@@ -1523,7 +1523,7 @@ exports[`LambdaTrpcConstruct — snapshot mwitt stack with all 11 router groups 
       "Properties": {
         "Code": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+          "S3Key": "3a92841cde6649818eb54dd2222d128676a330c337d170ba9c01af57e73399d5.zip",
         },
         "Environment": {
           "Variables": {
@@ -1708,7 +1708,7 @@ exports[`LambdaTrpcConstruct — snapshot mwitt stack with all 11 router groups 
       "Properties": {
         "Code": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+          "S3Key": "3a92841cde6649818eb54dd2222d128676a330c337d170ba9c01af57e73399d5.zip",
         },
         "Environment": {
           "Variables": {
@@ -1893,7 +1893,7 @@ exports[`LambdaTrpcConstruct — snapshot mwitt stack with all 11 router groups 
       "Properties": {
         "Code": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+          "S3Key": "3a92841cde6649818eb54dd2222d128676a330c337d170ba9c01af57e73399d5.zip",
         },
         "Environment": {
           "Variables": {
@@ -1956,7 +1956,7 @@ exports[`LambdaTrpcConstruct — snapshot mwitt stack with all 11 router groups 
       },
       "Type": "AWS::Lambda::Function",
     },
-    "LambdatasksFnCurrentVersion1524F0CA0e9420d1dd87e7eb1a1cf5ab2ac6995c": {
+    "LambdatasksFnCurrentVersion1524F0CAe550967dfc7e949938ad0088c3463aa9": {
       "DeletionPolicy": "Retain",
       "DependsOn": [
         "TestVpcprivateSubnet1DefaultRouteE55BA5B9",
@@ -1986,7 +1986,7 @@ exports[`LambdaTrpcConstruct — snapshot mwitt stack with all 11 router groups 
         "MaximumRetryAttempts": 1,
         "Qualifier": {
           "Fn::GetAtt": [
-            "LambdatasksFnCurrentVersion1524F0CA0e9420d1dd87e7eb1a1cf5ab2ac6995c",
+            "LambdatasksFnCurrentVersion1524F0CAe550967dfc7e949938ad0088c3463aa9",
             "Version",
           ],
         },
@@ -1995,13 +1995,13 @@ exports[`LambdaTrpcConstruct — snapshot mwitt stack with all 11 router groups 
     },
     "LambdatasksLiveAlias65B57A45": {
       "Properties": {
-        "Description": "Orbital mwitt tRPC tasks — provisioned concurrency=2",
+        "Description": "Orbital mwitt tRPC tasks - provisioned concurrency=2",
         "FunctionName": {
           "Ref": "LambdatasksFn3BC7B3D4",
         },
         "FunctionVersion": {
           "Fn::GetAtt": [
-            "LambdatasksFnCurrentVersion1524F0CA0e9420d1dd87e7eb1a1cf5ab2ac6995c",
+            "LambdatasksFnCurrentVersion1524F0CAe550967dfc7e949938ad0088c3463aa9",
             "Version",
           ],
         },
@@ -2134,7 +2134,7 @@ exports[`LambdaTrpcConstruct — snapshot mwitt stack with all 11 router groups 
       "Properties": {
         "Code": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "4057d2ad6107f3c03f0f610e832f78c37dfff24979d0dbfef903ddb159c4e7ae.zip",
+          "S3Key": "3a92841cde6649818eb54dd2222d128676a330c337d170ba9c01af57e73399d5.zip",
         },
         "Environment": {
           "Variables": {

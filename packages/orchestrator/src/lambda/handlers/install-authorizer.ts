@@ -42,6 +42,7 @@
 import type {
   APIGatewayRequestSimpleAuthorizerHandlerV2,
   APIGatewaySimpleAuthorizerResult,
+  APIGatewaySimpleAuthorizerWithContextResult,
 } from 'aws-lambda'
 import { eq } from 'drizzle-orm'
 import {
@@ -60,6 +61,16 @@ import { initOnce } from '../init.js'
 const nonceLru = new NonceLru({ capacity: 10_000, ttlMs: 5 * 60 * 1000 })
 
 // ---------------------------------------------------------------------------
+// Authorizer context shape — injected into downstream tRPC handler via
+// event.requestContext.authorizer.lambda
+// ---------------------------------------------------------------------------
+interface InstallAuthContext {
+  installId: string
+  tenantId: string
+  role: string
+}
+
+// ---------------------------------------------------------------------------
 // Result shape helpers
 // ---------------------------------------------------------------------------
 
@@ -70,11 +81,11 @@ function deny(reason: string): APIGatewaySimpleAuthorizerResult {
   return { isAuthorized: false }
 }
 
-function allow(context: {
-  installId: string
-  tenantId: string
-  role: string
-}): APIGatewaySimpleAuthorizerResult {
+// allow() returns the WithContext variant (superset of base result) so the
+// authorizer context is present in event.requestContext.authorizer.lambda
+// for downstream tRPC handlers. TypeScript treats this as satisfying the
+// base APIGatewaySimpleAuthorizerResult return type of the handler.
+function allow(context: InstallAuthContext): APIGatewaySimpleAuthorizerWithContextResult<InstallAuthContext> {
   return {
     isAuthorized: true,
     context,
@@ -104,15 +115,15 @@ export const handler: APIGatewayRequestSimpleAuthorizerHandlerV2 = async (event)
   }
 
   // ------------------------------------------------------------------
-  // 2. Decode request body bytes (for params_hash verification)
+  // 2. Request body bytes for params_hash verification.
+  //
+  //    APIGatewayRequestAuthorizerEventV2 does NOT carry `event.body` —
+  //    the request body is not forwarded to Lambda authorizers by API
+  //    Gateway HTTP API. The client signs with sha256('') (empty body)
+  //    when using the install-authorizer path. We pass an empty buffer
+  //    here; verifyEnvelope checks params_hash === sha256(new Uint8Array()).
   // ------------------------------------------------------------------
-  let requestBodyBytes: Uint8Array
-  try {
-    const rawBody = event.body ?? ''
-    requestBodyBytes = new TextEncoder().encode(rawBody)
-  } catch {
-    return deny('failed to encode request body')
-  }
+  const requestBodyBytes = new Uint8Array()
 
   // ------------------------------------------------------------------
   // 3. Look up install in known_installs (resolves tenantId + publicKey)

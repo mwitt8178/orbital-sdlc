@@ -153,12 +153,12 @@ describe.skipIf(!hasDb)('install-authorizer — authorization flows', () => {
   it('valid envelope → isAuthorized: true with correct context', async () => {
     const { handler } = await import('../../../src/lambda/handlers/install-authorizer.js')
 
-    const bodyStr = JSON.stringify({ taskId: 'test-task' })
-    const bodyBytes = new TextEncoder().encode(bodyStr)
-
+    // API Gateway HTTP API does not forward event.body to Lambda authorizers.
+    // The authorizer verifies params_hash against sha256(empty). The client
+    // must sign with bodyBytes = new Uint8Array() on the install-authorizer path.
     const { bodyB64, signatureB64 } = await signEnvelope({
       method: 'tasks.claim',
-      bodyBytes,
+      bodyBytes: new Uint8Array(),
       privateKey,
     })
 
@@ -166,7 +166,6 @@ describe.skipIf(!hasDb)('install-authorizer — authorization flows', () => {
       installId: testInstallId,
       sigBody: bodyB64,
       sig: signatureB64,
-      body: bodyStr,
     })
 
     const result = await handler(event, {} as never, () => {})
@@ -186,25 +185,21 @@ describe.skipIf(!hasDb)('install-authorizer — authorization flows', () => {
   it('invalid signature → isAuthorized: false', async () => {
     const { handler } = await import('../../../src/lambda/handlers/install-authorizer.js')
 
-    const bodyStr = 'test body'
-    const bodyBytes = new TextEncoder().encode(bodyStr)
-
     const { bodyB64 } = await signEnvelope({
       method: 'tasks.claim',
-      bodyBytes,
+      bodyBytes: new Uint8Array(),
       privateKey,
     })
 
     // Use a different key to create a bad signature
     const wrongKey = ed.utils.randomPrivateKey()
     const wrongPubKey = await ed.getPublicKeyAsync(wrongKey)
-    const wrongSig = await ed.signAsync(bodyBytes, wrongKey)
+    const wrongSig = await ed.signAsync(new Uint8Array(), wrongKey)
 
     const event = makeEvent({
       installId: testInstallId,
       sigBody: bodyB64,
       sig: bytesToBase64Url(wrongSig),
-      body: bodyStr,
     })
 
     const result = await handler(event, {} as never, () => {})
@@ -216,13 +211,12 @@ describe.skipIf(!hasDb)('install-authorizer — authorization flows', () => {
   it('expired timestamp → isAuthorized: false', async () => {
     const { handler } = await import('../../../src/lambda/handlers/install-authorizer.js')
 
-    const bodyBytes = new TextEncoder().encode('body')
     // 2 minutes ago — outside the ±60s window
     const expiredNowMs = Date.now() - 2 * 60 * 1000
 
     const { bodyB64, signatureB64 } = await signEnvelope({
       method: 'tasks.claim',
-      bodyBytes,
+      bodyBytes: new Uint8Array(),
       privateKey,
       nowMs: expiredNowMs,
     })
@@ -240,12 +234,11 @@ describe.skipIf(!hasDb)('install-authorizer — authorization flows', () => {
   it('replayed nonce → isAuthorized: false on second request', async () => {
     const { handler } = await import('../../../src/lambda/handlers/install-authorizer.js')
 
-    const bodyBytes = new TextEncoder().encode('body')
     const fixedNonce = 'fixed-nonce-for-replay-test'
 
     const { bodyB64, signatureB64 } = await signEnvelope({
       method: 'tasks.claim',
-      bodyBytes,
+      bodyBytes: new Uint8Array(),
       privateKey,
       nonce: fixedNonce,
     })
@@ -268,10 +261,9 @@ describe.skipIf(!hasDb)('install-authorizer — authorization flows', () => {
   it('unknown install_id → isAuthorized: false', async () => {
     const { handler } = await import('../../../src/lambda/handlers/install-authorizer.js')
 
-    const bodyBytes = new TextEncoder().encode('body')
     const { bodyB64, signatureB64 } = await signEnvelope({
       method: 'tasks.claim',
-      bodyBytes,
+      bodyBytes: new Uint8Array(),
       privateKey,
     })
 
@@ -303,10 +295,9 @@ describe.skipIf(!hasDb)('install-authorizer — authorization flows', () => {
     try {
       const { handler } = await import('../../../src/lambda/handlers/install-authorizer.js')
 
-      const bodyBytes = new TextEncoder().encode('body')
       const { bodyB64, signatureB64 } = await signEnvelope({
         method: 'tasks.claim',
-        bodyBytes,
+        bodyBytes: new Uint8Array(),
         privateKey: revokedKey,
       })
 
@@ -369,11 +360,9 @@ describe.skipIf(!hasDb)('install-authorizer — authorization flows', () => {
   it('tenantId is always from DB row, not from request headers', async () => {
     const { handler } = await import('../../../src/lambda/handlers/install-authorizer.js')
 
-    const bodyStr = 'test-body'
-    const bodyBytes = new TextEncoder().encode(bodyStr)
     const { bodyB64, signatureB64 } = await signEnvelope({
       method: 'tasks.claim',
-      bodyBytes,
+      bodyBytes: new Uint8Array(),
       privateKey,
     })
 
@@ -381,7 +370,6 @@ describe.skipIf(!hasDb)('install-authorizer — authorization flows', () => {
       installId: testInstallId,
       sigBody: bodyB64,
       sig: signatureB64,
-      body: bodyStr,
     })
 
     // Even if we add a forged tenant header, the context must use the DB row value

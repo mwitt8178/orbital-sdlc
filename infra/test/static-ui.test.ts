@@ -36,6 +36,7 @@ function makeEnvConfig(overrides?: Partial<EnvConfig>): EnvConfig {
     auroraMaxAcu: 4,
     logRetentionDays: 30,
     enableMfa: false,
+    useCustomDomain: true, // default true
     ...overrides,
   }
 }
@@ -49,6 +50,8 @@ function buildStack(
     region: envName === 'rreed' ? 'us-west-2' : 'us-east-1',
     domain: envName === 'prod' ? 'orbital.team.dev' : `${envName}.orbital.team.dev`,
     enableMfa: envName === 'prod',
+    // mwitt uses AWS-generated URLs — no custom domain on CloudFront
+    useCustomDomain: envName !== 'mwitt',
     ...configOverrides,
   })
   const stack = new OrbitalHubStack(app, `OrbitalHub-${envName}`, {
@@ -159,11 +162,19 @@ describe('StaticUiConstruct — Origin Access Control', () => {
 // ---------------------------------------------------------------------------
 
 describe('StaticUiConstruct — CloudFront distribution', () => {
-  test('distribution uses custom domain name', () => {
+  test('mwitt distribution has NO custom domain aliases (useCustomDomain=false)', () => {
     const { template } = buildStack('mwitt')
+    // When useCustomDomain=false, no Aliases are set — CloudFront uses *.cloudfront.net
+    const distributions = template.findResources('AWS::CloudFront::Distribution')
+    const cfDist = Object.values(distributions)[0] as { Properties: { DistributionConfig: Record<string, unknown> } }
+    expect(cfDist?.Properties?.DistributionConfig?.Aliases).toBeUndefined()
+  })
+
+  test('prod distribution uses custom domain alias', () => {
+    const { template } = buildStack('prod')
     template.hasResourceProperties('AWS::CloudFront::Distribution', {
       DistributionConfig: {
-        Aliases: ['mwitt.orbital.team.dev'],
+        Aliases: ['orbital.team.dev'],
       },
     })
   })
@@ -179,8 +190,8 @@ describe('StaticUiConstruct — CloudFront distribution', () => {
     })
   })
 
-  test('distribution uses TLS 1.2 minimum protocol version', () => {
-    const { template } = buildStack('mwitt')
+  test('prod distribution uses TLS 1.2 minimum protocol version (custom cert)', () => {
+    const { template } = buildStack('prod')
     template.hasResourceProperties('AWS::CloudFront::Distribution', {
       DistributionConfig: {
         ViewerCertificate: {
@@ -188,6 +199,17 @@ describe('StaticUiConstruct — CloudFront distribution', () => {
         },
       },
     })
+  })
+
+  test('mwitt distribution uses CloudFront default certificate (no custom cert)', () => {
+    // When useCustomDomain=false, CloudFront uses the default *.cloudfront.net cert.
+    // CDK leaves ViewerCertificate empty — AWS manages TLS on the default cert.
+    const { template } = buildStack('mwitt')
+    const distributions = template.findResources('AWS::CloudFront::Distribution')
+    const cfDist = Object.values(distributions)[0] as { Properties: { DistributionConfig: Record<string, unknown> } }
+    const vc = cfDist?.Properties?.DistributionConfig?.ViewerCertificate
+    // No AcmCertificateArn — that's the key indicator of no custom cert
+    expect((vc as Record<string, unknown> | undefined)?.AcmCertificateArn).toBeUndefined()
   })
 
   test('distribution has HTTP/2 and HTTP/3 enabled', () => {
@@ -306,10 +328,16 @@ describe('StaticUiConstruct — CloudFront distribution', () => {
 // ---------------------------------------------------------------------------
 
 describe('StaticUiConstruct — Route 53', () => {
-  test('creates Route 53 A record for the UI domain', () => {
+  test('mwitt env has NO Route 53 A record for UI domain (useCustomDomain=false)', () => {
     const { template } = buildStack('mwitt')
+    // No Route53 records at all when useCustomDomain=false
+    template.resourceCountIs('AWS::Route53::RecordSet', 0)
+  })
+
+  test('prod env creates Route 53 A record for UI domain', () => {
+    const { template } = buildStack('prod')
     template.hasResourceProperties('AWS::Route53::RecordSet', {
-      Name: 'mwitt.orbital.team.dev.',
+      Name: 'orbital.team.dev.',
       Type: 'A',
     })
   })
@@ -322,7 +350,7 @@ describe('StaticUiConstruct — Route 53', () => {
 describe('StaticUiConstruct — cdk-nag', () => {
   test('no ERROR-level nag violations with required suppressions', () => {
     const app = new cdk.App()
-    const config = makeEnvConfig()
+    const config = makeEnvConfig({ useCustomDomain: false })
     const stack = new OrbitalHubStack(app, 'OrbitalHub-mwitt-ui-nag', {
       envName: 'mwitt',
       envConfig: config,

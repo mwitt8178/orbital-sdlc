@@ -202,6 +202,7 @@ describe('ProjectsService.connectMonday', () => {
       getItem: async () => null,
       createSubitem: async () => ({ id: '1' }),
       updateColumnValue: async () => ({ id: '1' }),
+      graphql: async <T>() => ({} as T),
     }
     const svc = createProjectsService(db, eventStore, { mondayClient: stubMonday })
     try {
@@ -224,6 +225,7 @@ describe('ProjectsService.connectMonday', () => {
       getItem: async () => null,
       createSubitem: async () => ({ id: '1' }),
       updateColumnValue: async () => ({ id: '1' }),
+      graphql: async <T>() => ({} as T),
     }
     const svc = createProjectsService(db, eventStore, { mondayClient: stubMonday })
     const updated = await svc.connectMonday({ projectId: row.projectId, boardId: '12345' })
@@ -246,6 +248,7 @@ describe('ProjectsService.connectMonday', () => {
       getItem: async () => null,
       createSubitem: async () => ({ id: '1' }),
       updateColumnValue: async () => ({ id: '1' }),
+      graphql: async <T>() => ({} as T),
     }
     const svc = createProjectsService(db, eventStore, { mondayClient: failingMonday })
     try {
@@ -283,6 +286,16 @@ describe('ProjectsService.connectGithub', () => {
       listBranches: async () => [],
       getBranch: async () => null,
       createBranch: async () => ({ name: 'x', commitSha: 'y', protected: false }),
+      createPullRequest: async () => ({ pr_number: 1, html_url: 'https://github.com/x/y/pull/1' }),
+      addLabels: async () => undefined,
+      mergePullRequest: async () => ({ sha: 'deadbeef' }),
+      listOpenPullRequestsByLabel: async () => [],
+      getPullRequest: async () => null,
+      listCheckRuns: async () => [],
+      rerunCheckRun: async () => undefined,
+      createReviewComment: async () => ({ id: 1 }),
+      submitPRReview: async () => ({ id: 1 }),
+      rawRequest: async () => null,
     }
   }
 

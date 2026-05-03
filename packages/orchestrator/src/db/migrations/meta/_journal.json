@@ -253,6 +253,13 @@
       "when": 1747100000000,
       "tag": "0036_tenant_kms_arn",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1747200000000,
+      "tag": "0037_onboarding_state",
+      "breakpoints": true
     }
   ]
 }

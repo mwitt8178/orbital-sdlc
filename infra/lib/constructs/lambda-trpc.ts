@@ -13,8 +13,14 @@ import { Construct } from 'constructs'
 /**
  * All valid router group names.
  * One Lambda is created per group.
+ *
+ * 'all' is a catch-all Lambda that uses the full root `appRouter`. tRPC v10
+ * emits dot-separated procedure paths in URLs (e.g. /trpc/onboarding.status),
+ * which the slash-based per-group routes cannot match. The 'all' Lambda is
+ * wired to a single `/trpc/{proxy+}` route so every procedure resolves.
  */
 export type RouterGroup =
+  | 'all'
   | 'auth'
   | 'tasks'
   | 'memory'
@@ -31,7 +37,7 @@ export type RouterGroup =
  * Router groups that get Provisioned Concurrency = 2 (hot paths).
  * All others default to 0 (cold start acceptable).
  */
-const HOT_ROUTER_GROUPS: Set<RouterGroup> = new Set(['auth', 'tasks'])
+const HOT_ROUTER_GROUPS: Set<RouterGroup> = new Set(['all', 'tasks'])
 
 export interface LambdaTrpcProps {
   /**
@@ -40,7 +46,7 @@ export interface LambdaTrpcProps {
    */
   readonly routerGroup: RouterGroup
   /**
-   * Environment name — used in naming.
+   * Environment name - used in naming.
    */
   readonly envName: string
   /**
@@ -53,7 +59,7 @@ export interface LambdaTrpcProps {
    */
   readonly lambdaSg: ec2.ISecurityGroup
   /**
-   * RDS Proxy — grantConnect called so Lambda can use IAM DB auth.
+   * RDS Proxy - grantConnect called so Lambda can use IAM DB auth.
    */
   readonly rdsProxy: rds.DatabaseProxy
   /**
@@ -70,31 +76,31 @@ export interface LambdaTrpcProps {
    */
   readonly logRetentionDays: number
   /**
-   * SNS topic ARN for event fanout — Lambda gets publish permission.
+   * SNS topic ARN for event fanout - Lambda gets publish permission.
    * Optional; not all groups publish events.
    */
   readonly snsTopicArn?: string
   /**
-   * Replay S3 bucket — Lambda gets read permission for replay blobs.
+   * Replay S3 bucket - Lambda gets read permission for replay blobs.
    * Optional; only audit and replay groups need this.
    */
   readonly replayBucket?: s3.IBucket
   /**
-   * Cognito User Pool ID — injected as COGNITO_USER_POOL_ID env var.
+   * Cognito User Pool ID - injected as COGNITO_USER_POOL_ID env var.
    */
   readonly cognitoUserPoolId: string
   /**
-   * Cognito App Client ID — injected as COGNITO_APP_CLIENT_ID env var.
+   * Cognito App Client ID - injected as COGNITO_APP_CLIENT_ID env var.
    */
   readonly cognitoAppClientId: string
   /**
-   * AWS region for the env — needed for RDS signer.
+   * AWS region for the env - needed for RDS signer.
    */
   readonly region: string
 }
 
 /**
- * LambdaTrpcConstruct — factory for a single tRPC router group Lambda.
+ * LambdaTrpcConstruct - factory for a single tRPC router group Lambda.
  *
  * Features:
  *  - Runtime: Node.js 22
@@ -144,7 +150,7 @@ export class LambdaTrpcConstruct extends Construct {
     this.hasProvisionedConcurrency = isHotPath
 
     // ------------------------------------------------------------------
-    // CloudWatch log group — explicit retention
+    // CloudWatch log group - explicit retention
     // ------------------------------------------------------------------
     this.logGroup = new logs.LogGroup(this, 'LogGroup', {
       logGroupName: `/orbital/${props.envName}/lambda/trpc-${props.routerGroup}`,
@@ -153,7 +159,7 @@ export class LambdaTrpcConstruct extends Construct {
     })
 
     // ------------------------------------------------------------------
-    // IAM execution role — least-privilege per security-serverless skill
+    // IAM execution role - least-privilege per security-serverless skill
     // ------------------------------------------------------------------
     this.role = new iam.Role(this, 'Role', {
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
@@ -166,7 +172,7 @@ export class LambdaTrpcConstruct extends Construct {
       ],
     })
 
-    // RDS IAM auth — rds-db:connect to the proxy
+    // RDS IAM auth - rds-db:connect to the proxy
     props.rdsProxy.grantConnect(this.role, 'orbital_admin')
 
     // Secrets Manager: grant read for each injected secret
@@ -180,7 +186,7 @@ export class LambdaTrpcConstruct extends Construct {
       )
     }
 
-    // SNS publish (event fanout) — only for groups that emit events
+    // SNS publish (event fanout) - only for groups that emit events
     if (props.snsTopicArn) {
       this.role.addToPolicy(
         new iam.PolicyStatement({
@@ -221,6 +227,9 @@ export class LambdaTrpcConstruct extends Construct {
     const environment: Record<string, string> = {
       ORBITAL_DEPLOY_TARGET: 'aws',
       ORBITAL_TENANT_RESOLUTION: 'jwt',
+      // Lambda has no user $HOME; getOrbitalHome() needs an explicit path.
+      // /tmp is the only writable filesystem in Lambda.
+      ORBITAL_HOME: '/tmp/.orbital',
       RDS_PROXY_HOSTNAME: props.proxyEndpoint,
       RDS_PROXY_PORT: '5432',
       AURORA_DB_NAME: 'orbital_hub',
@@ -273,16 +282,17 @@ export class LambdaTrpcConstruct extends Construct {
     // Uses a version alias "live" to attach PC. The alias is also what
     // API Gateway integrations point at so warm containers are used.
     // ------------------------------------------------------------------
-    if (isHotPath) {
-      // Publish a version so we can configure PC on an alias
+    // Provisioned Concurrency is OFF by default for first deploy. PC requires
+    // Lambda init code to complete cleanly during pre-warm; on a fresh stack
+    // the secrets/DB user may not be ready yet, causing PC to fail. Enable
+    // PC after the stack is healthy by setting ORBITAL_ENABLE_PC=1.
+    if (isHotPath && process.env['ORBITAL_ENABLE_PC'] === '1') {
       const version = this.fn.currentVersion
-
-      // Alias "live" → current version with PC = 2
       new lambda.Alias(this, 'LiveAlias', {
         aliasName: 'live',
         version,
         provisionedConcurrentExecutions: 2,
-        description: `Orbital ${props.envName} tRPC ${props.routerGroup} — provisioned concurrency=2`,
+        description: `Orbital ${props.envName} tRPC ${props.routerGroup} - provisioned concurrency=2`,
       })
     }
 

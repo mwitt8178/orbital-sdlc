@@ -65,7 +65,8 @@
         "auroraMinAcu": 0.5,
         "auroraMaxAcu": 4,
         "logRetentionDays": 30,
-        "enableMfa": false
+        "enableMfa": false,
+        "useCustomDomain": false
       },
       "rreed": {
         "account": "<TBD>",
@@ -74,7 +75,8 @@
         "auroraMinAcu": 0.5,
         "auroraMaxAcu": 4,
         "logRetentionDays": 30,
-        "enableMfa": false
+        "enableMfa": false,
+        "useCustomDomain": true
       },
       "prod": {
         "account": "<TBD>",
@@ -83,7 +85,8 @@
         "auroraMinAcu": 1,
         "auroraMaxAcu": 16,
         "logRetentionDays": 90,
-        "enableMfa": true
+        "enableMfa": true,
+        "useCustomDomain": true
       }
     }
   }

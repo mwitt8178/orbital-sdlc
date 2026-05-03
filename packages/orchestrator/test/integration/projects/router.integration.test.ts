@@ -42,6 +42,7 @@ beforeAll(async () => {
     getItem: async () => null,
     createSubitem: async () => ({ id: '1' }),
     updateColumnValue: async () => ({ id: '1' }),
+    graphql: async <T>() => ({} as T),
   }
 
   const stubGithub: GithubClient = {
@@ -64,6 +65,16 @@ beforeAll(async () => {
     listBranches: async () => [],
     getBranch: async () => null,
     createBranch: async () => ({ name: 'x', commitSha: 'y', protected: false }),
+    createPullRequest: async () => ({ pr_number: 1, html_url: 'https://github.com/x/y/pull/1' }),
+    addLabels: async () => undefined,
+    mergePullRequest: async () => ({ sha: 'deadbeef' }),
+    listOpenPullRequestsByLabel: async () => [],
+    getPullRequest: async () => null,
+    listCheckRuns: async () => [],
+    rerunCheckRun: async () => undefined,
+    createReviewComment: async () => ({ id: 1 }),
+    submitPRReview: async () => ({ id: 1 }),
+    rawRequest: async () => null,
   }
 
   const service = createProjectsService(db, eventStore, {

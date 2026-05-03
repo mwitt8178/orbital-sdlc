@@ -7,7 +7,7 @@ import { Construct } from 'constructs'
 
 export interface RdsProxyConstructProps {
   /**
-   * Environment name — used in naming and removal policy.
+   * Environment name - used in naming and removal policy.
    */
   readonly envName: string
   /**
@@ -37,7 +37,7 @@ export interface RdsProxyConstructProps {
 }
 
 /**
- * RdsProxyConstruct — RDS Proxy in front of the Aurora Postgres cluster.
+ * RdsProxyConstruct - RDS Proxy in front of the Aurora Postgres cluster.
  *
  * The proxy is mandatory for Lambda → Aurora connections because Lambda
  * cannot maintain long-lived DB connections; the proxy pools them.
@@ -51,7 +51,7 @@ export interface RdsProxyConstructProps {
  *    (placeholder Lambda SG created here; 8-03 imports it by name)
  *  - Proxy SG is exposed as `proxySecurityGroup` so AuroraConstruct
  *    can restrict its own ingress to this SG only
- *  - Private subnet placement (PRIVATE_WITH_EGRESS — Lambda lives there)
+ *  - Private subnet placement (PRIVATE_WITH_EGRESS - Lambda lives there)
  *
  * IAM auth flow:
  *  1. Lambda calls `rds-signer` to generate a short-lived signed token
@@ -103,7 +103,7 @@ export class RdsProxyConstruct extends Construct {
       vpc: props.vpc,
       securityGroupName: `orbital-${props.envName}-lambda`,
       description: [
-        `Orbital ${props.envName} — placeholder Lambda SG.`,
+        `Orbital ${props.envName} - placeholder Lambda SG.`,
         '8-03 (Lambda) will attach this SG to Lambda functions.',
         'This SG is granted ingress to the RDS Proxy.',
       ].join(' '),
@@ -121,7 +121,7 @@ export class RdsProxyConstruct extends Construct {
       this.proxySecurityGroup = new ec2.SecurityGroup(this, 'ProxySg', {
         vpc: props.vpc,
         securityGroupName: `orbital-${props.envName}-rds-proxy`,
-        description: `Orbital ${props.envName} — RDS Proxy SG. Accepts connections from Lambda SG only.`,
+        description: `Orbital ${props.envName} - RDS Proxy SG. Accepts connections from Lambda SG only.`,
         allowAllOutbound: false,
       })
     }
@@ -130,7 +130,7 @@ export class RdsProxyConstruct extends Construct {
     this.proxySecurityGroup.addIngressRule(
       this.lambdaSecurityGroup,
       ec2.Port.tcp(5432),
-      'Lambda → RDS Proxy Postgres',
+      'Lambda to RDS Proxy Postgres',
     )
 
     // ------------------------------------------------------------------
@@ -138,7 +138,7 @@ export class RdsProxyConstruct extends Construct {
     // ------------------------------------------------------------------
     const proxyRole = new iam.Role(this, 'ProxyRole', {
       assumedBy: new iam.ServicePrincipal('rds.amazonaws.com'),
-      description: `Orbital ${props.envName} RDS Proxy — Secrets Manager reader`,
+      description: `Orbital ${props.envName} RDS Proxy - Secrets Manager reader`,
     })
 
     props.masterSecret.grantRead(proxyRole)
@@ -156,7 +156,7 @@ export class RdsProxyConstruct extends Construct {
       },
       securityGroups: [this.proxySecurityGroup],
 
-      // IAM authentication — Lambda presents signed tokens, no stored passwords
+      // IAM authentication - Lambda presents signed tokens, no stored passwords
       iamAuth: true,
 
       // Idle client timeout: 30 minutes (1800 seconds)
@@ -167,10 +167,10 @@ export class RdsProxyConstruct extends Construct {
       // The proxy honours whatever Aurora reports via the secret.
       maxConnectionsPercent: 95,
 
-      // Proxy name — unique per env
+      // Proxy name - unique per env
       dbProxyName: `orbital-${props.envName}-proxy`,
 
-      // Debug logging — disabled in prod (can expose query parameters)
+      // Debug logging - disabled in prod (can expose query parameters)
       debugLogging: !isProd,
     })
 
@@ -185,7 +185,7 @@ export class RdsProxyConstruct extends Construct {
 
     new cdk.CfnOutput(this, 'LambdaSecurityGroupId', {
       value: this.lambdaSecurityGroup.securityGroupId,
-      description: `Orbital ${props.envName} placeholder Lambda SG ID — imported by 8-03`,
+      description: `Orbital ${props.envName} placeholder Lambda SG ID - imported by 8-03`,
       exportName: `OrbitalHub-${props.envName}-LambdaSgId`,
     })
 

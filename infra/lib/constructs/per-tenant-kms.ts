@@ -1,6 +1,6 @@
 // [Engineer-Principal · Opus · run-round8-07-secrets-kms]
 /**
- * per-tenant-kms.ts — IAM permissions for runtime per-tenant CMK provisioning.
+ * per-tenant-kms.ts - IAM permissions for runtime per-tenant CMK provisioning.
  *
  * IMPORTANT: This construct does NOT create any CMKs at deploy time. Per-tenant
  * keys are provisioned ON DEMAND when a new tenant signs up, by the orchestrator
@@ -56,7 +56,7 @@ export interface PerTenantKmsConstructProps {
 export const TENANT_KEY_ALIAS_PREFIX = 'alias/orbital-tenant-'
 
 /**
- * PerTenantKmsConstruct — IAM-only construct for runtime per-tenant key mgmt.
+ * PerTenantKmsConstruct - IAM-only construct for runtime per-tenant key mgmt.
  */
 export class PerTenantKmsConstruct extends Construct {
   readonly envName: string
@@ -73,7 +73,7 @@ export class PerTenantKmsConstruct extends Construct {
     // chasing them through IAM policies.
     new cdk.CfnOutput(this, 'TenantKeyAliasPrefix', {
       value: TENANT_KEY_ALIAS_PREFIX,
-      description: `Per-tenant CMK alias prefix — ${props.envName}`,
+      description: `Per-tenant CMK alias prefix - ${props.envName}`,
       exportName: `OrbitalHub-${props.envName}-TenantKeyAliasPrefix`,
     })
 
@@ -130,7 +130,7 @@ export class PerTenantKmsConstruct extends Construct {
       resourceArns: [
         // Alias arn pattern: arn:aws:kms:<region>:<account>:alias/orbital-tenant-*
         `arn:aws:kms:${this.region}:${this.account}:${TENANT_KEY_ALIAS_PREFIX}*`,
-        // The alias also targets a key — wildcard resource because key id is not
+        // The alias also targets a key - wildcard resource because key id is not
         // known at policy eval; the alias arn constraint above provides the
         // namespace boundary.
         `arn:aws:kms:${this.region}:${this.account}:key/*`,
@@ -156,7 +156,7 @@ export class PerTenantKmsConstruct extends Construct {
    *   - The replay CMK (alias/orbital-replays-${env})
    *   - Any other CMK in the account.
    *
-   * Note on cross-tenant: this grant alone is NOT cross-tenant safe — a
+   * Note on cross-tenant: this grant alone is NOT cross-tenant safe - a
    * compromised Lambda processing tenant A could in theory pass a different
    * tenant's alias if it could discover one. Defense in depth is enforced
    * by the application layer in tenant-kms.ts which only ever resolves the

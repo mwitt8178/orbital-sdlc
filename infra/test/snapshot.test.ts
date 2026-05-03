@@ -31,6 +31,7 @@ function makeEnvConfig(overrides?: Partial<EnvConfig>): EnvConfig {
     auroraMaxAcu: 4,
     logRetentionDays: 30,
     enableMfa: false,
+    useCustomDomain: true, // default true — tests that need false set it explicitly
     ...overrides,
   }
 }
@@ -45,6 +46,8 @@ function buildStack(
     domain:
       envName === 'prod' ? 'orbital.team.dev' : `${envName}.orbital.team.dev`,
     enableMfa: envName === 'prod',
+    // mwitt uses AWS-generated URLs — no Route53/ACM
+    useCustomDomain: envName !== 'mwitt',
     ...configOverrides,
   })
   const stack = new OrbitalHubStack(app, `OrbitalHub-${envName}`, {
@@ -137,32 +140,37 @@ describe('VpcConstruct', () => {
 // ---------------------------------------------------------------------------
 
 describe('DnsConstruct', () => {
-  test('creates a Route 53 hosted zone with the correct domain', () => {
+  // mwitt uses useCustomDomain=false — no Route53 or ACM resources created.
+  test('mwitt env has NO Route 53 hosted zone (useCustomDomain=false)', () => {
     const { template } = buildStack('mwitt')
+    template.resourceCountIs('AWS::Route53::HostedZone', 0)
+  })
+
+  test('mwitt env has NO ACM certificate (useCustomDomain=false)', () => {
+    const { template } = buildStack('mwitt')
+    template.resourceCountIs('AWS::CertificateManager::Certificate', 0)
+  })
+
+  // prod uses useCustomDomain=true — Route53 and ACM are created.
+  test('prod env creates Route 53 hosted zone with apex domain', () => {
+    const { template } = buildStack('prod')
     template.hasResourceProperties('AWS::Route53::HostedZone', {
-      Name: 'mwitt.orbital.team.dev.',
+      Name: 'orbital.team.dev.',
     })
   })
 
-  test('creates ACM certificate for the env domain', () => {
-    const { template } = buildStack('mwitt')
+  test('prod env creates ACM certificate for the apex domain', () => {
+    const { template } = buildStack('prod')
     template.hasResourceProperties('AWS::CertificateManager::Certificate', {
-      DomainName: 'mwitt.orbital.team.dev',
+      DomainName: 'orbital.team.dev',
       ValidationMethod: 'DNS',
     })
   })
 
-  test('ACM cert includes wildcard SAN', () => {
-    const { template } = buildStack('mwitt')
-    template.hasResourceProperties('AWS::CertificateManager::Certificate', {
-      SubjectAlternativeNames: ['*.mwitt.orbital.team.dev'],
-    })
-  })
-
-  test('prod domain uses apex domain', () => {
+  test('prod ACM cert includes wildcard SAN', () => {
     const { template } = buildStack('prod')
-    template.hasResourceProperties('AWS::Route53::HostedZone', {
-      Name: 'orbital.team.dev.',
+    template.hasResourceProperties('AWS::CertificateManager::Certificate', {
+      SubjectAlternativeNames: ['*.orbital.team.dev'],
     })
   })
 })
@@ -264,10 +272,16 @@ describe('CognitoConstruct', () => {
     })
   })
 
-  test('creates Route53 A record for auth subdomain', () => {
+  test('mwitt env has NO Route53 A record for auth subdomain (useCustomDomain=false)', () => {
     const { template } = buildStack('mwitt')
+    // No Route53 records at all for mwitt
+    template.resourceCountIs('AWS::Route53::RecordSet', 0)
+  })
+
+  test('prod env creates Route53 A record for auth subdomain', () => {
+    const { template } = buildStack('prod')
     template.hasResourceProperties('AWS::Route53::RecordSet', {
-      Name: 'auth.mwitt.orbital.team.dev.',
+      Name: 'auth.orbital.team.dev.',
       Type: 'A',
     })
   })
@@ -322,7 +336,7 @@ describe('cdk-nag AwsSolutionsChecks', () => {
     // cdk-nag violations are surfaced as cdk annotations.
     // We apply suppressions inline here matching cdk-nag.config.ts.
     const app = new cdk.App()
-    const config = makeEnvConfig()
+    const config = makeEnvConfig({ useCustomDomain: false })
     const stack = new OrbitalHubStack(app, 'OrbitalHub-mwitt-nag', {
       envName: 'mwitt',
       envConfig: config,

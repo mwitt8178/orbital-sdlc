@@ -6,7 +6,7 @@ import { Construct } from 'constructs'
 
 export interface VpcConstructProps {
   /**
-   * Environment name — used to determine NAT gateway count.
+   * Environment name - used to determine NAT gateway count.
    * prod uses 2 NAT gateways for HA; non-prod uses 1 to reduce cost.
    */
   readonly envName: string
@@ -20,18 +20,18 @@ export interface VpcConstructProps {
  * VpcConstruct provisions the VPC that all OrbitalHub resources sit in.
  *
  * Subnets:
- *  - PUBLIC  — one per AZ; hosts NAT GW and future ALB
- *  - PRIVATE (with egress) — one per AZ; hosts Lambda functions
- *  - ISOLATED — one per AZ; hosts Aurora cluster (no internet access)
+ *  - PUBLIC  - one per AZ; hosts NAT GW and future ALB
+ *  - PRIVATE (with egress) - one per AZ; hosts Lambda functions
+ *  - ISOLATED - one per AZ; hosts Aurora cluster (no internet access)
  *
  * NAT gateways:
  *  - prod: 2 (one per AZ for HA)
- *  - non-prod: 1 (cost saving — single point of failure acceptable in dev)
+ *  - non-prod: 1 (cost saving - single point of failure acceptable in dev)
  *
- * VPC Endpoints (Gateway type — free):
+ * VPC Endpoints (Gateway type - free):
  *  - S3
  *
- * VPC Endpoints (Interface type — paid but reduced NAT costs):
+ * VPC Endpoints (Interface type - paid but reduced NAT costs):
  *  - Secrets Manager
  *  - KMS
  *
@@ -56,7 +56,7 @@ export class VpcConstruct extends Construct {
     // IAM role for VPC Flow Logs to write to CloudWatch
     const flowLogsRole = new iam.Role(this, 'FlowLogsRole', {
       assumedBy: new iam.ServicePrincipal('vpc-flow-logs.amazonaws.com'),
-      description: `Orbital ${props.envName} — VPC flow logs CloudWatch writer`,
+      description: `Orbital ${props.envName} - VPC flow logs CloudWatch writer`,
     })
 
     flowLogGroup.grantWrite(flowLogsRole)
@@ -94,19 +94,19 @@ export class VpcConstruct extends Construct {
       },
     })
 
-    // Gateway endpoint for S3 — free, avoids NAT charges for S3 traffic
+    // Gateway endpoint for S3 - free, avoids NAT charges for S3 traffic
     this.vpc.addGatewayEndpoint('S3Endpoint', {
       service: ec2.GatewayVpcEndpointAwsService.S3,
     })
 
-    // Interface endpoint for Secrets Manager — Lambda can read secrets without NAT
+    // Interface endpoint for Secrets Manager - Lambda can read secrets without NAT
     this.vpc.addInterfaceEndpoint('SecretsManagerEndpoint', {
       service: ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
       subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
       privateDnsEnabled: true,
     })
 
-    // Interface endpoint for KMS — Lambda can use KMS without NAT
+    // Interface endpoint for KMS - Lambda can use KMS without NAT
     this.vpc.addInterfaceEndpoint('KmsEndpoint', {
       service: ec2.InterfaceVpcEndpointAwsService.KMS,
       subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },

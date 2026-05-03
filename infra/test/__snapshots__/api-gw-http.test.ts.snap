@@ -4,7 +4,7 @@ exports[`ApiGwHttpConstruct — snapshot mwitt stack matches snapshot 1`] = `
 {
   "Outputs": {
     "ApiGwApiEndpoint1F7D28E6": {
-      "Description": "Orbital mwitt API endpoint (custom domain)",
+      "Description": "Orbital mwitt API endpoint",
       "Export": {
         "Name": "OrbitalHub-mwitt-ApiEndpoint",
       },
@@ -59,7 +59,7 @@ exports[`ApiGwHttpConstruct — snapshot mwitt stack matches snapshot 1`] = `
             ],
           },
         },
-        "Comment": "Orbital mwitt — HTTP API custom domain",
+        "Comment": "Orbital mwitt - HTTP API custom domain",
         "HostedZoneId": {
           "Ref": "TestZone0C3926D9",
         },

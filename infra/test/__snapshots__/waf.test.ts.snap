@@ -1,0 +1,337 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`WafConstruct — Snapshot mwitt stack template matches snapshot 1`] = `
+{
+  "Outputs": {
+    "WafWebAclArn55725021": {
+      "Description": "Orbital mwitt WAF WebACL ARN",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-WebAclArn",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "WafWebAclBE24253C",
+          "Arn",
+        ],
+      },
+    },
+    "WafWebAclId122C8B9B": {
+      "Description": "Orbital mwitt WAF WebACL ID",
+      "Export": {
+        "Name": "OrbitalHub-mwitt-WebAclId",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "WafWebAclBE24253C",
+          "Id",
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "WafBlockedRequestsAlarm3EB2200B": {
+      "Properties": {
+        "AlarmDescription": "WAF blocked requests rate is elevated - possible attack in progress",
+        "AlarmName": "orbital-mwitt-waf-blocked-requests",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "Region",
+            "Value": "us-east-1",
+          },
+          {
+            "Name": "Rule",
+            "Value": "ALL",
+          },
+          {
+            "Name": "WebACL",
+            "Value": "orbital-mwitt-acl",
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "BlockedRequests",
+        "Namespace": "AWS/WAFV2",
+        "Period": 300,
+        "Statistic": "Sum",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "waf",
+          },
+        ],
+        "Threshold": 500,
+        "TreatMissingData": "notBreaching",
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "WafHttpApiAssociation8D4EF119": {
+      "Properties": {
+        "ResourceArn": "arn:aws:apigateway:us-east-1::/apis/abc123/stages/$default",
+        "WebACLArn": {
+          "Fn::GetAtt": [
+            "WafWebAclBE24253C",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::WAFv2::WebACLAssociation",
+    },
+    "WafWafLogGroupD60AECDC": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "LogGroupName": "aws-waf-logs-orbital-mwitt",
+        "RetentionInDays": 30,
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "waf",
+          },
+        ],
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "WafWafLoggingDA440506": {
+      "Properties": {
+        "LogDestinationConfigs": [
+          {
+            "Fn::GetAtt": [
+              "WafWafLogGroupD60AECDC",
+              "Arn",
+            ],
+          },
+        ],
+        "ResourceArn": {
+          "Fn::GetAtt": [
+            "WafWebAclBE24253C",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::WAFv2::LoggingConfiguration",
+    },
+    "WafWebAclBE24253C": {
+      "Metadata": {
+        "cdk_nag": {
+          "rules_to_suppress": [
+            {
+              "id": "AwsSolutions-WAF1",
+              "reason": "WAF shield advanced is out of scope for this tier; managed rules provide OWASP coverage.",
+            },
+            {
+              "id": "AwsSolutions-WAF4",
+              "reason": "AWS managed rule groups do not support custom metric names for individual rules.",
+            },
+          ],
+        },
+      },
+      "Properties": {
+        "DefaultAction": {
+          "Allow": {},
+        },
+        "Description": "Orbital mwitt - Web ACL for API Gateway HTTP and WebSocket",
+        "Name": "orbital-mwitt-acl",
+        "Rules": [
+          {
+            "Name": "AWSManagedRulesAmazonIpReputationList",
+            "OverrideAction": {
+              "None": {},
+            },
+            "Priority": 0,
+            "Statement": {
+              "ManagedRuleGroupStatement": {
+                "Name": "AWSManagedRulesAmazonIpReputationList",
+                "VendorName": "AWS",
+              },
+            },
+            "VisibilityConfig": {
+              "CloudWatchMetricsEnabled": true,
+              "MetricName": "orbital-mwitt-ip-reputation",
+              "SampledRequestsEnabled": true,
+            },
+          },
+          {
+            "Name": "AWSManagedRulesCommonRuleSet",
+            "OverrideAction": {
+              "None": {},
+            },
+            "Priority": 1,
+            "Statement": {
+              "ManagedRuleGroupStatement": {
+                "Name": "AWSManagedRulesCommonRuleSet",
+                "VendorName": "AWS",
+              },
+            },
+            "VisibilityConfig": {
+              "CloudWatchMetricsEnabled": true,
+              "MetricName": "orbital-mwitt-common-rules",
+              "SampledRequestsEnabled": true,
+            },
+          },
+          {
+            "Name": "AWSManagedRulesKnownBadInputsRuleSet",
+            "OverrideAction": {
+              "None": {},
+            },
+            "Priority": 2,
+            "Statement": {
+              "ManagedRuleGroupStatement": {
+                "Name": "AWSManagedRulesKnownBadInputsRuleSet",
+                "VendorName": "AWS",
+              },
+            },
+            "VisibilityConfig": {
+              "CloudWatchMetricsEnabled": true,
+              "MetricName": "orbital-mwitt-bad-inputs",
+              "SampledRequestsEnabled": true,
+            },
+          },
+          {
+            "Action": {
+              "Block": {},
+            },
+            "Name": "BlockMissingUserAgent",
+            "Priority": 3,
+            "Statement": {
+              "NotStatement": {
+                "Statement": {
+                  "SizeConstraintStatement": {
+                    "ComparisonOperator": "GE",
+                    "FieldToMatch": {
+                      "SingleHeader": {
+                        "Name": "user-agent",
+                      },
+                    },
+                    "Size": 1,
+                    "TextTransformations": [
+                      {
+                        "Priority": 0,
+                        "Type": "NONE",
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+            "VisibilityConfig": {
+              "CloudWatchMetricsEnabled": true,
+              "MetricName": "orbital-mwitt-missing-user-agent",
+              "SampledRequestsEnabled": true,
+            },
+          },
+          {
+            "Action": {
+              "Block": {},
+            },
+            "Name": "GeneralRateLimit",
+            "Priority": 4,
+            "Statement": {
+              "RateBasedStatement": {
+                "AggregateKeyType": "IP",
+                "Limit": 5000,
+              },
+            },
+            "VisibilityConfig": {
+              "CloudWatchMetricsEnabled": true,
+              "MetricName": "orbital-mwitt-rate-limit-general",
+              "SampledRequestsEnabled": true,
+            },
+          },
+          {
+            "Action": {
+              "Block": {},
+            },
+            "Name": "AuthEndpointRateLimit",
+            "Priority": 5,
+            "Statement": {
+              "RateBasedStatement": {
+                "AggregateKeyType": "IP",
+                "Limit": 100,
+                "ScopeDownStatement": {
+                  "ByteMatchStatement": {
+                    "FieldToMatch": {
+                      "UriPath": {},
+                    },
+                    "PositionalConstraint": "STARTS_WITH",
+                    "SearchString": "/trpc/auth",
+                    "TextTransformations": [
+                      {
+                        "Priority": 0,
+                        "Type": "LOWERCASE",
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+            "VisibilityConfig": {
+              "CloudWatchMetricsEnabled": true,
+              "MetricName": "orbital-mwitt-rate-limit-auth",
+              "SampledRequestsEnabled": true,
+            },
+          },
+        ],
+        "Scope": "REGIONAL",
+        "Tags": [
+          {
+            "Key": "orbital:component",
+            "Value": "waf",
+          },
+        ],
+        "VisibilityConfig": {
+          "CloudWatchMetricsEnabled": true,
+          "MetricName": "orbital-mwitt-waf",
+          "SampledRequestsEnabled": true,
+        },
+      },
+      "Type": "AWS::WAFv2::WebACL",
+    },
+    "WafWsApiAssociation028671AE": {
+      "Properties": {
+        "ResourceArn": "arn:aws:apigateway:us-east-1::/apis/xyz789/stages/$default",
+        "WebACLArn": {
+          "Fn::GetAtt": [
+            "WafWebAclBE24253C",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::WAFv2::WebACLAssociation",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;

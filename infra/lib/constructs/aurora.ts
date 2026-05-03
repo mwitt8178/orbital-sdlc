@@ -7,7 +7,7 @@ import { Construct } from 'constructs'
 
 export interface AuroraConstructProps {
   /**
-   * Environment name — drives multi-AZ, backup retention, and ACU range.
+   * Environment name - drives multi-AZ, backup retention, and ACU range.
    */
   readonly envName: string
   /**
@@ -28,25 +28,25 @@ export interface AuroraConstructProps {
   readonly logRetentionDays: number
   /**
    * Security group from which the Aurora cluster accepts connections
-   * (should be the RDS Proxy SG — wired in RdsProxyConstruct).
+   * (should be the RDS Proxy SG - wired in RdsProxyConstruct).
    */
   readonly allowedSg: ec2.ISecurityGroup
 }
 
 /**
- * AuroraConstruct — Aurora Postgres Serverless v2 cluster for the Orbital Hub.
+ * AuroraConstruct - Aurora Postgres Serverless v2 cluster for the Orbital Hub.
  *
  * Features:
  *  - Aurora Postgres 16 Serverless v2
- *  - ACU range from env context (mwitt: 0.5–4, prod: 1–16)
+ *  - ACU range from env context (mwitt: 0.5-4, prod: 1-16)
  *  - Multi-AZ writer + reader instance for prod; single writer for non-prod
  *  - Encryption at rest (AWS-managed KMS key; per-tenant CMK added in 8-07)
  *  - Automated backups: 7 days (non-prod), 35 days (prod)
  *  - Point-in-time recovery (always enabled on Aurora)
  *  - Performance Insights enabled
  *  - Custom parameter group:
- *      pgvector.enabled = on
  *      shared_preload_libraries = 'pg_stat_statements, pgaudit'
+ *      (pgvector installed via CREATE EXTENSION at migration time)
  *      log_min_duration_statement = 500
  *      log_connections = on
  *      log_disconnections = on
@@ -77,12 +77,12 @@ export class AuroraConstruct extends Construct {
     const isProd = props.envName === 'prod'
 
     // ------------------------------------------------------------------
-    // Security group — ingress only from RDS Proxy SG
+    // Security group - ingress only from RDS Proxy SG
     // ------------------------------------------------------------------
     this.securityGroup = new ec2.SecurityGroup(this, 'AuroraSg', {
       vpc: props.vpc,
       securityGroupName: `orbital-${props.envName}-aurora`,
-      description: `Orbital ${props.envName} — Aurora cluster SG. Accepts connections from RDS Proxy only.`,
+      description: `Orbital ${props.envName} - Aurora cluster SG. Accepts connections from RDS Proxy only.`,
       allowAllOutbound: false,
     })
 
@@ -90,11 +90,11 @@ export class AuroraConstruct extends Construct {
     this.securityGroup.addIngressRule(
       props.allowedSg,
       ec2.Port.tcp(5432),
-      'RDS Proxy → Aurora Postgres',
+      'RDS Proxy to Aurora Postgres',
     )
 
     // ------------------------------------------------------------------
-    // Subnet group — isolated subnets only (no internet access)
+    // Subnet group - isolated subnets only (no internet access)
     // ------------------------------------------------------------------
     const subnetGroup = new rds.SubnetGroup(this, 'SubnetGroup', {
       vpc: props.vpc,
@@ -106,7 +106,7 @@ export class AuroraConstruct extends Construct {
     })
 
     // ------------------------------------------------------------------
-    // DB parameter group — Postgres 16 cluster params
+    // DB parameter group - Postgres 16 cluster params
     // pgvector, pg_stat_statements, pgaudit, audit logging
     // ------------------------------------------------------------------
     const parameterGroup = new rds.ParameterGroup(this, 'ParamGroup', {
@@ -115,9 +115,10 @@ export class AuroraConstruct extends Construct {
       }),
       description: `Orbital ${props.envName} Aurora Postgres 16 cluster parameter group`,
       parameters: {
-        // Enable pgvector extension support
-        'pgvector.enabled': 'on',
-        // Load pg_stat_statements and pgaudit at server start
+        // Aurora Postgres pgvector is a trusted extension installed via
+        // CREATE EXTENSION vector — NOT loaded via shared_preload_libraries.
+        // The migration runner Lambda executes the CREATE EXTENSION at runtime.
+        // Aurora's shared_preload_libraries allowlist does not include 'vector'.
         shared_preload_libraries: 'pg_stat_statements,pgaudit',
         // Log queries taking longer than 500ms
         log_min_duration_statement: '500',
@@ -128,7 +129,7 @@ export class AuroraConstruct extends Construct {
     })
 
     // ------------------------------------------------------------------
-    // Master secret (Secrets Manager) — auto-rotated by Aurora
+    // Master secret (Secrets Manager) - auto-rotated by Aurora
     // ------------------------------------------------------------------
     this.masterSecret = new rds.DatabaseSecret(this, 'MasterSecret', {
       username: 'orbital_admin',
@@ -205,7 +206,7 @@ export class AuroraConstruct extends Construct {
       // IAM DB authentication (required for RDS Proxy IAM auth)
       iamAuthentication: true,
 
-      // Instance removal policy — retain in prod to protect data
+      // Instance removal policy - retain in prod to protect data
       removalPolicy: isProd ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
     })
 
