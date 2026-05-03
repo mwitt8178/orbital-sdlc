@@ -28,9 +28,8 @@ import http from 'node:http'
 import { ulid } from 'ulid'
 import pino from 'pino'
 
-// Use deep relative paths so tsc resolves directly to source rather than
-// requiring orchestrator package subpath exports. esbuild/tsc bundle this.
-import { getDb, closeDb } from '../../orchestrator/dist/db/client.js'
+// Use @orbital/db directly — the DB client is now in its own package.
+import { getDb, closeDb } from '@orbital/db'
 import { getSecrets } from '../../orchestrator/dist/lambda/secrets-cache.js'
 import { createEventStore } from '../../orchestrator/dist/events/store.js'
 import { SqsConsumer, type EventHandler } from './sqs-consumer.js'

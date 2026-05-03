@@ -13,6 +13,7 @@
     "lint": "eslint src test"
   },
   "dependencies": {
+    "@orbital/db": "*",
     "@orbital/orchestrator": "*",
     "@aws-sdk/client-secrets-manager": "^3.750.0",
     "@aws-sdk/client-sns": "^3.1041.0",
