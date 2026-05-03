@@ -70,7 +70,7 @@ import { createMemoryService } from '../../orchestrator/src/memory/service.js'
 // so write-path sprint procedures are expected to fail without daemon backing.
 import type { SprintService } from '../../orchestrator/src/backlog/sprint-service.js'
 
-import { getDb } from '../../orchestrator/src/db/client.js'
+import { getDb } from '@orbital/db'
 import type { AnyRouter } from '@trpc/server'
 
 let _router: AnyRouter | null = null

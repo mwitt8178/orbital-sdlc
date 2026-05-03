@@ -119,7 +119,7 @@ export class RunMigrationsTrigger extends Construct {
     // Migration runner Lambda
     //
     // Code is bundled from the migration-runner source directory.
-    // The migrations SQL files from packages/orchestrator/src/db/migrations/
+    // The migrations SQL files from packages/db/src/migrations/
     // are copied into the bundle under /migrations/ so the handler can
     // read them at runtime.
     //
@@ -128,8 +128,9 @@ export class RunMigrationsTrigger extends Construct {
     // ------------------------------------------------------------------
     const migrationsSourceDir = path.resolve(
       __dirname,
-      // Path from infra/lib/triggers/ → orbital/ = 3 levels up.
-      '../../../packages/orchestrator/src/db/migrations',
+      // Phase 3.2: migrations moved from packages/orchestrator/src/db/migrations
+      // to packages/db/src/migrations. Path from infra/lib/triggers/ → orbital/ = 3 levels up.
+      '../../../packages/db/src/migrations',
     )
 
     const lambdaSourceDir = path.resolve(__dirname, '../lambdas/migration-runner')

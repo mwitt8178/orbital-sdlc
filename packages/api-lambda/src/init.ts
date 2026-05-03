@@ -15,9 +15,9 @@
  *   downstream segment via the postgres.js socket trace.
  */
 
-import { getDb } from '../../orchestrator/src/db/client.js'
+import { getDb } from '@orbital/db'
 import { getSecrets, type Secrets, type DbCreds } from '../../orchestrator/src/lambda/secrets-cache.js'
-import type { DB } from '../../orchestrator/src/db/client.js'
+import type { DB } from '@orbital/db'
 
 import {
   SecretsManagerClient,

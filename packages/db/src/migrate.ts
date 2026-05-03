@@ -19,7 +19,14 @@ import { fileURLToPath } from 'node:url'
 import * as readline from 'node:readline'
 import * as fs from 'node:fs/promises'
 import { db, closeDb } from './client.js'
-import { logger } from '../config/logger.js'
+
+// Phase 3.2: migrate.ts moved to @orbital/db. Uses console logging directly
+// to avoid importing pino/otel from the orchestrator config package.
+const logger = {
+  info: (obj: unknown, msg?: string) => console.log(JSON.stringify({ level: 'info', ...(typeof obj === 'object' && obj !== null ? obj : { msg: obj }), ...(msg ? { msg } : {}) })),
+  warn: (obj: unknown, msg?: string) => console.warn(JSON.stringify({ level: 'warn', ...(typeof obj === 'object' && obj !== null ? obj : { msg: obj }), ...(msg ? { msg } : {}) })),
+  error: (obj: unknown, msg?: string) => console.error(JSON.stringify({ level: 'error', ...(typeof obj === 'object' && obj !== null ? obj : { msg: obj }), ...(msg ? { msg } : {}) })),
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
