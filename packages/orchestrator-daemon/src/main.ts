@@ -224,6 +224,34 @@ async function main(): Promise<void> {
       return
     }
 
+    // ---- story.run_requested handler ----
+    // Reviewer clicked "Run agent" on a story. The api-lambda inserted a
+    // story_pr_runs row (status=queued) and published this event. The daemon
+    // owns the long-running clone → agent → commit → PR flow because the
+    // api-lambda has a 30s budget and the agent spawn is minutes.
+    //
+    // [Engineer-Principal · Opus · run-story-pr-pipeline]
+    if (kind === 'story.run_requested') {
+      const payload = (event as Record<string, unknown>) ?? {}
+      const runId = typeof payload['run_id'] === 'string' ? (payload['run_id'] as string) : null
+      const storyId = typeof payload['story_id'] === 'string' ? (payload['story_id'] as string) : null
+      if (!runId || !storyId || tenant_id === 'system') {
+        logger.error(
+          { tenant_id, runId, storyId },
+          'daemon: story.run_requested missing run_id/story_id/tenant_id',
+        )
+        return
+      }
+      logger.info({ tenant_id, runId, storyId }, 'daemon: story.run_requested dispatching')
+      const { runStoryPr } = await import('../../orchestrator/dist/story-runs/run.js')
+      const result = await runStoryPr({ tenantId: tenant_id, runId, storyId })
+      logger.info(
+        { tenant_id, runId, storyId, status: result.status, pr_url: result.prUrl },
+        'daemon: story.run_requested completed',
+      )
+      return
+    }
+
     // Receipt is captured in CloudWatch + EMF metric. Real domain dispatch
     // (write an audit row + run scheduler) lands when the daemon migrates
     // its scheduler tick into this loop — Phase 2.x in the plan. The
