@@ -2,11 +2,15 @@
  * trpc/routers/github.ts — GitHub App installation + repo binding procedures.
  *
  * [Engineer-Principal · Opus · run-orbital-github-integration]
+ * [Engineer-Sr · Sonnet · run-github-app-install]
  *
  * Procedures:
  *   github.recordInstallation  — exchange manifest code OR record an
  *                                installation_id from the post-install redirect
  *   github.listInstallations   — list installations bound to the current tenant
+ *   github.listRepos           — list repos accessible to an installation (60s cache)
+ *   github.getInstallationToken — get a short-lived installation token for an
+ *                                 installation_id owned by the current tenant
  *   github.bindRepo            — bind an Orbital project to a (installation_id,
  *                                full_name) pair
  *   github.listBindings        — list active bindings for a project
@@ -29,6 +33,11 @@ import { router, publicProcedure } from '../init.js'
 import { tenantProcedure } from '../middleware/tenant.js'
 import { db } from '../../db/client.js'
 import { githubInstallations, githubRepoBindings } from '@orbital/db'
+import {
+  listInstallationRepos,
+  assertInstallationBelongsToTenant,
+  getDefaultRepoListCache,
+} from '../../github/install-repos.js'
 
 // ---------------------------------------------------------------------------
 // Input schemas
@@ -55,6 +64,10 @@ const recordInstallationInput = z
   .refine((v) => Boolean(v.code) !== Boolean(v.installationId), {
     message: 'Provide exactly one of `code` or `installationId`',
   })
+
+const installationIdInput = z.object({
+  installationId: z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]),
+})
 
 const bindRepoInput = z.object({
   projectId: z.string().uuid(),
@@ -112,6 +125,68 @@ async function exchangeManifestCode(code: string): Promise<ManifestConversionRes
     })
   }
   return (await res.json()) as ManifestConversionResponse
+}
+
+// ---------------------------------------------------------------------------
+// Installation token provider factory
+// Lazily imported to avoid loading Secrets Manager at startup in local-mode.
+// ---------------------------------------------------------------------------
+
+/**
+ * Tenant-isolation helper: queries github_installations to verify that the
+ * requested installationId is owned by tenantId.
+ */
+async function checkInstallationOwnership(installationId: number, tenantId: string): Promise<void> {
+  await assertInstallationBelongsToTenant({
+    installationId,
+    tenantId,
+    queryInstallations: async (params) => {
+      const rows = await db
+        .select({ installationId: githubInstallations.installationId })
+        .from(githubInstallations)
+        .where(
+          and(
+            eq(githubInstallations.installationId, params.installationId),
+            eq(githubInstallations.tenantId, params.tenantId),
+          ),
+        )
+        .limit(1)
+      return rows
+    },
+  })
+}
+
+/**
+ * Get a real installation token for the given installationId.
+ *
+ * Uses the process-level GitHub App client from init.ts (Lambda path) or
+ * the env-var path (orchestrator standalone). Lazily imported so local-mode
+ * procedures don't pay the Secrets Manager round-trip on cold start.
+ */
+async function getTokenForInstallation(installationId: number): Promise<string> {
+  if (process.env['ORBITAL_GITHUB_APP_ENABLED'] !== '1') {
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message:
+        'GitHub App not configured. Register the App and set ORBITAL_GITHUB_APP_ENABLED=1 ' +
+        'with the private key and webhook secret in Secrets Manager.',
+    })
+  }
+  // Lambda path — use the cached client from init.ts.
+  try {
+    const { getStoryExecutorGitHubClient } = await import(
+      '../../../../api-lambda/src/init.js'
+    )
+    const client = await getStoryExecutorGitHubClient()
+    return client.getTokenForInstallation(installationId)
+  } catch (err) {
+    // In non-Lambda environments (tests, local orchestrator), fail with a clear message.
+    const msg = err instanceof Error ? err.message : String(err)
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: `GitHub App token fetch failed: ${msg}`,
+    })
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -199,6 +274,45 @@ export const githubRouter = router({
       .orderBy(desc(githubInstallations.installedAt))
     return rows
   }),
+
+  /**
+   * List repositories accessible to the given installation.
+   *
+   * Multi-tenant guard: verifies the installation belongs to ctx.tenantId
+   * before calling the GitHub API. Results are cached in-process for 60s.
+   *
+   * [Engineer-Sr · Sonnet · run-github-app-install]
+   */
+  listRepos: tenantProcedure.input(installationIdInput).query(async ({ ctx, input }) => {
+    const installationId = asNumber(input.installationId)
+    await checkInstallationOwnership(installationId, ctx.tenantId)
+    const repos = await listInstallationRepos({
+      installationId,
+      getToken: () => getTokenForInstallation(installationId),
+      cache: getDefaultRepoListCache(),
+    })
+    return repos
+  }),
+
+  /**
+   * Get a short-lived installation token for the given installation_id.
+   *
+   * Used at PR-creation time: the story executor calls this procedure to
+   * obtain a token before pushing commits and opening a pull request.
+   *
+   * Multi-tenant guard: verifies the installation belongs to ctx.tenantId.
+   * Token is NOT persisted — it is returned to the caller and used immediately.
+   *
+   * [Engineer-Sr · Sonnet · run-github-app-install]
+   */
+  getInstallationToken: tenantProcedure
+    .input(installationIdInput)
+    .query(async ({ ctx, input }) => {
+      const installationId = asNumber(input.installationId)
+      await checkInstallationOwnership(installationId, ctx.tenantId)
+      const token = await getTokenForInstallation(installationId)
+      return { token, installationId }
+    }),
 
   /** Bind an Orbital project to a (installation_id, full_name) pair. */
   bindRepo: tenantProcedure.input(bindRepoInput).mutation(async ({ ctx, input }) => {

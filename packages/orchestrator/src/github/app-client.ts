@@ -409,6 +409,15 @@ export class DefaultStoryExecutorGitHubClient implements StoryExecutorGitHubClie
     }
     return { merge_sha: data.sha }
   }
+
+  /**
+   * Get an installation token for the given installation ID.
+   * Exposed publicly so the tRPC router can use it directly without private-field access.
+   * The token is cached in-process by the underlying InstallationTokenProvider.
+   */
+  async getTokenForInstallation(installationId: number): Promise<string> {
+    return this.opts.tokenProvider.getInstallationToken(installationId)
+  }
 }
 
 /**

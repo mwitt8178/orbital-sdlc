@@ -80,6 +80,9 @@ import { projectPersonasRouter } from './project-personas.js'
 // Settings → Sprints — per-project sprint policy (cadence, capacity, budget, ceremony rules)
 // [Engineer-Principal · Opus · run-settings-sprints]
 import { sprintPolicyRouter } from './sprint-policy.js'
+// GitHub App install flow — installation management + repo listing
+// [Engineer-Sr · Sonnet · run-github-app-install]
+import { githubRouter } from './github.js'
 
 // ---------------------------------------------------------------------------
 // Lazy singletons / DI registry
@@ -390,6 +393,9 @@ export const appRouter = router({
   // Settings → Sprints — per-project sprint policy (cadence, capacity, budget, ceremony rules)
   // [Engineer-Principal · Opus · run-settings-sprints]
   sprintPolicy: sprintPolicyRouter,
+  // GitHub App install flow — installation management + repo listing
+  // [Engineer-Sr · Sonnet · run-github-app-install]
+  github: githubRouter,
 })
 
 export type AppRouter = typeof appRouter
