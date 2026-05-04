@@ -16,6 +16,7 @@ import { ExportProgressList } from '../components/features/audit/ExportProgressL
 // Round 6 #7 — Determinism / Replay
 // [Engineer-Principal · Opus · run-round6-07-replay]
 import { ReplayDrawer } from '../components/features/audit/ReplayDrawer.js'
+import { ProjectBreadcrumb } from '../components/layout/ProjectBreadcrumb.js'
 
 export default function Audit() {
   const [_lastRequestedExportId, setLastRequestedExportId] = useState<string | null>(null)
@@ -47,7 +48,7 @@ export default function Audit() {
       <header className="mb-6 flex items-start justify-between">
         <div>
           <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
-            <span>Acme Product</span>
+            <ProjectBreadcrumb />
             <span aria-hidden="true">›</span>
             <span>Audit Log</span>
           </div>

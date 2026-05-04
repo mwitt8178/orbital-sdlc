@@ -67,6 +67,7 @@ export function ConnectToolsStep({
 
   const connectAnthropic = trpc.onboarding.connect.anthropic.useMutation()
   const connectMonday = trpc.onboarding.connect.monday.useMutation()
+  const connectGithub = trpc.onboarding.connect.github.useMutation()
 
   useEffect(() => {
     onChange({
@@ -94,6 +95,24 @@ export function ConnectToolsStep({
       setAnthropicSaved(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Anthropic connect failed.')
+    }
+  }
+
+  const onSaveGithub = async () => {
+    setError(null)
+    if (githubToken.length < 30) {
+      setError(`GitHub tokens are 30+ chars; this is ${githubToken.length}.`)
+      return
+    }
+    try {
+      const res = await connectGithub.mutateAsync({ apiToken: githubToken })
+      if (!res.ok) {
+        setError(res.message ?? 'GitHub validation failed.')
+        return
+      }
+      setGithubSaved(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'GitHub connect failed.')
     }
   }
 
@@ -232,18 +251,10 @@ export function ConnectToolsStep({
               <div className="mt-2 flex items-center gap-3">
                 <Button
                   size="sm"
-                  onClick={() => {
-                    // Frontend stores this via the keychain endpoint below; if no
-                    // dedicated tRPC procedure exists yet for GitHub validation,
-                    // we mark saved when the token shape passes the synchronous
-                    // sanity check. Real validation runs on the first API call.
-                    if (githubToken.length >= 30) {
-                      setGithubSaved(true)
-                    }
-                  }}
-                  disabled={githubToken.length < 30}
+                  onClick={() => void onSaveGithub()}
+                  disabled={githubToken.length < 30 || connectGithub.isPending}
                 >
-                  Save
+                  {connectGithub.isPending ? 'Validating…' : 'Save & validate'}
                 </Button>
                 <SkipWithRecoveryHint
                   recoveryPath="Settings → Integrations → GitHub"

@@ -16,6 +16,7 @@ import { CeremonyCard } from '../components/features/ceremonies/CeremonyCard.js'
 import { OverrideDropdown } from '../components/features/ceremonies/OverrideDropdown.js'
 import { TriggerRulesPanel } from '../components/features/ceremonies/TriggerRulesPanel.js'
 import { EmptyState } from '../components/ui/EmptyState.js'
+import { ProjectBreadcrumb } from '../components/layout/ProjectBreadcrumb.js'
 
 export default function Ceremonies() {
   const list = useCeremoniesStore((s) => s.list)
@@ -28,7 +29,7 @@ export default function Ceremonies() {
       <header className="mb-6 flex items-start justify-between">
         <div>
           <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
-            <span>Acme Product</span>
+            <ProjectBreadcrumb />
             <span aria-hidden="true">›</span>
             <span>Ceremonies</span>
           </div>

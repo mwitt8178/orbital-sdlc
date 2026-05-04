@@ -31,6 +31,9 @@ import { OnboardingChecklist } from '../components/features/dashboard/Onboarding
 // [Engineer-Sr · Sonnet · run-round7-08-operator-attribution]
 import { OperatorBadge, type TeamMember } from '../components/identity/OperatorBadge.js'
 import { PresenceIndicator } from '../components/identity/PresenceIndicator.js'
+// Round 11 — handoff fix: live project name, not "Acme Product".
+// [Engineer-Principal · Opus · run-handoff-audit-001]
+import { ProjectBreadcrumb } from '../components/layout/ProjectBreadcrumb.js'
 
 // ---------------------------------------------------------------------------
 // Team panel component (Round 7-08)
@@ -140,7 +143,7 @@ export default function Dashboard() {
       <header className="mb-6 flex items-start justify-between">
         <div>
           <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
-            <span>Acme Product</span>
+            <ProjectBreadcrumb />
             <span aria-hidden="true">›</span>
             <span>Sprints</span>
           </div>

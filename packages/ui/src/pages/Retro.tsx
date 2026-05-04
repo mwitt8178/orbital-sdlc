@@ -17,6 +17,7 @@ import { ProposalCard } from '../components/features/retro/ProposalCard.js'
 import { RollbackPanel } from '../components/features/retro/RollbackPanel.js'
 import { ErrorMessage } from '../components/ui/ErrorMessage.js'
 import { Skeleton } from '../components/ui/Skeleton.js'
+import { ProjectBreadcrumb } from '../components/layout/ProjectBreadcrumb.js'
 
 type Tab = 'proposals' | 'versions'
 
@@ -40,7 +41,7 @@ export default function Retro() {
       <header className="mb-6 flex items-start justify-between">
         <div>
           <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
-            <span>Acme Product</span>
+            <ProjectBreadcrumb />
             <span aria-hidden="true">›</span>
             <span>Retrospective</span>
           </div>

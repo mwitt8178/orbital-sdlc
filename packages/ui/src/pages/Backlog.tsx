@@ -59,6 +59,7 @@ import { EscalationBanner } from '../components/features/channels/EscalationBann
 // [Engineer-Sr · Sonnet · run-round7-08-operator-attribution]
 import { OperatorBadge, type TeamMember } from '../components/identity/OperatorBadge.js'
 import { OperatorFilter, type OperatorFilterValue } from '../components/identity/OperatorFilter.js'
+import { ProjectBreadcrumb } from '../components/layout/ProjectBreadcrumb.js'
 
 interface RawEpicRow {
   epicId?: unknown
@@ -172,7 +173,7 @@ export default function Backlog() {
       <header className="mb-5 flex items-start justify-between">
         <div className="max-w-3xl">
           <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
-            <span>Acme Product</span>
+            <ProjectBreadcrumb />
             <span aria-hidden="true">›</span>
             <span>Backlog</span>
           </div>

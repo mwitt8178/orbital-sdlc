@@ -9,11 +9,18 @@ import { Link, useLocation } from 'react-router-dom'
 import { VisionChat } from '../components/features/vision/VisionChat.js'
 import { VisionDocumentDisplay } from '../components/features/vision/VisionDocumentDisplay.js'
 import { VisionHistoryPanel } from '../components/features/vision/VisionHistoryPanel.js'
+import { PlanningPanel } from '../components/features/vision/PlanningPanel.js'
 import { useVisionStore } from '../store/vision.js'
+import { trpc } from '../services/trpc.js'
 
 export default function Vision() {
   const documentId = useVisionStore((s) => s.currentDocumentId)
   const location = useLocation()
+  const planningDocQuery = trpc.vision.get.useQuery(
+    documentId ? { vision_document_id: documentId } : (undefined as never),
+    { enabled: !!documentId, staleTime: 5_000 },
+  )
+  const isLocked = !!planningDocQuery.data?.version?.is_locked
   const fromSettings = (location.state as { from?: string } | null)?.from === '/settings'
 
   return (
@@ -88,6 +95,10 @@ export default function Vision() {
       <div className="grid grid-cols-2 gap-5">
         <VisionChat />
         <VisionDocumentDisplay />
+      </div>
+
+      <div className="mt-5">
+        <PlanningPanel visionId={documentId ?? ''} isLocked={isLocked && !!documentId} />
       </div>
 
       {documentId && (
