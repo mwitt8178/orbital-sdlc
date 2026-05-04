@@ -28,6 +28,10 @@ import HubAdmin from './pages/HubAdmin.js'
 // [Engineer-Principal · Opus · run-orbital-review-ui]
 import Stories from './pages/Stories.js'
 import StoryDetail from './pages/StoryDetail.js'
+// Phase D — first-class internal-ticket surface
+// [Engineer-Principal · Opus · run-phase-d-internal-tickets]
+import ProjectBacklog from './pages/ProjectBacklog.js'
+import SprintBoard from './pages/SprintBoard.js'
 import { ToastProvider } from './components/ui/ToastProvider.js'
 import { CommandPalette } from './components/ui/CommandPalette.js'
 // Round 7-06 — Offline Cache + Reconciliation
@@ -73,6 +77,25 @@ export default function App() {
             {/* Round 7-07 — Hub Admin (owner-only, hub mode) */}
             {/* [Engineer-Sr · Sonnet · run-round7-07-hub-deploy-ops] */}
             <Route path="/hub-admin/*" element={<HubAdmin />} />
+            {/* Phase D — first-class internal-ticket surface, OUTSIDE SetupGate
+                so it stays reachable post-onboarding without bouncing to /welcome.
+                [Engineer-Principal · Opus · run-phase-d-internal-tickets] */}
+            <Route
+              path="/projects/:projectId/backlog"
+              element={
+                <AppShell>
+                  <ProjectBacklog />
+                </AppShell>
+              }
+            />
+            <Route
+              path="/projects/:projectId/sprints/:sprintId/board"
+              element={
+                <AppShell>
+                  <SprintBoard />
+                </AppShell>
+              }
+            />
             <Route
               path="/*"
               element={
