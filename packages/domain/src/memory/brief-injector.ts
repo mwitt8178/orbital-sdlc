@@ -14,7 +14,7 @@
 import { uuidv7 } from 'uuidv7'
 import type { DB } from '@orbital/db'
 import type { EventStore } from '../events/store.js'
-import { retrieveTopN, type RetrievalQuery } from './retrieval.js'
+import { retrieveTopN, type RetrievalQuery, type RetrievalOptions } from './retrieval.js'
 import type { MemoryEntry } from './types.js'
 import type { MemoryRetrievedForBriefPayload } from './types.js'
 import { logger } from '../logger.js'
@@ -42,6 +42,9 @@ export interface MemoryBriefInjection {
  * @param taskId     Task being briefed (for event payload)
  * @param query      Title + description of the task
  * @param k          Number of entries to include (default: 8)
+ * @param options    Optional retrieval options (tenantId, personaSlug)
+ *
+ * [Engineer-Sr · Sonnet · run-memory-prompt-assembly]
  */
 export async function injectMemoryIntoBrief(
   db: DB,
@@ -50,12 +53,13 @@ export async function injectMemoryIntoBrief(
   taskId: string,
   query: RetrievalQuery,
   k = 8,
+  options: RetrievalOptions = {},
 ): Promise<MemoryBriefInjection> {
   let entries: MemoryEntry[] = []
   let method: 'vector' | 'tag_fallback' | 'none' = 'none'
 
   try {
-    const result = await retrieveTopN(db, projectId, query, k)
+    const result = await retrieveTopN(db, projectId, query, k, options)
     entries = result.entries
     method = result.method
   } catch (err) {
@@ -102,18 +106,26 @@ export async function injectMemoryIntoBrief(
 // ---------------------------------------------------------------------------
 
 function formatMemorySection(entries: MemoryEntry[]): string {
-  const lines: string[] = [
-    `## Project memory (top ${entries.length} relevant entries)`,
-    '',
-  ]
+  const pinnedCount = entries.filter((e) => e.pinned).length
+  const rankedCount = entries.length - pinnedCount
+
+  const header = pinnedCount > 0
+    ? `## Project memory (${pinnedCount} pinned + ${rankedCount} relevant)`
+    : `## Project memory (top ${entries.length} relevant entries)`
+
+  const lines: string[] = [header, '']
 
   for (const entry of entries) {
-    lines.push(`### [${entry.kind}] ${entry.title}`)
+    const pinnedBadge = entry.pinned ? ' [pinned]' : ''
+    const relevanceBadge = entry.relevanceScore != null
+      ? ` relevance=${(entry.relevanceScore * 100).toFixed(0)}%`
+      : ''
+    lines.push(`### [${entry.kind}] ${entry.title}${pinnedBadge}`)
     lines.push('')
     lines.push(entry.body)
     lines.push('')
     lines.push(
-      `_Source: ${entry.sourceKind}, recorded ${new Date(entry.createdAt).toISOString().split('T')[0]}, confidence ${entry.confidence}_`,
+      `_Source: ${entry.sourceKind}, recorded ${new Date(entry.createdAt).toISOString().split('T')[0]}, confidence ${entry.confidence}${relevanceBadge}_`,
     )
     lines.push('')
   }

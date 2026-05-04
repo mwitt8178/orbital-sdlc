@@ -23,11 +23,18 @@ export interface MemoryEntryListItem {
   title: string
   body: string
   sourceKind: string
+  sourceId?: string | null
   confidence: string
   scope: string
   scopeValue: string | null
   status: string
   tags: string[]
+  /** Migration 0051 — null until retrieval scores this entry */
+  relevanceScore?: number | null
+  /** Migration 0051 — true = always included in prompt */
+  pinned?: boolean
+  /** Migration 0051 — persona slug this entry is scoped to, or null for all */
+  personaScope?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -168,8 +175,18 @@ export function MemoryEntryList({
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <KindBadge kind={entry.kind} />
+                    {entry.pinned && (
+                      <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-amber-600/20">
+                        pinned
+                      </span>
+                    )}
+                    {entry.tags.includes('auto-lesson') && (
+                      <span className="inline-flex items-center rounded-full bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700 ring-1 ring-violet-600/20">
+                        auto
+                      </span>
+                    )}
                     {entry.confidence === 'high' && (
                       <span className="text-xs text-emerald-600 font-medium">High confidence</span>
                     )}
@@ -183,6 +200,11 @@ export function MemoryEntryList({
                   <p className="mt-0.5 text-xs text-slate-400 truncate">
                     {new Date(entry.createdAt).toLocaleDateString()} &middot; {entry.sourceKind}
                     {entry.scope !== 'project' && ` · ${entry.scope}${entry.scopeValue ? `: ${entry.scopeValue}` : ''}`}
+                    {entry.relevanceScore != null && (
+                      <span className="ml-1 text-brand-500">
+                        {Math.round(entry.relevanceScore * 100)}% relevant
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>

@@ -85,6 +85,16 @@ export interface BriefMemoryContext {
   projectId: string
   /** Number of entries to retrieve (default: 8) */
   k?: number
+  /**
+   * Multi-tenant scoping. Sentinel = local-install default.
+   * [Engineer-Sr · Sonnet · run-memory-prompt-assembly]
+   */
+  tenantId?: string
+  /**
+   * Persona slug — when provided, entries scoped to OTHER personas are excluded.
+   * [Engineer-Sr · Sonnet · run-memory-prompt-assembly]
+   */
+  personaSlug?: string
 }
 
 /**
@@ -179,13 +189,14 @@ export async function buildBrief(
   extensions: BriefExtensions = {},
 ): Promise<string> {
   // Memory injection (async — runs before building sections)
+  // [Engineer-Sr · Sonnet · run-memory-prompt-assembly]
   let memoryInjection: MemoryBriefInjection | null = null
   if (extensions.memoryContext) {
-    const { db, eventStore, projectId, k = 8 } = extensions.memoryContext
+    const { db, eventStore, projectId, k = 8, tenantId, personaSlug } = extensions.memoryContext
     memoryInjection = await injectMemoryIntoBrief(db, eventStore, projectId, task.task_id, {
       title: task.title,
       description: task.description,
-    }, k)
+    }, k, { tenantId, personaSlug })
   }
 
   // Round 6 #8 — routeModel: resolve provider+model badge for this spawn.

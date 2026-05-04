@@ -68,6 +68,16 @@ export const MemoryEntrySchema = z.object({
   supersededBy: z.string().uuid().nullable(),
   tags: z.array(z.string()),
   links: z.array(MemoryLinkSchema),
+  /**
+   * Migration 0051 — memory-prompt-assembly.
+   * Pre-computed relevance score at retrieval time (0.0–1.0). Null if never scored.
+   * [Engineer-Sr · Sonnet · run-memory-prompt-assembly]
+   */
+  relevanceScore: z.number().nullable().optional(),
+  /** When true, always included in the prompt regardless of retrieval ranking. */
+  pinned: z.boolean().optional().default(false),
+  /** Optional persona slug filter. When non-null, only injected for that persona. */
+  personaScope: z.string().nullable().optional(),
   createdAt: z.string().datetime({ offset: true }),
   updatedAt: z.string().datetime({ offset: true }),
 })
@@ -107,6 +117,10 @@ export const UpdateMemoryEntryInputSchema = z.object({
   scope: MemoryScopeSchema.optional(),
   scopeValue: z.string().optional(),
   tags: z.array(z.string().min(1).max(64)).optional(),
+  /** Migration 0051: pin/unpin the entry. */
+  pinned: z.boolean().optional(),
+  /** Migration 0051: restrict to a specific persona slug. */
+  personaScope: z.string().nullable().optional(),
 })
 export type UpdateMemoryEntryInput = z.infer<typeof UpdateMemoryEntryInputSchema>
 

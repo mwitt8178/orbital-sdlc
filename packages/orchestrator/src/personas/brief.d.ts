@@ -68,6 +68,16 @@ export interface BriefMemoryContext {
     projectId: string;
     /** Number of entries to retrieve (default: 8) */
     k?: number;
+    /**
+     * Multi-tenant scoping. Sentinel = local-install default.
+     * [Engineer-Sr · Sonnet · run-memory-prompt-assembly]
+     */
+    tenantId?: string;
+    /**
+     * Persona slug — when provided, entries scoped to OTHER personas are excluded.
+     * [Engineer-Sr · Sonnet · run-memory-prompt-assembly]
+     */
+    personaSlug?: string;
 }
 export interface BriefExtensions {
     /** Conversation history; rendered as a "Conversation so far" section. */
