@@ -52,6 +52,8 @@ import { costLedger } from '../../db/schema/cost.js'
 import { createGithubClient } from '../../github/client.js'
 import { loadEnv } from '../../config/env.js'
 import { logger } from '../../config/logger.js'
+import { getScmClient, type ScmProvider } from '../../scm/factory.js'
+import type { ScmUnifiedDiffFile } from '../../scm/client.js'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -246,6 +248,143 @@ const redirectInput = z.object({
   story_id: z.string().uuid(),
   redirect_note: z.string().min(1).max(4000),
 })
+
+const getAttemptDiffInput = z.object({
+  story_id: z.string().uuid(),
+  attempt_number: z.number().int().min(1),
+})
+
+const getCompareDiffInput = z.object({
+  story_id: z.string().uuid(),
+  from_attempt: z.number().int().min(1),
+  to_attempt: z.number().int().min(1),
+})
+
+// ---------------------------------------------------------------------------
+// SCM helpers — provider-agnostic project + scm-client lookup
+// ---------------------------------------------------------------------------
+
+interface ProjectScmRow {
+  projectId: string
+  scmProvider: ScmProvider
+  repoId: string | null
+  defaultBranch: string
+  githubOwner: string | null
+  githubRepo: string | null
+  region: string
+}
+
+async function loadProjectScmForStory(
+  db: typeof defaultDb,
+  tenantId: string,
+  storyId: string,
+): Promise<ProjectScmRow | null> {
+  // Resolve the story's most recent task → project via cost_ledger.
+  const taskRow = await loadLatestTaskForStory(db, tenantId, storyId)
+  if (!taskRow?.projectId) return null
+  const rows = await db.execute<{
+    project_id: string
+    scm_provider: string
+    repo_id: string | null
+    github_default_branch: string
+    github_owner: string | null
+    github_repo: string | null
+  }>(drizzleSql`
+    SELECT project_id, scm_provider, repo_id, github_default_branch,
+           github_owner, github_repo
+      FROM projects
+     WHERE project_id = ${taskRow.projectId}
+       AND tenant_id = ${tenantId}
+     LIMIT 1
+  `)
+  const arr = (Array.isArray(rows)
+    ? rows
+    : (rows as { rows?: Array<unknown> }).rows ?? []) as Array<{
+    project_id: string
+    scm_provider: string
+    repo_id: string | null
+    github_default_branch: string
+    github_owner: string | null
+    github_repo: string | null
+  }>
+  const r = arr[0]
+  if (!r) return null
+  const provider = (r.scm_provider as ScmProvider) ?? 'internal'
+  // Resolve a repoId: explicit column wins; fall back to owner/repo for github.
+  let repoId: string | null = r.repo_id
+  if (!repoId && provider === 'github' && r.github_owner && r.github_repo) {
+    repoId = `${r.github_owner}/${r.github_repo}`
+  }
+  return {
+    projectId: r.project_id,
+    scmProvider: provider,
+    repoId,
+    defaultBranch: r.github_default_branch ?? 'main',
+    githubOwner: r.github_owner,
+    githubRepo: r.github_repo,
+    region: process.env['AWS_REGION'] ?? 'us-east-1',
+  }
+}
+
+async function loadAttemptBranch(
+  db: typeof defaultDb,
+  tenantId: string,
+  storyId: string,
+  attemptNumber: number,
+): Promise<{ branch: string | null; runId: string | null }> {
+  const rows = await db.execute<{
+    run_id: string
+    branch: string | null
+  }>(drizzleSql`
+    SELECT run_id, branch
+      FROM worker_runs
+     WHERE tenant_id = ${tenantId}
+       AND story_id = ${storyId}
+       AND attempt = ${attemptNumber}
+     ORDER BY started_at DESC
+     LIMIT 1
+  `)
+  const arr = (Array.isArray(rows)
+    ? rows
+    : (rows as { rows?: Array<unknown> }).rows ?? []) as Array<{
+    run_id: string
+    branch: string | null
+  }>
+  const r = arr[0]
+  if (!r) return { branch: null, runId: null }
+  return { branch: r.branch, runId: r.run_id }
+}
+
+function buildScmClientForProject(scm: ProjectScmRow) {
+  const env = loadEnv()
+  let githubClient: ReturnType<typeof createGithubClient> | undefined
+  if (scm.scmProvider === 'github') {
+    if (!env.GITHUB_API_TOKEN) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'GITHUB_API_TOKEN not configured',
+      })
+    }
+    githubClient = createGithubClient({ token: env.GITHUB_API_TOKEN })
+  }
+  return getScmClient(
+    { scmProvider: scm.scmProvider, repoId: scm.repoId },
+    { region: scm.region, githubClient },
+  )
+}
+
+function buildDiffMetaUrl(scm: ProjectScmRow): string | null {
+  if (scm.scmProvider === 'github') {
+    if (scm.githubOwner && scm.githubRepo) {
+      return `https://github.com/${scm.githubOwner}/${scm.githubRepo}`
+    }
+    return null
+  }
+  if (scm.repoId) {
+    return `https://${scm.region}.console.aws.amazon.com/codesuite/codecommit/repositories/${scm.repoId}/browse?region=${scm.region}`
+  }
+  return null
+}
 
 // ---------------------------------------------------------------------------
 // Router
@@ -481,6 +620,149 @@ export const storiesRouter = router({
     }
   }),
 
+  /**
+   * Provider-agnostic unified diff for a single attempt. Resolves the
+   * project's SCM provider from the projects row, builds an ScmClient via
+   * the factory, and returns parsed hunks. Works for CodeCommit, internal
+   * (alias of CodeCommit) and GitHub.
+   *
+   * [Engineer-Principal · Opus · run-phase-e-review-ui-codecommit]
+   */
+  getAttemptDiff: tenantProcedure
+    .input(getAttemptDiffInput)
+    .query(async ({ ctx, input }) => {
+      const db = defaultDb
+      const story = await loadStoryScoped(db, ctx.tenantId!, input.story_id)
+      if (!story) throw new TRPCError({ code: 'NOT_FOUND', message: 'Story not found' })
+
+      const scm = await loadProjectScmForStory(db, ctx.tenantId!, input.story_id)
+      if (!scm) {
+        return {
+          provider: null,
+          repoUrl: null,
+          fromRef: null,
+          toRef: null,
+          files: [] as ScmUnifiedDiffFile[],
+          error: 'No project linked to this story (cost_ledger empty).',
+        }
+      }
+      if (!scm.repoId) {
+        return {
+          provider: scm.scmProvider,
+          repoUrl: null,
+          fromRef: null,
+          toRef: null,
+          files: [] as ScmUnifiedDiffFile[],
+          error: 'Project has no repo configured.',
+        }
+      }
+
+      const { branch } = await loadAttemptBranch(
+        db,
+        ctx.tenantId!,
+        input.story_id,
+        input.attempt_number,
+      )
+      if (!branch) {
+        return {
+          provider: scm.scmProvider,
+          repoUrl: buildDiffMetaUrl(scm),
+          fromRef: scm.defaultBranch,
+          toRef: null,
+          files: [] as ScmUnifiedDiffFile[],
+          error: `Attempt #${input.attempt_number} has no branch_name recorded yet.`,
+        }
+      }
+
+      try {
+        const client = buildScmClientForProject(scm)
+        const result = await client.getUnifiedDiff(scm.repoId, scm.defaultBranch, branch)
+        return {
+          provider: scm.scmProvider,
+          repoUrl: buildDiffMetaUrl(scm),
+          fromRef: scm.defaultBranch,
+          toRef: branch,
+          files: result.files,
+          error: null as string | null,
+        }
+      } catch (err) {
+        logger.warn(
+          { err, storyId: input.story_id, attempt: input.attempt_number },
+          'stories.getAttemptDiff failed',
+        )
+        return {
+          provider: scm.scmProvider,
+          repoUrl: buildDiffMetaUrl(scm),
+          fromRef: scm.defaultBranch,
+          toRef: branch,
+          files: [] as ScmUnifiedDiffFile[],
+          error: (err as Error).message,
+        }
+      }
+    }),
+
+  /**
+   * Compare two attempts head-to-head. Branches come from worker_runs.
+   * Returns the same shape as getAttemptDiff.
+   */
+  getCompareDiff: tenantProcedure
+    .input(getCompareDiffInput)
+    .query(async ({ ctx, input }) => {
+      const db = defaultDb
+      const story = await loadStoryScoped(db, ctx.tenantId!, input.story_id)
+      if (!story) throw new TRPCError({ code: 'NOT_FOUND', message: 'Story not found' })
+      const scm = await loadProjectScmForStory(db, ctx.tenantId!, input.story_id)
+      if (!scm?.repoId) {
+        return {
+          provider: scm?.scmProvider ?? null,
+          repoUrl: null,
+          fromRef: null,
+          toRef: null,
+          files: [] as ScmUnifiedDiffFile[],
+          error: 'No repo configured for this story.',
+        }
+      }
+      const [fromBr, toBr] = await Promise.all([
+        loadAttemptBranch(db, ctx.tenantId!, input.story_id, input.from_attempt),
+        loadAttemptBranch(db, ctx.tenantId!, input.story_id, input.to_attempt),
+      ])
+      if (!fromBr.branch || !toBr.branch) {
+        return {
+          provider: scm.scmProvider,
+          repoUrl: buildDiffMetaUrl(scm),
+          fromRef: fromBr.branch,
+          toRef: toBr.branch,
+          files: [] as ScmUnifiedDiffFile[],
+          error: 'One or both attempts have no branch_name recorded.',
+        }
+      }
+      try {
+        const client = buildScmClientForProject(scm)
+        const result = await client.getUnifiedDiff(scm.repoId, fromBr.branch, toBr.branch)
+        return {
+          provider: scm.scmProvider,
+          repoUrl: buildDiffMetaUrl(scm),
+          fromRef: fromBr.branch,
+          toRef: toBr.branch,
+          files: result.files,
+          error: null as string | null,
+        }
+      } catch (err) {
+        logger.warn(
+          { err, storyId: input.story_id, from: input.from_attempt, to: input.to_attempt },
+          'stories.getCompareDiff failed',
+        )
+        return {
+          provider: scm.scmProvider,
+          repoUrl: buildDiffMetaUrl(scm),
+          fromRef: fromBr.branch,
+          toRef: toBr.branch,
+          files: [] as ScmUnifiedDiffFile[],
+          error: (err as Error).message,
+        }
+      }
+    }),
+
   // -------------------------------------------------------------------------
   // Mutations
   // -------------------------------------------------------------------------
@@ -538,42 +820,27 @@ export const storiesRouter = router({
       })
     }
     const task = { ...taskBase, projectId }
-    const projectRows = await db
-      .select({
-        owner: projects.githubOwner,
-        repo: projects.githubRepo,
-      })
-      .from(projects)
-      .where(
-        and(
-          eq(projects.projectId, task.projectId),
-          eq(projects.tenantId, ctx.tenantId!),
-        ),
-      )
-      .limit(1)
-    const project = projectRows[0]
-    if (!project?.owner || !project?.repo) {
+    // Provider-agnostic merge via the ScmClient factory. Falls back to the
+    // GitHub adapter for legacy projects without scm_provider set.
+    const scm = await loadProjectScmForStory(db, ctx.tenantId!, input.story_id)
+    if (!scm) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
-        message: 'Project has no GitHub owner/repo configured',
+        message: 'Project SCM metadata not found for this story',
       })
     }
-
-    const env = loadEnv()
-    const token = env.GITHUB_API_TOKEN
-    if (!token) {
+    if (!scm.repoId) {
       throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'GITHUB_API_TOKEN not configured',
+        code: 'BAD_REQUEST',
+        message: 'Project has no repo configured',
       })
     }
-    const client = createGithubClient({ token })
-    const merge = await client.mergePullRequest({
-      owner: project.owner,
-      repo: project.repo,
-      pr_number: task.githubPrNumber as number,
-      mergeMethod: input.mergeMethod,
-    })
+    const scmClient = buildScmClientForProject(scm)
+    const merge = await scmClient.mergePR(
+      scm.repoId,
+      String(task.githubPrNumber),
+      input.mergeMethod,
+    )
 
     // Persist post-merge state.
     await db
@@ -598,12 +865,12 @@ export const storiesRouter = router({
         task_id: task.taskId,
         action: 'accept',
         pr_url: task.githubPrUrl,
-        merged_sha: merge.sha,
+        merged_sha: merge.commitSha,
       },
     )
     return {
       ok: true as const,
-      merged_sha: merge.sha,
+      merged_sha: merge.commitSha,
       pr_url: task.githubPrUrl,
     }
   }),
@@ -675,5 +942,8 @@ export const storiesRouter = router({
 // suppress unused import warnings when DSQL helpers shift
 void gte
 void lt
+void createGithubClient
+void loadEnv
+void projects
 
 export type StoriesRouter = typeof storiesRouter

@@ -55,6 +55,29 @@ interface AttemptRow {
   summary: string | null
 }
 
+interface UnifiedHunkLine {
+  origin: ' ' | '+' | '-'
+  content: string
+}
+
+interface UnifiedHunk {
+  oldStart: number
+  oldLines: number
+  newStart: number
+  newLines: number
+  lines: UnifiedHunkLine[]
+}
+
+interface UnifiedFile {
+  path: string
+  oldPath: string | null
+  changeType: 'A' | 'M' | 'D' | 'R'
+  additions: number
+  deletions: number
+  binary: boolean
+  hunks: UnifiedHunk[]
+}
+
 export default function StoryDetail() {
   const { storyId = '' } = useParams<{ storyId: string }>()
   const navigate = useNavigate()
@@ -252,6 +275,7 @@ export default function StoryDetail() {
 
       {tab === 'attempts' && (
         <AttemptsTab
+          storyId={storyId}
           loading={attemptsQuery.isLoading}
           attempts={attempts}
           compareSet={compareSet}
@@ -274,7 +298,11 @@ export default function StoryDetail() {
       )}
 
       {compareList.length >= 2 && (
-        <ComparePanel attempts={compareList} onClose={() => setCompareSet(new Set())} />
+        <ComparePanel
+          storyId={storyId}
+          attempts={compareList}
+          onClose={() => setCompareSet(new Set())}
+        />
       )}
 
       {/* Confirmation modals */}
@@ -369,16 +397,19 @@ function TabBtn({
 // ---------------------------------------------------------------------------
 
 function AttemptsTab({
+  storyId,
   loading,
   attempts,
   compareSet,
   toggleCompare,
 }: {
+  storyId: string
   loading: boolean
   attempts: AttemptRow[]
   compareSet: Set<string>
   toggleCompare: (id: string) => void
 }) {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
   if (loading) return <Skeleton className="h-40 w-full" />
   if (attempts.length === 0) {
     return (
@@ -389,7 +420,7 @@ function AttemptsTab({
     )
   }
   return (
-    <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+    <ul className="grid grid-cols-1 gap-3">
       {attempts.map((a) => {
         const cents = a.usd_cents ?? 0
         const cost = cents / 100
@@ -445,9 +476,24 @@ function AttemptsTab({
               )}
               <button
                 type="button"
+                onClick={() =>
+                  setExpanded((prev) => {
+                    const next = new Set(prev)
+                    if (next.has(a.worker_run_id)) next.delete(a.worker_run_id)
+                    else next.add(a.worker_run_id)
+                    return next
+                  })
+                }
+                className="ml-auto rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 transition hover:bg-slate-50"
+                data-testid={`toggle-diff-${a.attempt_number}`}
+              >
+                {expanded.has(a.worker_run_id) ? 'Hide diff' : 'Show diff'}
+              </button>
+              <button
+                type="button"
                 onClick={() => toggleCompare(a.worker_run_id)}
                 className={clsx(
-                  'ml-auto rounded-md border px-2 py-1 text-xs transition',
+                  'rounded-md border px-2 py-1 text-xs transition',
                   compareSet.has(a.worker_run_id)
                     ? 'border-brand-300 bg-brand-50 text-brand-700'
                     : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
@@ -456,10 +502,177 @@ function AttemptsTab({
                 {compareSet.has(a.worker_run_id) ? 'Comparing' : 'Compare'}
               </button>
             </div>
+            {expanded.has(a.worker_run_id) && (
+              <AttemptDiff storyId={storyId} attemptNumber={a.attempt_number} />
+            )}
           </li>
         )
       })}
     </ul>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// AttemptDiff — provider-agnostic unified-diff renderer
+// ---------------------------------------------------------------------------
+
+function AttemptDiff({
+  storyId,
+  attemptNumber,
+}: {
+  storyId: string
+  attemptNumber: number
+}) {
+  const q = trpc.stories.getAttemptDiff.useQuery(
+    { story_id: storyId, attempt_number: attemptNumber },
+    { staleTime: 30_000 },
+  )
+
+  if (q.isLoading) {
+    return <Skeleton className="mt-3 h-32 w-full" />
+  }
+  if (q.isError) {
+    return (
+      <div className="mt-3 rounded-md border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700">
+        Failed to load diff: {q.error?.message ?? 'unknown error'}
+      </div>
+    )
+  }
+  const data = q.data
+  if (!data) return null
+
+  const provider = data.provider ?? 'unknown'
+  const isCodeCommit = provider === 'codecommit' || provider === 'internal'
+
+  return (
+    <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
+      <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+        <Badge color={isCodeCommit ? 'amber' : provider === 'github' ? 'slate' : 'slate'}>
+          {provider}
+        </Badge>
+        {data.fromRef && data.toRef && (
+          <span className="font-mono">
+            {data.fromRef} … {data.toRef}
+          </span>
+        )}
+        {data.repoUrl && (
+          <a
+            href={data.repoUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-brand-600 hover:underline"
+          >
+            Open repo
+          </a>
+        )}
+      </div>
+      {isCodeCommit && (
+        <div className="rounded-md border border-amber-100 bg-amber-50/50 p-2 text-[11px] text-amber-800">
+          For local clones, configure the{' '}
+          <a
+            className="underline"
+            href="https://docs.aws.amazon.com/codecommit/latest/userguide/setting-up-https-unixes.html"
+            target="_blank"
+            rel="noreferrer"
+          >
+            AWS CodeCommit credential helper
+          </a>
+          .
+        </div>
+      )}
+      {data.error && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">
+          {data.error}
+        </div>
+      )}
+      {data.files.length === 0 && !data.error && (
+        <EmptyState
+          title="No file changes"
+          description="The branch has no differences against the default branch."
+        />
+      )}
+      {data.files.map((f) => (
+        <FileDiff key={f.path} file={f as UnifiedFile} />
+      ))}
+    </div>
+  )
+}
+
+function FileDiff({ file }: { file: UnifiedFile }) {
+  const tone =
+    file.changeType === 'A'
+      ? 'emerald'
+      : file.changeType === 'D'
+        ? 'rose'
+        : file.changeType === 'R'
+          ? 'amber'
+          : 'slate'
+  return (
+    <section
+      className="overflow-hidden rounded-md border border-slate-200"
+      data-testid={`file-diff-${file.path}`}
+    >
+      <header className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+        <Badge color={tone}>{file.changeType}</Badge>
+        <span className="font-mono text-slate-800">{file.path}</span>
+        {file.oldPath && file.oldPath !== file.path && (
+          <span className="font-mono text-slate-500">(was {file.oldPath})</span>
+        )}
+        <span className="ml-auto font-mono text-slate-500">
+          <span className="text-emerald-600">+{file.additions}</span>{' '}
+          <span className="text-rose-600">-{file.deletions}</span>
+        </span>
+      </header>
+      {file.binary ? (
+        <p className="p-3 text-xs text-slate-500">Binary file — diff suppressed.</p>
+      ) : file.hunks.length === 0 ? (
+        <p className="p-3 text-xs text-slate-500">No textual changes.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          {file.hunks.map((h, hi) => (
+            <Hunk key={hi} hunk={h} />
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function Hunk({ hunk }: { hunk: UnifiedHunk }) {
+  let oldNo = hunk.oldStart
+  let newNo = hunk.newStart
+  return (
+    <div className="font-mono text-[11px] leading-5">
+      <div className="bg-slate-100 px-3 py-1 text-slate-600">
+        @@ -{hunk.oldStart},{hunk.oldLines} +{hunk.newStart},{hunk.newLines} @@
+      </div>
+      {hunk.lines.map((ln, i) => {
+        const oldShown = ln.origin === '+' ? '' : String(oldNo)
+        const newShown = ln.origin === '-' ? '' : String(newNo)
+        if (ln.origin !== '+') oldNo++
+        if (ln.origin !== '-') newNo++
+        const bg =
+          ln.origin === '+'
+            ? 'bg-emerald-50 text-emerald-900'
+            : ln.origin === '-'
+              ? 'bg-rose-50 text-rose-900'
+              : 'bg-white text-slate-800'
+        return (
+          <div key={i} className={clsx('flex whitespace-pre', bg)}>
+            <span className="w-12 shrink-0 select-none border-r border-slate-100 px-1 text-right text-slate-400">
+              {oldShown}
+            </span>
+            <span className="w-12 shrink-0 select-none border-r border-slate-100 px-1 text-right text-slate-400">
+              {newShown}
+            </span>
+            <span className="w-4 shrink-0 select-none text-center text-slate-400">
+              {ln.origin === ' ' ? '' : ln.origin}
+            </span>
+            <span className="grow px-1">{ln.content}</span>
+          </div>
+        )
+      })}
+    </div>
   )
 }
 
@@ -509,19 +722,36 @@ function TimelineTab({ loading, items }: { loading: boolean; items: TimelineItem
 // ---------------------------------------------------------------------------
 
 function ComparePanel({
+  storyId,
   attempts,
   onClose,
 }: {
+  storyId: string
   attempts: AttemptRow[]
   onClose: () => void
 }) {
+  // Sort by attempt_number ascending for a stable from→to.
+  const sorted = [...attempts].sort((a, b) => a.attempt_number - b.attempt_number)
+  const from = sorted[0]
+  const to = sorted[sorted.length - 1]
+  const enabled = !!from && !!to && from.attempt_number !== to.attempt_number
+  const diffQuery = trpc.stories.getCompareDiff.useQuery(
+    {
+      story_id: storyId,
+      from_attempt: from?.attempt_number ?? 1,
+      to_attempt: to?.attempt_number ?? 1,
+    },
+    { enabled, staleTime: 30_000 },
+  )
   return (
     <section
       aria-label="Compare attempts"
       className="rounded-lg border border-slate-200 bg-white p-4"
     >
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-900">Compare attempts</h2>
+        <h2 className="text-sm font-semibold text-slate-900">
+          Compare attempts {from && to && `#${from.attempt_number} → #${to.attempt_number}`}
+        </h2>
         <button
           type="button"
           onClick={onClose}
@@ -530,27 +760,44 @@ function ComparePanel({
           Clear
         </button>
       </div>
-      <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${attempts.length}, minmax(0, 1fr))` }}>
-        {attempts.map((a) => (
+      <div
+        className="mb-3 grid gap-3"
+        style={{ gridTemplateColumns: `repeat(${sorted.length}, minmax(0, 1fr))` }}
+      >
+        {sorted.map((a) => (
           <div key={a.worker_run_id} className="rounded-md border border-slate-200 p-3">
             <p className="text-xs font-semibold text-slate-900">Attempt #{a.attempt_number}</p>
             <p className="mt-1 text-xs text-slate-500">
               {a.exit_status ?? 'unknown'} · {formatUsd((a.usd_cents ?? 0) / 100)}
             </p>
             {a.summary && <p className="mt-2 text-xs text-slate-700">{a.summary}</p>}
-            {a.pr_url && (
-              <a
-                href={a.pr_url}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 inline-block text-xs text-brand-600 hover:underline"
-              >
-                Open diff
-              </a>
-            )}
           </div>
         ))}
       </div>
+      {!enabled && (
+        <p className="text-xs text-slate-500">
+          Pick two distinct attempts to see a head-to-head diff.
+        </p>
+      )}
+      {enabled && diffQuery.isLoading && <Skeleton className="h-32 w-full" />}
+      {enabled && diffQuery.isError && (
+        <ErrorMessage message={diffQuery.error?.message ?? 'Failed to load diff'} />
+      )}
+      {enabled && diffQuery.data && (
+        <div className="space-y-2">
+          {diffQuery.data.error && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">
+              {diffQuery.data.error}
+            </div>
+          )}
+          {(diffQuery.data.files as UnifiedFile[]).map((f) => (
+            <FileDiff key={f.path} file={f} />
+          ))}
+          {diffQuery.data.files.length === 0 && !diffQuery.data.error && (
+            <EmptyState title="No differences" description="The two attempts produced identical trees." />
+          )}
+        </div>
+      )}
     </section>
   )
 }

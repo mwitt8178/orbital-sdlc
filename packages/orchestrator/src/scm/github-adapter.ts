@@ -16,7 +16,9 @@ import type {
   ScmPullRequestStatus,
   ScmDifferenceFile,
   ScmMergeMethod,
+  ScmUnifiedDiffFile,
 } from './client.js'
+import { computeUnifiedDiff } from './unified-diff.js'
 
 export interface GithubScmAdapterOptions {
   /** Default owner used by createRepo if the caller doesn't encode one. */
@@ -196,6 +198,77 @@ export class GithubScmAdapter implements ScmClient {
     }))
     return { files }
   }
+
+  async getUnifiedDiff(
+    repoId: string,
+    fromRef: string,
+    toRef: string,
+  ): Promise<{ files: ScmUnifiedDiffFile[] }> {
+    const { owner, repo } = parseRepoId(repoId)
+    // Fetch each file's before/after raw content via the contents endpoint.
+    // For large diffs this is many calls — acceptable since the Review UI
+    // only loads on demand. Fall back to an empty hunk if a file's blob
+    // cannot be retrieved.
+    const compare = await this.gh.rawRequest<{
+      files?: Array<{
+        filename: string
+        status: string
+        additions: number
+        deletions: number
+        previous_filename?: string
+        patch?: string
+      }>
+    }>(
+      'GET',
+      `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/compare/${encodeURIComponent(fromRef)}...${encodeURIComponent(toRef)}`,
+    )
+    const out: ScmUnifiedDiffFile[] = []
+    for (const f of compare?.files ?? []) {
+      const changeType = mapStatus(f.status)
+      // GitHub already provides a `patch` text; parse it as best-effort.
+      const hunks = f.patch ? parseGithubPatchHunks(f.patch) : []
+      out.push({
+        path: f.filename,
+        oldPath: f.previous_filename ?? null,
+        changeType,
+        additions: f.additions,
+        deletions: f.deletions,
+        binary: !f.patch,
+        hunks,
+      })
+    }
+    void computeUnifiedDiff // exported to share types; fall-through for future use
+    return { files: out }
+  }
+}
+
+/** Best-effort unified-diff hunk parser for GitHub's `patch` field. */
+function parseGithubPatchHunks(patch: string): import('./client.js').ScmUnifiedHunk[] {
+  const hunks: import('./client.js').ScmUnifiedHunk[] = []
+  const lines = patch.split('\n')
+  let cur: import('./client.js').ScmUnifiedHunk | null = null
+  const headerRe = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/
+  for (const ln of lines) {
+    const h = ln.match(headerRe)
+    if (h) {
+      if (cur) hunks.push(cur)
+      cur = {
+        oldStart: Number(h[1]),
+        oldLines: h[2] ? Number(h[2]) : 1,
+        newStart: Number(h[3]),
+        newLines: h[4] ? Number(h[4]) : 1,
+        lines: [],
+      }
+      continue
+    }
+    if (!cur) continue
+    if (ln.startsWith('+')) cur.lines.push({ origin: '+', content: ln.slice(1) })
+    else if (ln.startsWith('-')) cur.lines.push({ origin: '-', content: ln.slice(1) })
+    else if (ln.startsWith(' ')) cur.lines.push({ origin: ' ', content: ln.slice(1) })
+    // ignore '\ No newline at end of file' and other markers
+  }
+  if (cur) hunks.push(cur)
+  return hunks
 }
 
 // ---------------------------------------------------------------------------
