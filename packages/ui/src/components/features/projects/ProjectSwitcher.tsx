@@ -181,8 +181,10 @@ export function ProjectSwitcher() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={(project) => {
+          // Modal already updates the active-project store + navigates to /,
+          // but call setActiveProject too so the switcher's local hook view is
+          // immediately consistent for the brief moment before navigation.
           setActiveProject(project.projectId)
-          setCreateOpen(false)
         }}
       />
     </div>

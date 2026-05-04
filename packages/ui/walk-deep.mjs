@@ -102,8 +102,10 @@ for (const r of ROUTES) {
   const inputs = await page.locator('input:visible, textarea:visible').count()
 
   const issues = []
-  if (url !== `${BASE}${r}` && !url.endsWith(r) && !url.endsWith(r + '/')) {
-    issues.push(`redirected-to: ${url.replace(BASE, '')}`)
+  // Strip query string before comparing — UX-4 ActiveProjectUrlSync adds ?project=<id>
+  const path = url.replace(BASE, '').split('?')[0]
+  if (path !== r && path !== r + '/') {
+    issues.push(`redirected-to: ${path}`)
   }
   for (const s of SUSPICIOUS_STRINGS) {
     if (text.includes(s)) issues.push(`text-contains: "${s}"`)
