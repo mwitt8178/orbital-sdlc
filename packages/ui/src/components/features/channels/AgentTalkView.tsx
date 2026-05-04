@@ -52,8 +52,8 @@ function personaIcon(personaId: string): string {
 function channelColor(channelName: string): string {
   if (channelName.startsWith('#escalation-')) return 'bg-red-100 text-red-700'
   if (channelName.startsWith('#sprint-')) return 'bg-blue-100 text-blue-700'
-  if (channelName.startsWith('#review-')) return 'bg-purple-100 text-purple-700'
-  if (channelName.startsWith('#orb-')) return 'bg-green-100 text-green-700'
+  if (channelName.startsWith('#review-')) return 'bg-violet-100 text-violet-700'
+  if (channelName.startsWith('#orb-')) return 'bg-emerald-100 text-emerald-700'
   return 'bg-slate-100 text-slate-700'
 }
 

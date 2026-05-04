@@ -25,7 +25,7 @@ const STOPS: TourStop[] = [
   {
     title: 'Backlog',
     body:
-      'All in-flight tickets live here. Sorted by sprint, with full Monday + GitHub PR cross-references.',
+      'All in-flight stories live here. Sorted by sprint, with full Monday + GitHub PR cross-references.',
   },
   {
     title: 'Channels',

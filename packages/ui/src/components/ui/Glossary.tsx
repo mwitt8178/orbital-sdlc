@@ -54,7 +54,7 @@ const GLOSSARY: Record<string, GlossaryEntry> = {
   sprint: {
     short: 'A bounded unit of agent work.',
     detail:
-      'A sprint is a story-point and budget bounded set of tickets the orchestrator executes via spawned agents. Sprints are immutable once started.',
+      'A sprint is a story-point and budget bounded set of stories the orchestrator executes via spawned agents. Sprints are immutable once started.',
   },
   hook: {
     short: 'A pre/post-event script.',

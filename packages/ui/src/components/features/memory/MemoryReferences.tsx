@@ -50,10 +50,10 @@ function MemoryReferenceItem({ entryId }: { entryId: string }) {
 
   const kindBadgeClass: Record<string, string> = {
     decision: 'bg-blue-50 text-blue-700',
-    convention: 'bg-green-50 text-green-700',
-    learning: 'bg-yellow-50 text-yellow-800',
+    convention: 'bg-emerald-50 text-emerald-700',
+    learning: 'bg-amber-50 text-amber-800',
     anti_pattern: 'bg-red-50 text-red-700',
-    glossary: 'bg-purple-50 text-purple-700',
+    glossary: 'bg-violet-50 text-violet-700',
   }
 
   return (

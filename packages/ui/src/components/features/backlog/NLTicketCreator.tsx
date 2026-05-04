@@ -180,7 +180,7 @@ export function NLTicketCreator({ epics }: NLTicketCreatorProps) {
   return (
     <section
       className="rounded-lg border border-brand-100 bg-gradient-to-br from-white to-brand-50/30 p-3"
-      aria-label="Add a ticket from natural language"
+      aria-label="Add a story from natural language"
       data-testid="nl-ticket-creator"
     >
       <div className="flex items-center gap-2">
@@ -298,7 +298,7 @@ function ProposalConfirmCard(props: ProposalConfirmCardProps) {
       className="mt-3 rounded-md border border-slate-200 bg-white p-3 shadow-sm"
       data-testid="nl-ticket-creator-proposal"
       role="region"
-      aria-label="Proposed ticket — review and confirm"
+      aria-label="Proposed story — review and confirm"
     >
       <div className="mb-2 flex items-center gap-2">
         <Badge color={kindBadgeColor}>{draft.kind}</Badge>

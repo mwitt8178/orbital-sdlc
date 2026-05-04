@@ -46,6 +46,10 @@ import ResetPassword from './pages/ResetPassword.js'
 // [Engineer-Principal · Opus · run-orbital-github-integration]
 import IntegrationsGitHub from './pages/IntegrationsGitHub.js'
 import GitHubCallback from './pages/oauth/GitHubCallback.js'
+// UX-3 — Stories review queue + detail. Pages were implemented but never routed,
+// causing every <Link to="/stories"> in StoryDetail to dead-end at the catch-all.
+import Stories from './pages/Stories.js'
+import StoryDetail from './pages/StoryDetail.js'
 
 export default function App() {
   const [queryClient] = useState(() => new QueryClient({
@@ -149,6 +153,9 @@ export default function App() {
                           <Route path="/audit" element={<Audit />} />
                           <Route path="/memory" element={<Memory />} />
                           <Route path="/agents" element={<AgentInspector />} />
+                          {/* UX-3 — Stories reviewer queue + detail */}
+                          <Route path="/stories" element={<Stories />} />
+                          <Route path="/stories/:storyId" element={<StoryDetail />} />
                           {/* Round 6 #5 — Cost Governance */}
                           {/* [Engineer-Sr · Sonnet · run-round6-05-cost-governance] */}
                           <Route path="/cost" element={<Cost />} />
