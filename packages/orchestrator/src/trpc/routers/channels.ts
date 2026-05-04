@@ -22,7 +22,7 @@
 import { z } from 'zod'
 import { uuidv7 } from 'uuidv7'
 import { TRPCError } from '@trpc/server'
-import { eq, and, desc, lt, inArray, type SQL, sql as dSQL } from 'drizzle-orm'
+import { eq, and, desc, lt, inArray, isNull, type SQL, sql as dSQL } from 'drizzle-orm'
 // Round 7-02 — hub client for proxy mode
 // [Engineer-Sr · Sonnet · run-round7-02-local-hub-split]
 import { getHubClient } from '../../hub-client/index.js'
@@ -147,7 +147,7 @@ export const channelsRouter = router({
       }
       if (!input.include_archived) {
         // archived_at IS NULL
-        conditions.push(eq(channels.archivedAt as never, null as never))
+        conditions.push(isNull(channels.archivedAt))
       }
       const cursor = decodeCursor(input.after)
       if (cursor) {
