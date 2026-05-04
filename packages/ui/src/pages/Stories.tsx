@@ -136,9 +136,9 @@ export default function Stories() {
   }, [cursorIdx])
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 p-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Review queue</h1>
+    <div className="mx-auto max-w-[1400px] px-8 py-6">
+      <header className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-900">Review Queue</h1>
         <p className="mt-1 text-sm text-slate-500">
           Stories the agents have shipped to a PR and are waiting on a human
           decision. Use <kbd className="rounded border border-slate-300 px-1 text-xs">j</kbd>/

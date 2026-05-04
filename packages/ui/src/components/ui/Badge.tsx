@@ -1,6 +1,8 @@
 import clsx from 'clsx'
 import { ReactNode } from 'react'
 
+// UX-3: 'purple' kept as a back-compat alias of 'violet' to avoid breaking any
+// stale callers; new code should use 'violet'. The two map to the same palette.
 type BadgeColor =
   | 'emerald'
   | 'violet'
@@ -25,7 +27,8 @@ const colorMap: Record<BadgeColor, string> = {
   rose: 'bg-rose-50 text-rose-700 border-rose-200',
   slate: 'bg-slate-100 text-slate-600 border-slate-200',
   indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  purple: 'bg-purple-50 text-purple-700 border-purple-200',
+  // UX-3: alias to violet palette for visual consistency.
+  purple: 'bg-violet-50 text-violet-700 border-violet-200',
 }
 
 export function Badge({ color = 'slate', children, className }: BadgeProps) {

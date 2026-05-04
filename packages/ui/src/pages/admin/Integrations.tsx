@@ -39,7 +39,8 @@ function AdminIntegrationsShell() {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-[1200px] px-6 py-5">
+        {/* UX-3: align to canonical page-shell width (max-w-[1400px] px-8 py-6). */}
+        <div className="mx-auto max-w-[1400px] px-8 py-6">
           <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
             <Link to="/" className="hover:text-slate-700">
               Orbital
@@ -51,7 +52,7 @@ function AdminIntegrationsShell() {
             <span aria-hidden="true">›</span>
             <span className="text-slate-700">Integrations</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Tool integrations</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Tool Integrations</h1>
           <p className="mt-1 max-w-2xl text-sm text-slate-600">
             Configure the external services Orbital uses on behalf of every project in this
             install. Each connection persists for all users; individual onboarding wizards no
@@ -82,7 +83,7 @@ function AdminIntegrationsShell() {
           </nav>
         </div>
       </header>
-      <main key={location.pathname} className="mx-auto max-w-[1200px] px-6 py-8">
+      <main key={location.pathname} className="mx-auto max-w-[1400px] px-8 py-6">
         <Outlet />
       </main>
     </div>

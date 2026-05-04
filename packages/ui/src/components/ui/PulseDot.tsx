@@ -20,7 +20,8 @@ const colorMap: Record<DotColor, string> = {
   rose: 'bg-rose-500',
   slate: 'bg-slate-400',
   indigo: 'bg-indigo-500',
-  purple: 'bg-purple-500',
+  // UX-3: 'purple' aliased to violet for palette consistency.
+  purple: 'bg-violet-500',
 }
 
 const sizeMap: Record<DotSize, string> = {

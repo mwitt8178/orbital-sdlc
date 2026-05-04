@@ -51,7 +51,7 @@ function formatRelativeTime(isoString: string): string {
 
 function channelTagColor(name: string): string {
   if (name.startsWith('#escalation-')) return 'bg-red-100 text-red-700'
-  if (name.startsWith('#review-')) return 'bg-purple-100 text-purple-700'
+  if (name.startsWith('#review-')) return 'bg-violet-100 text-violet-700'
   if (name.startsWith('#sprint-')) return 'bg-blue-100 text-blue-700'
   return 'bg-slate-100 text-slate-700'
 }
@@ -280,7 +280,7 @@ export default function Channels() {
               </div>
               <h3 className="text-sm font-semibold text-slate-900">No channels yet</h3>
               <p className="mt-1 text-xs text-slate-500">
-                Channels are auto-created per sprint and per ticket.
+                Channels are auto-created per sprint and per story.
               </p>
               <Link
                 to="/"

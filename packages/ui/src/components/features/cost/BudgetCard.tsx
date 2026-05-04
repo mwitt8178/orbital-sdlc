@@ -55,7 +55,7 @@ export function BudgetCard({
       : pctClamped >= 0.8
         ? 'bg-amber-500'
         : pctClamped >= 0.5
-          ? 'bg-yellow-400'
+          ? 'bg-amber-400'
           : 'bg-emerald-500'
 
   const statusText =

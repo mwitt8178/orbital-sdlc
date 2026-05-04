@@ -38,10 +38,10 @@ export interface MemoryEntryListItem {
 
 const KIND_COLORS: Record<string, string> = {
   decision: 'bg-blue-50 text-blue-700 ring-blue-700/10',
-  convention: 'bg-green-50 text-green-700 ring-green-700/10',
-  learning: 'bg-yellow-50 text-yellow-800 ring-yellow-800/10',
+  convention: 'bg-emerald-50 text-emerald-700 ring-emerald-700/10',
+  learning: 'bg-amber-50 text-amber-800 ring-amber-800/10',
   anti_pattern: 'bg-red-50 text-red-700 ring-red-600/10',
-  glossary: 'bg-purple-50 text-purple-700 ring-purple-700/10',
+  glossary: 'bg-violet-50 text-violet-700 ring-violet-700/10',
 }
 
 interface KindBadgeProps {

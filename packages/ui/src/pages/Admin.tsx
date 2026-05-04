@@ -57,7 +57,8 @@ export default function Admin() {
     <AdminTokenContext.Provider value={tokenCtx}>
       <div className="min-h-screen bg-slate-50">
         <header className="border-b border-slate-200 bg-white">
-          <div className="mx-auto max-w-[1400px] px-8 py-5">
+          {/* UX-3: align header padding to canonical py-6 (matched to <main>). */}
+          <div className="mx-auto max-w-[1400px] px-8 py-6">
             <div className="flex items-start justify-between">
               <div>
                 <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
@@ -65,7 +66,7 @@ export default function Admin() {
                   <span aria-hidden="true">›</span>
                   <span>Admin</span>
                 </div>
-                <h1 className="text-2xl font-bold text-slate-900">Operations console</h1>
+                <h1 className="text-2xl font-bold text-slate-900">Operations Console</h1>
                 <p className="mt-1 text-sm text-slate-500">
                   Health, workers, keys, backups, verify, and reset — every operation that was
                   previously a CLI command, now in one place.

@@ -77,10 +77,10 @@ export function MemoryEntryDetail({ entry, onUpdate, onArchive }: MemoryEntryDet
 
   const kindColors: Record<string, string> = {
     decision: 'text-blue-700 bg-blue-50',
-    convention: 'text-green-700 bg-green-50',
-    learning: 'text-yellow-800 bg-yellow-50',
+    convention: 'text-emerald-700 bg-emerald-50',
+    learning: 'text-amber-800 bg-amber-50',
     anti_pattern: 'text-red-700 bg-red-50',
-    glossary: 'text-purple-700 bg-purple-50',
+    glossary: 'text-violet-700 bg-violet-50',
   }
 
   return (
