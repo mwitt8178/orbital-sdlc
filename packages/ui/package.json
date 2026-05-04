@@ -20,6 +20,7 @@
     "@trpc/server": "^11.0.0-rc.660",
     "amazon-cognito-identity-js": "^6.3.16",
     "clsx": "^2.1.0",
+    "framer-motion": "^12.38.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.75.0",

@@ -136,10 +136,12 @@ export default function App() {
                           {/* Round 6 #5 — Cost Governance */}
                           {/* [Engineer-Sr · Sonnet · run-round6-05-cost-governance] */}
                           <Route path="/cost" element={<Cost />} />
-                          <Route path="/settings" element={<Settings />} />
-                          {/* GitHub App integration settings */}
+                          <Route path="/settings/*" element={<Settings />} />
+                          {/* Legacy direct route preserved so old links don't 404; the
+                              new Settings sub-routing already exposes this surface
+                              under /settings/integrations/github. */}
                           <Route
-                            path="/settings/integrations/github"
+                            path="/integrations/github/legacy"
                             element={<IntegrationsGitHub />}
                           />
                         </Routes>

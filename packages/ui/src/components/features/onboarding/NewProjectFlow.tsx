@@ -1,27 +1,35 @@
 /**
  * NewProjectFlow — Flow A: Orbital BUILDS the SDLC for a brand-new project.
  *
- * Round 9 — Onboarding UX Overhaul
- * [Engineer-Principal · Opus · run-round9-onboarding-overhaul]
+ * Rebuilt for the onboarding rework:
+ *  - Owns its own OnboardingShell, with multi-step progress visible at all
+ *    viewport widths
+ *  - Save state is surfaced in the chrome (not buried under inputs)
+ *  - Provisioning panels stream real progress with motion + per-line state,
+ *    and a "Retry" affordance when a call fails
+ *  - Idempotency: provisioning steps guard on local + server state and
+ *    require an explicit retry, so reload during a network hang doesn't
+ *    fire two `createMondayBoard` calls back-to-back
+ *  - Reserved-slug + slug→URL preview added
  *
- * Steps: project_basics → connect_tools → vision_intake → monday_provision →
- * github_provision → system_teach → mode → first_sprint → done.
- *
- * Resumability: state is mirrored into the server-side onboarding_sessions
- * table on every step transition, so refresh returns to the current step.
+ * [Engineer-Principal · Opus · run-orbital-onboarding-rework]
  */
 
 import { useEffect, useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
 import { trpc } from '../../../services/trpc.js'
-import { Button } from '../../ui/Button.js'
-import { TimeEstimateBadge } from '../../ui/TimeEstimateBadge.js'
+import { OnboardingShell } from './OnboardingShell.js'
 import { ConnectToolsStep, type ConnectToolsResult } from './ConnectToolsStep.js'
 import { ProjectBasicsStep, type ProjectBasics } from './ProjectBasicsStep.js'
 import { VisionIntakeStep, type VisionIntakeData } from './VisionIntakeStep.js'
 import { ModeStep } from './ModeStep.js'
 import { FirstSprintStep } from './FirstSprintStep.js'
 import { DoneStep, type DoneStepData } from './DoneStep.js'
+import { NEW_PROJECT_STEPS } from './flow-steps.js'
+import { Button } from '../../ui/Button.js'
+import type { SaveState } from '../../onboarding/SaveIndicator.js'
 import type { OnboardingMode } from '../../../services/onboarding-types.js'
+import { DURATION, EASE } from '../../onboarding/motion.js'
 
 export type NewProjectStepId =
   | 'project_basics'
@@ -40,14 +48,16 @@ interface Props {
   initialState: Record<string, unknown>
   hasAnthropic: boolean
   hasMonday: boolean
-  /** Called when the wizard finishes and the user clicks Launch. */
   onComplete: () => void
+  onAbandon?: () => void
 }
 
-interface ProvisioningProgress {
+interface ProvisioningEntry {
   message: string
-  done: boolean
+  state: 'pending' | 'running' | 'done' | 'failed'
 }
+
+const STEPS = NEW_PROJECT_STEPS
 
 export function NewProjectFlow({
   sessionId,
@@ -56,6 +66,7 @@ export function NewProjectFlow({
   hasAnthropic,
   hasMonday,
   onComplete,
+  onAbandon,
 }: Props) {
   const update = trpc.onboarding.updateSession.useMutation()
   const createMondayBoard = trpc.onboarding.createMondayBoard.useMutation()
@@ -65,6 +76,8 @@ export function NewProjectFlow({
   const completeSession = trpc.onboarding.completeSession.useMutation()
 
   const [step, setStep] = useState<NewProjectStepId>(initialStep)
+  const [saveState, setSaveState] = useState<SaveState>('idle')
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   // Reducer-style state, persisted to the server on every transition.
   const [basics, setBasics] = useState<ProjectBasics>({
@@ -101,24 +114,34 @@ export function NewProjectFlow({
   const [memoryEntryIds, setMemoryEntryIds] = useState<string[]>(
     (initialState['memory_entry_ids'] as string[] | undefined) ?? [],
   )
-  const [provisioningLog, setProvisioningLog] = useState<ProvisioningProgress[]>([])
+  const [provisioningLog, setProvisioningLog] = useState<ProvisioningEntry[]>([])
 
-  const [error, setError] = useState<string | null>(null)
+  const [stepError, setStepError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  // Helpers --------------------------------------------------------------
-
+  // ---- Persist current step to server with save-indicator feedback. ----
   const advance = async (nextStep: NewProjectStepId, patch: Record<string, unknown> = {}) => {
     setStep(nextStep)
+    setSaveState('saving')
+    setSaveError(null)
     try {
       await update.mutateAsync({ sessionId, step: nextStep, patch })
+      setSaveState('saved')
+      setTimeout(() => setSaveState((s) => (s === 'saved' ? 'idle' : s)), 1200)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save progress.')
+      setSaveState('error')
+      setSaveError(err instanceof Error ? err.message : 'Could not save progress.')
     }
   }
 
-  // Step actions ---------------------------------------------------------
+  const back = () => {
+    const idx = STEPS.findIndex((s) => s.id === step)
+    if (idx <= 0) return
+    const prevId = STEPS[idx - 1]!.id as NewProjectStepId
+    void advance(prevId)
+  }
 
+  // ---- Step actions ----
   const goFromBasics = () => {
     void advance('connect_tools', {
       name: basics.name,
@@ -136,20 +159,16 @@ export function NewProjectFlow({
   }
 
   const goFromVision = () => {
-    void advance('monday_provision', {
-      intent: vision.intent,
-      stack: vision.stack,
-    })
+    void advance('monday_provision', { intent: vision.intent, stack: vision.stack })
   }
 
   const runMondayProvision = async () => {
-    setError(null)
+    setStepError(null)
     setBusy(true)
-    setProvisioningLog([{ message: 'Creating Monday board...', done: false }])
+    setProvisioningLog([{ message: 'Creating Monday board…', state: 'running' }])
     try {
       const pid = projectId ?? crypto.randomUUID()
       if (!projectId) setProjectId(pid)
-
       const result = await createMondayBoard.mutateAsync({
         sessionId,
         projectId: pid,
@@ -158,27 +177,29 @@ export function NewProjectFlow({
       })
       setMondayBoardId(result.boardId)
       setProvisioningLog([
-        { message: `Created board "${basics.name} — SDLC" (id: ${result.boardId})`, done: true },
-        { message: `Added ${result.columnsAdded} columns`, done: true },
-        { message: `Configured ${result.statusValuesAdded} workflow statuses`, done: true },
-        { message: 'Mapped to Orbital SDLC schema', done: true },
+        { message: `Created board "${basics.name} — SDLC" (id: ${result.boardId})`, state: 'done' },
+        { message: `Added ${result.columnsAdded} columns`, state: 'done' },
+        { message: `Configured ${result.statusValuesAdded} workflow statuses`, state: 'done' },
+        { message: 'Mapped to Orbital SDLC schema', state: 'done' },
       ])
       void advance('github_provision', { project_id: pid, monday_board_id: result.boardId })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Monday board provisioning failed.')
+      const msg = err instanceof Error ? err.message : 'Monday board provisioning failed.'
+      setProvisioningLog([{ message: msg, state: 'failed' }])
+      setStepError(msg)
     } finally {
       setBusy(false)
     }
   }
 
   const runGithubProvision = async () => {
-    setError(null)
+    setStepError(null)
     setBusy(true)
-    setProvisioningLog([{ message: 'Creating GitHub repo...', done: false }])
+    setProvisioningLog([{ message: 'Creating GitHub repo…', state: 'running' }])
     try {
       const pid = projectId
       if (!pid) {
-        setError('Project id missing — cannot provision repo.')
+        setStepError('Project id missing — cannot provision repo.')
         return
       }
       const result = await createGitRepo.mutateAsync({
@@ -192,28 +213,33 @@ export function NewProjectFlow({
       })
       setGithub({ owner: result.owner, repo: result.repo })
       setProvisioningLog([
-        { message: `Created ${result.owner}/${result.repo} (${result.isPrivate ? 'private' : 'public'})`, done: true },
-        { message: `Initialized with README + .gitignore + LICENSE`, done: true },
-        { message: `Added ${result.labelsCreated.length} labels`, done: true },
-        { message: result.ciWorkflowCommitted ? 'Configured CI workflow' : 'CI workflow skipped', done: true },
-        { message: result.webhookConfigured ? 'Webhook configured' : 'Webhook skipped', done: true },
+        {
+          message: `Created ${result.owner}/${result.repo} (${result.isPrivate ? 'private' : 'public'})`,
+          state: 'done',
+        },
+        { message: 'Initialized with README + .gitignore + LICENSE', state: 'done' },
+        { message: `Added ${result.labelsCreated.length} labels`, state: 'done' },
+        { message: result.ciWorkflowCommitted ? 'Configured CI workflow' : 'CI workflow skipped', state: 'done' },
+        { message: result.webhookConfigured ? 'Webhook configured' : 'Webhook skipped', state: 'done' },
       ])
       void advance('system_teach', { github: { owner: result.owner, repo: result.repo } })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'GitHub repo provisioning failed.')
+      const msg = err instanceof Error ? err.message : 'GitHub repo provisioning failed.'
+      setProvisioningLog([{ message: msg, state: 'failed' }])
+      setStepError(msg)
     } finally {
       setBusy(false)
     }
   }
 
   const runSystemTeach = async () => {
-    setError(null)
+    setStepError(null)
     setBusy(true)
-    setProvisioningLog([{ message: 'Teaching the system about this project...', done: false }])
+    setProvisioningLog([{ message: 'Teaching the system about this project…', state: 'running' }])
     try {
       const pid = projectId
       if (!pid) {
-        setError('Project id missing.')
+        setStepError('Project id missing.')
         return
       }
       const seedRes = await seedFromVision.mutateAsync({
@@ -228,7 +254,6 @@ export function NewProjectFlow({
         glossary: [],
       })
       setMemoryEntryIds(seedRes.entryIds)
-
       const cfg = await configureSystem.mutateAsync({
         sessionId,
         projectId: pid,
@@ -241,19 +266,53 @@ export function NewProjectFlow({
       setProvisioningLog([
         {
           message: `Generated project CLAUDE.md ${cfg.claudeMdCommitted ? '(committed to repo)' : '(local-only)'}`,
-          done: true,
+          state: 'done',
         },
-        { message: `Seeded ${seedRes.entryIds.length} memory entries`, done: true },
-        { message: `Configured ${cfg.skillsEnabled.length} skills for this project`, done: true },
-        { message: 'Persona briefs now include project context', done: true },
+        { message: `Seeded ${seedRes.entryIds.length} memory entries`, state: 'done' },
+        { message: `Configured ${cfg.skillsEnabled.length} skills for this project`, state: 'done' },
+        { message: 'Persona briefs now include project context', state: 'done' },
       ])
       void advance('mode', { memory_entry_ids: seedRes.entryIds })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'System teach step failed.')
+      const msg = err instanceof Error ? err.message : 'System teach step failed.'
+      setProvisioningLog([{ message: msg, state: 'failed' }])
+      setStepError(msg)
     } finally {
       setBusy(false)
     }
   }
+
+  // ---- Auto-trigger provisioning when entering the step, but ONLY if the
+  // outcome isn't already known. This is the key idempotency guard. ----
+  useEffect(() => {
+    if (busy) return
+    if (step === 'monday_provision') {
+      if (mondayBoardId) {
+        void advance('github_provision')
+      } else if (!tools.mondayConnected && !tools.mondaySkipped) {
+        void advance('github_provision')
+      } else if (tools.mondayConnected && !mondayBoardId) {
+        void runMondayProvision()
+      } else if (tools.mondaySkipped) {
+        void advance('github_provision')
+      }
+    } else if (step === 'github_provision') {
+      if (github) {
+        void advance('system_teach')
+      } else if (!tools.githubConnected) {
+        void advance('system_teach')
+      } else {
+        void runGithubProvision()
+      }
+    } else if (step === 'system_teach') {
+      if (memoryEntryIds.length > 0) {
+        void advance('mode')
+      } else {
+        void runSystemTeach()
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step])
 
   const goFromMode = () => {
     if (!mode) return
@@ -268,25 +327,6 @@ export function NewProjectFlow({
       // already completed — fine
     }
   }
-
-  // Auto-trigger provisioning steps when entering them.
-  useEffect(() => {
-    if (step === 'monday_provision' && !mondayBoardId && !busy && tools.mondayConnected) {
-      void runMondayProvision()
-    } else if (step === 'monday_provision' && !tools.mondayConnected && !mondayBoardId) {
-      // Skipped: jump straight ahead.
-      void advance('github_provision')
-    } else if (step === 'github_provision' && !github && !busy && tools.githubConnected) {
-      void runGithubProvision()
-    } else if (step === 'github_provision' && !tools.githubConnected && !github) {
-      void advance('system_teach')
-    } else if (step === 'system_teach' && memoryEntryIds.length === 0 && !busy) {
-      void runSystemTeach()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step])
-
-  // Render --------------------------------------------------------------
 
   const summary = useMemo<DoneStepData>(() => {
     return {
@@ -322,100 +362,127 @@ export function NewProjectFlow({
         },
         {
           title: 'Policies',
-          items: [
-            `Mode: ${mode ?? 'semi-autonomous'}`,
-            'Budget: $20/sprint, $100/week',
-          ],
+          items: [`Mode: ${mode ?? 'semi-autonomous'}`, 'Budget: $20/sprint, $100/week'],
         },
       ],
     }
   }, [basics.name, vision.intent, mondayBoardId, github, memoryEntryIds.length, mode])
 
+  // ---- Footer wiring per step ----
+  const stepIndex = STEPS.findIndex((s) => s.id === step)
+  const showFooter = step !== 'done' && step !== 'first_sprint' && !isProvisioningStep(step)
+  const continueAction =
+    step === 'project_basics'
+      ? goFromBasics
+      : step === 'connect_tools'
+        ? goFromConnect
+        : step === 'vision_intake'
+          ? goFromVision
+          : step === 'mode'
+            ? goFromMode
+            : undefined
+  const canContinue =
+    step === 'project_basics'
+      ? basicsValid
+      : step === 'connect_tools'
+        ? tools.anthropicConnected
+        : step === 'vision_intake'
+          ? visionValid
+          : step === 'mode'
+            ? mode !== null
+            : false
+
   return (
-    <div data-testid="new-project-flow" className="space-y-6">
-      {step === 'project_basics' && (
-        <>
-          <ProjectBasicsStep initial={basics} onChange={(b, valid) => { setBasics(b); setBasicsValid(valid) }} />
-          <FlowFooter onContinue={goFromBasics} canContinue={basicsValid} />
-        </>
-      )}
-      {step === 'connect_tools' && (
-        <>
+    <OnboardingShell
+      steps={STEPS}
+      currentIndex={stepIndex < 0 ? 0 : stepIndex}
+      hideActions={!showFooter}
+      onContinue={continueAction}
+      canContinue={canContinue}
+      onBack={back}
+      canGoBack={stepIndex > 0 && !busy}
+      saveState={saveState}
+      saveError={saveError}
+      secondaryAction={onAbandon ? { label: 'Switch path', onClick: onAbandon } : null}
+    >
+      <div data-testid="new-project-flow" className="space-y-6">
+        {step === 'project_basics' && (
+          <ProjectBasicsStep
+            initial={basics}
+            onChange={(b, valid) => {
+              setBasics(b)
+              setBasicsValid(valid)
+            }}
+          />
+        )}
+        {step === 'connect_tools' && (
           <ConnectToolsStep
             hasAnthropic={tools.anthropicConnected}
             hasMonday={tools.mondayConnected}
             hasGithub={tools.githubConnected}
             onChange={setTools}
           />
-          <FlowFooter
-            onContinue={goFromConnect}
-            canContinue={tools.anthropicConnected}
+        )}
+        {step === 'vision_intake' && (
+          <VisionIntakeStep
+            initial={vision}
+            onChange={(v, valid) => {
+              setVision(v)
+              setVisionValid(valid)
+            }}
           />
-        </>
-      )}
-      {step === 'vision_intake' && (
-        <>
-          <VisionIntakeStep initial={vision} onChange={(v, valid) => { setVision(v); setVisionValid(valid) }} />
-          <FlowFooter onContinue={goFromVision} canContinue={visionValid} />
-        </>
-      )}
-      {(step === 'monday_provision' || step === 'github_provision' || step === 'system_teach') && (
-        <ProvisioningPanel
-          step={step}
-          log={provisioningLog}
-          busy={busy}
-          error={error}
-          mondayBoardId={mondayBoardId}
-          githubFullName={github ? `${github.owner}/${github.repo}` : null}
-        />
-      )}
-      {step === 'mode' && (
-        <>
-          <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-slate-900">Mode + budget</h1>
-            <TimeEstimateBadge estSeconds={30} />
+        )}
+        {(step === 'monday_provision' || step === 'github_provision' || step === 'system_teach') && (
+          <ProvisioningPanel
+            step={step}
+            log={provisioningLog}
+            busy={busy}
+            error={stepError}
+            mondayBoardId={mondayBoardId}
+            githubFullName={github ? `${github.owner}/${github.repo}` : null}
+            onRetry={
+              step === 'monday_provision'
+                ? () => void runMondayProvision()
+                : step === 'github_provision'
+                  ? () => void runGithubProvision()
+                  : () => void runSystemTeach()
+            }
+          />
+        )}
+        {step === 'mode' && (
+          <div>
+            <h1 className="text-display-md text-slate-900">Mode + budget</h1>
+            <p className="mt-2 mb-6 text-sm text-slate-600">
+              Default: live mode, $20/sprint, $100/week. Adjust later in{' '}
+              <a href="/settings/general" className="font-medium text-brand-700 underline-offset-2 hover:underline">
+                Settings → General
+              </a>
+              .
+            </p>
+            <ModeStep selected={mode} onSelect={setMode} />
           </div>
-          <p className="mb-4 text-sm text-slate-500">
-            Default: semi-autonomous, $20/sprint, $100/week. You can adjust these from{' '}
-            <span className="font-medium">Settings</span>.
-          </p>
-          <ModeStep selected={mode} onSelect={setMode} />
-          <FlowFooter onContinue={goFromMode} canContinue={mode !== null} />
-        </>
-      )}
-      {step === 'first_sprint' && <FirstSprintStep onChoice={handleSprintChoice} />}
-      {step === 'done' && (
-        <DoneStep
-          data={summary}
-          onLaunch={onComplete}
-          onTour={() => onComplete()}
-          onWatchInspector={() => onComplete()}
-        />
-      )}
-      {error && <p className="rounded-md bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</p>}
-    </div>
+        )}
+        {step === 'first_sprint' && <FirstSprintStep onChoice={handleSprintChoice} />}
+        {step === 'done' && (
+          <DoneStep
+            data={summary}
+            onLaunch={onComplete}
+            onTour={() => onComplete()}
+            onWatchInspector={() => onComplete()}
+          />
+        )}
+      </div>
+    </OnboardingShell>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Internal subcomponents
-// ---------------------------------------------------------------------------
-
-function FlowFooter({
-  onContinue,
-  canContinue,
-}: {
-  onContinue: () => void
-  canContinue: boolean
-}) {
-  return (
-    <div className="flex justify-end pt-4">
-      <Button size="lg" onClick={onContinue} disabled={!canContinue}>
-        Continue
-      </Button>
-    </div>
-  )
+function isProvisioningStep(s: NewProjectStepId): boolean {
+  return s === 'monday_provision' || s === 'github_provision' || s === 'system_teach'
 }
+
+// ---------------------------------------------------------------------------
+// ProvisioningPanel — animated, retry-aware
+// ---------------------------------------------------------------------------
 
 function ProvisioningPanel({
   step,
@@ -424,48 +491,120 @@ function ProvisioningPanel({
   error,
   mondayBoardId,
   githubFullName,
+  onRetry,
 }: {
   step: NewProjectStepId
-  log: ProvisioningProgress[]
+  log: ProvisioningEntry[]
   busy: boolean
   error: string | null
   mondayBoardId: string | null
   githubFullName: string | null
+  onRetry: () => void
 }) {
   const heading =
     step === 'monday_provision'
-      ? 'Setting up your Monday board...'
+      ? 'Setting up your Monday board'
       : step === 'github_provision'
-        ? 'Setting up your GitHub repository...'
-        : 'Teaching your system how to work on this project...'
+        ? 'Setting up your GitHub repository'
+        : 'Teaching the system about this project'
+  const subheading =
+    step === 'monday_provision'
+      ? 'Real provisioning — every line below is an actual API call completing.'
+      : step === 'github_provision'
+        ? 'Repo + labels + CI + webhook. Real GitHub mutations, not a simulation.'
+        : 'Generating CLAUDE.md, seeding memory entries, and binding skills to this project.'
   return (
     <div data-testid={`provision-panel-${step}`}>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">{heading}</h1>
-        <TimeEstimateBadge estSeconds={30} />
+      <div className="mb-2 flex items-center gap-2">
+        <span className="relative inline-flex h-2.5 w-2.5">
+          {busy && (
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-70" />
+          )}
+          <span
+            className={`relative inline-flex h-2.5 w-2.5 rounded-full ${error ? 'bg-red-500' : busy ? 'bg-brand-500' : 'bg-emerald-500'}`}
+          />
+        </span>
+        <h1 className="text-display-md text-slate-900">{heading}</h1>
       </div>
-      <p className="mb-4 text-sm text-slate-500">
-        Real progress, not animation — every line below is an actual API call completing.
-      </p>
-      <ul className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-4 text-sm" role="status" aria-live="polite">
-        {log.length === 0 && <li className="text-slate-500">Working...</li>}
-        {log.map((entry, idx) => (
-          <li key={idx} className="flex items-start gap-2">
-            <span className={entry.done ? 'text-emerald-600' : 'text-slate-400'}>
-              {entry.done ? '✓' : '·'}
-            </span>
-            <span className="text-slate-700">{entry.message}</span>
+      <p className="mb-6 text-sm text-slate-600">{subheading}</p>
+
+      <ul
+        className="space-y-2 rounded-card border border-slate-200 bg-surface-sunken p-4 text-sm"
+        role="status"
+        aria-live="polite"
+      >
+        {log.length === 0 && (
+          <li className="text-slate-500">
+            <span className="inline-flex animate-pulse-dot rounded-full bg-slate-300" /> Working…
           </li>
+        )}
+        {log.map((entry, idx) => (
+          <motion.li
+            key={`${entry.message}-${idx}`}
+            initial={{ opacity: 0, x: -4 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: DURATION.fast, ease: EASE.out, delay: idx * 0.05 }}
+            className="flex items-start gap-2"
+          >
+            <EntryIcon state={entry.state} />
+            <span className={entry.state === 'failed' ? 'text-red-700' : 'text-slate-700'}>
+              {entry.message}
+            </span>
+          </motion.li>
         ))}
       </ul>
-      {step === 'monday_provision' && mondayBoardId && (
-        <p className="mt-3 text-xs text-slate-500">Board id: {mondayBoardId}</p>
+
+      <div className="mt-3 space-y-1 text-xs text-slate-500">
+        {step === 'monday_provision' && mondayBoardId && <p>Board id: {mondayBoardId}</p>}
+        {step === 'github_provision' && githubFullName && <p>Repo: {githubFullName}</p>}
+        {busy && <p>Hold on — this can take ~30 seconds.</p>}
+      </div>
+
+      {error && (
+        <div className="mt-4 rounded-card border border-red-200 bg-red-50 p-4">
+          <p className="text-sm font-medium text-red-800">Step failed</p>
+          <p className="mt-1 text-sm text-red-700">{error}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button size="sm" onClick={onRetry} disabled={busy}>
+              Retry
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => window.location.reload()}>
+              Reload
+            </Button>
+          </div>
+        </div>
       )}
-      {step === 'github_provision' && githubFullName && (
-        <p className="mt-3 text-xs text-slate-500">Repo: {githubFullName}</p>
-      )}
-      {error && <p className="mt-3 rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      {busy && <p className="mt-2 text-xs text-slate-400">Hold on — this can take ~30 seconds.</p>}
     </div>
   )
+}
+
+function EntryIcon({ state }: { state: ProvisioningEntry['state'] }) {
+  if (state === 'done') {
+    return (
+      <span className="mt-0.5 inline-flex h-4 w-4 flex-none items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      </span>
+    )
+  }
+  if (state === 'failed') {
+    return (
+      <span className="mt-0.5 inline-flex h-4 w-4 flex-none items-center justify-center rounded-full bg-red-100 text-red-700">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </span>
+    )
+  }
+  if (state === 'running') {
+    return (
+      <span className="relative mt-0.5 inline-flex h-4 w-4 flex-none items-center justify-center">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-70" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-500" />
+      </span>
+    )
+  }
+  return <span className="mt-0.5 inline-block h-2 w-2 flex-none rounded-full bg-slate-300" />
 }
