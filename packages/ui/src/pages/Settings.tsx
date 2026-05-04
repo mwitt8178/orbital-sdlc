@@ -34,6 +34,9 @@ import { GitHubTab } from '../components/features/settings/GitHubTab.js'
 import { BudgetTab } from '../components/features/settings/BudgetTab.js'
 import { HubTab } from '../components/features/settings/HubTab.js'
 import { IntegrationsDashboard } from '../components/features/settings/IntegrationsDashboard.js'
+// Per-project integration bindings (distinct from /admin/integrations install-wide tools).
+// [Engineer-Principal · Opus · run-settings-integrations]
+import { ProjectIntegrationsDashboard } from '../components/features/settings/ProjectIntegrationsDashboard.js'
 import { ComingSoonState } from '../components/features/settings/ComingSoonState.js'
 import { DURATION, EASE } from '../components/onboarding/motion.js'
 
@@ -250,9 +253,17 @@ function IntegrationsDashboardPage() {
     <>
       <PageHeader
         title="Integrations"
-        description="Every external service Orbital talks to. Test, reconnect, or disconnect in one place."
+        description="Per-project bindings — source control, ticket tracking, webhooks, and team chat. (Install-wide tool config lives under /admin/integrations.)"
       />
-      <IntegrationsDashboard />
+      <ProjectIntegrationsDashboard />
+      <details className="mt-8 rounded-card-lg border border-slate-200 bg-slate-50 p-4 text-sm">
+        <summary className="cursor-pointer font-semibold text-slate-700">
+          Install-wide tool credentials
+        </summary>
+        <div className="mt-4">
+          <IntegrationsDashboard />
+        </div>
+      </details>
     </>
   )
 }
