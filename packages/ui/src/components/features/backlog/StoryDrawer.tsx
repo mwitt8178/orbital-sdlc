@@ -189,8 +189,13 @@ export function StoryDrawer() {
 
   const onClose = () => closeDrawer()
 
+  const titleError = title.trim().length === 0 ? 'Title is required' : null
+  const isSaving = updateMutation.isPending || groomMutation.isPending
+  const saveError = updateMutation.error?.message ?? groomMutation.error?.message ?? null
+
   const handleSave = () => {
     if (!storyRow) return
+    if (titleError) return
     const original = {
       title: String(storyRow.title ?? ''),
       description: String(storyRow.description ?? ''),
@@ -337,6 +342,14 @@ export function StoryDrawer() {
           </button>
         </header>
 
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            handleSave()
+          }}
+          noValidate
+          className="flex flex-1 flex-col overflow-hidden"
+        >
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {storiesQuery.isLoading && !storyRow ? (
             <Skeleton rows={5} />
@@ -358,12 +371,28 @@ export function StoryDrawer() {
                   htmlFor="drawer-title"
                 >
                   Title
+                  <span className="ml-0.5 text-rose-600" aria-hidden="true">
+                    *
+                  </span>
                 </label>
                 <Input
                   id="drawer-title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
+                  aria-required
+                  aria-invalid={!!titleError}
+                  aria-describedby={titleError ? 'drawer-title-error' : undefined}
+                  hasError={!!titleError}
                 />
+                {titleError && (
+                  <p
+                    id="drawer-title-error"
+                    className="mt-1 text-xs text-rose-600"
+                    role="alert"
+                  >
+                    {titleError}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -526,21 +555,31 @@ export function StoryDrawer() {
           )}
         </div>
 
+        {saveError && (
+          <div className="border-t border-rose-100 bg-rose-50 px-5 py-2">
+            <p className="text-xs text-rose-700" role="alert">
+              {saveError}
+            </p>
+          </div>
+        )}
+
         <footer className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-3">
           <Button
+            type="button"
             variant="secondary"
             onClick={onClose}
-            disabled={updateMutation.isPending || groomMutation.isPending}
+            disabled={isSaving}
           >
             Cancel
           </Button>
           <Button
-            onClick={handleSave}
-            disabled={!storyRow || updateMutation.isPending || groomMutation.isPending}
+            type="submit"
+            disabled={!storyRow || isSaving || !!titleError}
           >
-            {updateMutation.isPending || groomMutation.isPending ? 'Saving…' : 'Save'}
+            {isSaving ? 'Saving…' : 'Save'}
           </Button>
         </footer>
+        </form>
       </aside>
     </>
   )

@@ -16,6 +16,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { Button } from '../../ui/Button.js'
 import { Skeleton } from '../../ui/Skeleton.js'
 import { ErrorMessage } from '../../ui/ErrorMessage.js'
+import { ConfirmDialog } from '../../ui/ConfirmDialog.js'
 
 interface BackupEntry {
   filename: string
@@ -45,6 +46,7 @@ export function BackupPanel({ ownerToken }: Props) {
     triggeredAt: string
   } | null>(null)
   const [triggerError, setTriggerError] = useState<string | null>(null)
+  const [confirmTrigger, setConfirmTrigger] = useState(false)
 
   const headers: HeadersInit = ownerToken
     ? { 'x-orbital-owner-token': ownerToken }
@@ -69,8 +71,6 @@ export function BackupPanel({ ownerToken }: Props) {
   }, [fetchBackups])
 
   const handleTriggerBackup = useCallback(async () => {
-    if (!window.confirm('Trigger a new backup now? This may take a few minutes.')) return
-
     setTriggering(true)
     setTriggerError(null)
     setTriggerResult(null)
@@ -92,6 +92,7 @@ export function BackupPanel({ ownerToken }: Props) {
       setTriggerResult(result)
       // Refresh the backup list
       await fetchBackups()
+      setConfirmTrigger(false)
     } catch (err) {
       setTriggerError((err as Error).message ?? 'Backup trigger failed')
     } finally {
@@ -114,7 +115,7 @@ export function BackupPanel({ ownerToken }: Props) {
             </p>
           </div>
           <Button
-            onClick={() => void handleTriggerBackup()}
+            onClick={() => setConfirmTrigger(true)}
             disabled={triggering}
             variant="primary"
             size="sm"
@@ -204,6 +205,24 @@ export function BackupPanel({ ownerToken }: Props) {
           </div>
         )}
       </section>
+
+      <ConfirmDialog
+        open={confirmTrigger}
+        onCancel={() => setConfirmTrigger(false)}
+        onConfirm={() => void handleTriggerBackup()}
+        title="Trigger backup now?"
+        confirmLabel="Trigger backup"
+        pendingLabel="Triggering…"
+        pending={triggering}
+        error={triggerError}
+        body={
+          <p>
+            This runs <span className="font-mono">hub-backup.sh</span> immediately. The dump may
+            take several minutes depending on database size; the panel will update with the new
+            backup file when it completes.
+          </p>
+        }
+      />
     </div>
   )
 }

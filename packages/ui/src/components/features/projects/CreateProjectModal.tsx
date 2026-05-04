@@ -105,6 +105,7 @@ export function CreateProjectModal({ open, onClose, onCreated }: Props) {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [slugTouched, setSlugTouched] = useState(false)
+  const [nameTouched, setNameTouched] = useState(false)
 
   // State carried across stages 5-6 (vision interview + initial epics)
   const [createdProject, setCreatedProject] = useState<ProjectCreatedShape | null>(null)
@@ -142,6 +143,7 @@ export function CreateProjectModal({ open, onClose, onCreated }: Props) {
       })
       setSubmitError(null)
       setSlugTouched(false)
+      setNameTouched(false)
       setSubmitting(false)
       setCreatedProject(null)
       setLockedVision(null)
@@ -333,13 +335,23 @@ export function CreateProjectModal({ open, onClose, onCreated }: Props) {
       <StepIndicator />
 
       {step === 'basics' && (
-        <div className="space-y-3">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (basicsValid) setStep('monday')
+          }}
+          noValidate
+          className="space-y-3"
+        >
           <div>
             <label
               className="mb-1 block text-xs font-medium text-slate-700"
               htmlFor="project-name"
             >
               Name
+              <span className="ml-0.5 text-rose-600" aria-hidden="true">
+                *
+              </span>
             </label>
             <Input
               id="project-name"
@@ -347,9 +359,21 @@ export function CreateProjectModal({ open, onClose, onCreated }: Props) {
               onChange={(e) =>
                 setBasics((b) => ({ ...b, name: e.target.value }))
               }
+              onBlur={() => setNameTouched(true)}
               placeholder="Acme Billing"
               autoFocus
+              aria-required
+              aria-invalid={nameTouched && basics.name.trim().length === 0}
+              aria-describedby={
+                nameTouched && basics.name.trim().length === 0 ? 'project-name-error' : undefined
+              }
+              hasError={nameTouched && basics.name.trim().length === 0}
             />
+            {nameTouched && basics.name.trim().length === 0 && (
+              <p id="project-name-error" className="mt-1 text-xs text-rose-600" role="alert">
+                Name is required
+              </p>
+            )}
           </div>
 
           <div>
@@ -358,6 +382,9 @@ export function CreateProjectModal({ open, onClose, onCreated }: Props) {
               htmlFor="project-slug"
             >
               Slug
+              <span className="ml-0.5 text-rose-600" aria-hidden="true">
+                *
+              </span>
             </label>
             <Input
               id="project-slug"
@@ -367,11 +394,23 @@ export function CreateProjectModal({ open, onClose, onCreated }: Props) {
                 setBasics((b) => ({ ...b, slug: e.target.value }))
               }}
               placeholder="acme-billing"
+              aria-required
+              aria-invalid={basics.slug.length > 0 && !slugIsValid}
+              aria-describedby={
+                basics.slug.length > 0 && !slugIsValid ? 'project-slug-error' : 'project-slug-help'
+              }
               hasError={basics.slug.length > 0 && !slugIsValid}
             />
-            <p className="mt-1 text-[11px] text-slate-400">
-              Lowercase letters, digits, hyphens. 2–64 chars. Used in URLs.
-            </p>
+            {basics.slug.length > 0 && !slugIsValid ? (
+              <p id="project-slug-error" className="mt-1 text-xs text-rose-600" role="alert">
+                Slug must be 2–64 characters: lowercase letters, digits, hyphens; cannot start or
+                end with a hyphen.
+              </p>
+            ) : (
+              <p id="project-slug-help" className="mt-1 text-[11px] text-slate-400">
+                Lowercase letters, digits, hyphens. 2–64 chars. Used in URLs.
+              </p>
+            )}
           </div>
 
           <div>
@@ -394,17 +433,21 @@ export function CreateProjectModal({ open, onClose, onCreated }: Props) {
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="secondary" onClick={onClose}>
+            <Button type="button" variant="secondary" onClick={onClose}>
               Cancel
             </Button>
             <Button
-              onClick={() => setStep('monday')}
+              type="submit"
+              onClick={() => {
+                setNameTouched(true)
+                setSlugTouched(true)
+              }}
               disabled={!basicsValid}
             >
               Next: Monday
             </Button>
           </div>
-        </div>
+        </form>
       )}
 
       {step === 'monday' && (

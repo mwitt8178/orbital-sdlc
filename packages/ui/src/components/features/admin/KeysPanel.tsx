@@ -8,8 +8,8 @@ import { useState } from 'react'
 import { trpc } from '../../../services/trpc.js'
 import { Badge } from '../../ui/Badge.js'
 import { Button } from '../../ui/Button.js'
+import { ConfirmDialog } from '../../ui/ConfirmDialog.js'
 import { ErrorMessage } from '../../ui/ErrorMessage.js'
-import { Modal } from '../../ui/Modal.js'
 import { Skeleton } from '../../ui/Skeleton.js'
 import { useAdminToken } from './admin-context.js'
 
@@ -169,49 +169,32 @@ export function KeysPanel() {
         )}
       </section>
 
-      <Modal
+      <ConfirmDialog
         open={confirming}
-        onClose={() => {
-          if (!rotate.isPending) setConfirming(false)
-        }}
+        onCancel={() => setConfirming(false)}
+        onConfirm={() => rotate.mutate({ adminToken: token ?? undefined })}
         title="Rotate sub-key?"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-slate-700">
-            Rotation retires the current active sub-key, generates a new one, and emits a{' '}
-            <span className="font-mono">KeyRotated</span> audit event. Capabilities issued
-            against the retired key remain verifiable.
-          </p>
-          {rotate.isError && (
-            <p className="rounded border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
-              {rotate.error.message}
+        confirmLabel="Rotate sub-key"
+        pendingLabel="Rotating…"
+        variant="danger"
+        pending={rotate.isPending}
+        error={rotate.isError ? rotate.error.message : null}
+        requireAcknowledge="I understand this retires the active sub-key and emits a KeyRotated audit event. Capabilities issued against the retired key remain verifiable."
+        body={
+          <div className="space-y-3">
+            <p>
+              Rotation retires the current active sub-key, generates a new one, and emits a{' '}
+              <span className="font-mono">KeyRotated</span> audit event.
             </p>
-          )}
-          {rotate.data && (
-            <p className="rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
-              Rotated. New key{' '}
-              <span className="font-mono">{rotate.data.newKeyId.slice(0, 12)}…</span>
-            </p>
-          )}
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => setConfirming(false)}
-              disabled={rotate.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              disabled={rotate.isPending}
-              onClick={() => {
-                rotate.mutate({ adminToken: token ?? undefined })
-              }}
-            >
-              {rotate.isPending ? 'Rotating…' : 'Confirm rotate'}
-            </Button>
+            {rotate.data && (
+              <p className="rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                Rotated. New key{' '}
+                <span className="font-mono">{rotate.data.newKeyId.slice(0, 12)}…</span>
+              </p>
+            )}
           </div>
-        </div>
-      </Modal>
+        }
+      />
     </div>
   )
 }
