@@ -112,7 +112,9 @@ async function upsertRow(
     setFragments.push(drSql`mode = ${patch.mode ?? null}`)
   }
   if ('setup_completed_at' in patch) {
-    setFragments.push(drSql`setup_completed_at = ${patch.setup_completed_at ?? null}`)
+    // postgres-js doesn't accept Date as a parameter; must be ISO string.
+    const v = patch.setup_completed_at == null ? null : patch.setup_completed_at.toISOString()
+    setFragments.push(drSql`setup_completed_at = ${v}`)
   }
   if ('demo_replay_id' in patch) {
     setFragments.push(drSql`demo_replay_id = ${patch.demo_replay_id ?? null}`)
@@ -120,7 +122,8 @@ async function upsertRow(
   const setClause = drSql.join(setFragments, drSql`, `)
 
   const insertMode = patch.mode ?? null
-  const insertCompleted = patch.setup_completed_at ?? null
+  const insertCompleted =
+    patch.setup_completed_at == null ? null : patch.setup_completed_at.toISOString()
   const insertReplay = patch.demo_replay_id ?? null
 
   const rows = await _db.execute<RawRow>(
