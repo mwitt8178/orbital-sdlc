@@ -6,6 +6,7 @@
  *
  * Supported subscription patterns (all tenant-scoped):
  *   task:<id>                    — TaskStateChanged, etc. for a specific task
+ *   story:<id>                   — Story status + reviewer events for one story
  *   channel:<name>               — ChannelPostAdded etc. for a channel name
  *   project:<id>:events          — All events whose aggregate_id === project_id
  *                                  OR payload.project_id === id
@@ -146,6 +147,18 @@ function matchPattern(
     return (
       (event.aggregate_type === 'task' && event.aggregate_id === taskId) ||
       (payload['task_id'] === taskId)
+    )
+  }
+
+  // story:<id> — reviewer + StoryExecutor events for one story.
+  // Matches: story aggregate, task whose payload.story_id matches, and
+  // channel posts whose payload.story_id matches (reviewer accept/reject/redirect).
+  if (pattern.startsWith('story:')) {
+    const storyId = pattern.slice('story:'.length)
+    if (!storyId) return false
+    return (
+      (event.aggregate_type === 'story' && event.aggregate_id === storyId) ||
+      payload['story_id'] === storyId
     )
   }
 

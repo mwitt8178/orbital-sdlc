@@ -260,6 +260,13 @@
       "when": 1747200000000,
       "tag": "0037_onboarding_state",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1747500000000,
+      "tag": "0041_redirect_note",
+      "breakpoints": true
     }
   ]
 }
