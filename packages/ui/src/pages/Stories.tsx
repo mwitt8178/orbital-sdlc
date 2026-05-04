@@ -37,6 +37,16 @@ type StoryStatus =
   | 'defective'
   | 'cancelled'
 
+// PR review_status filter — [Engineer-Sr · Sonnet · run-pr-review-agent-001]
+type ReviewStatusFilter = 'any' | 'pass' | 'block' | 'pending'
+
+const REVIEW_STATUS_OPTIONS: Array<{ value: ReviewStatusFilter; label: string }> = [
+  { value: 'any', label: 'Any review' },
+  { value: 'pass', label: 'Review: PASS' },
+  { value: 'block', label: 'Review: BLOCK' },
+  { value: 'pending', label: 'Review: pending' },
+]
+
 const STATUS_OPTIONS: StoryStatus[] = [
   'in_review',
   'ready',
@@ -72,6 +82,7 @@ export default function Stories() {
 
   const [status, setStatus] = useState<StoryStatus>('in_review')
   const [costBandIdx, setCostBandIdx] = useState(0)
+  const [reviewStatusFilter, setReviewStatusFilter] = useState<ReviewStatusFilter>('any')
   const [cursorIdx, setCursorIdx] = useState(0)
   const listRef = useRef<HTMLUListElement | null>(null)
 
@@ -105,7 +116,17 @@ export default function Stories() {
     }
   }, [events, utils])
 
-  const stories = useMemo(() => listQuery.data?.stories ?? [], [listQuery.data])
+  const allStories = useMemo(() => listQuery.data?.stories ?? [], [listQuery.data])
+
+  // Client-side review_status filter — [Engineer-Sr · Sonnet · run-pr-review-agent-001]
+  const stories = useMemo(() => {
+    if (reviewStatusFilter === 'any') return allStories
+    return allStories.filter((s) => {
+      const rs = (s as { reviewStatus?: string | null }).reviewStatus
+      if (reviewStatusFilter === 'pending') return rs == null || rs === 'pending'
+      return rs === reviewStatusFilter
+    })
+  }, [allStories, reviewStatusFilter])
 
   // j/k keyboard nav (mail-client style). Enter opens.
   useEffect(() => {
@@ -187,6 +208,22 @@ export default function Stories() {
             ))}
           </select>
         </label>
+        {/* PR review_status filter — [Engineer-Sr · Sonnet · run-pr-review-agent-001] */}
+        <label className="flex items-center gap-2 text-sm text-slate-700">
+          <span>Review</span>
+          <select
+            value={reviewStatusFilter}
+            onChange={(e) => setReviewStatusFilter(e.target.value as ReviewStatusFilter)}
+            className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm"
+            data-testid="review-status-filter"
+          >
+            {REVIEW_STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
         <span className="ml-auto text-xs text-slate-500">
           {stories.length} {stories.length === 1 ? 'story' : 'stories'}
         </span>
@@ -235,6 +272,11 @@ export default function Stories() {
                     <p className="truncate text-sm font-medium text-slate-900">{s.title}</p>
                     <div className="mt-1 flex items-center gap-2 text-xs text-slate-700">
                       <Badge color={statusTone(s.status)}>{s.status.replace('_', ' ')}</Badge>
+                      {(s as { reviewStatus?: string | null }).reviewStatus && (
+                        <Badge color={reviewStatusTone((s as { reviewStatus?: string | null }).reviewStatus!)}>
+                          {(s as { reviewStatus?: string | null }).reviewStatus}
+                        </Badge>
+                      )}
                       {s.priority && <span>P{s.priority}</span>}
                       {typeof s.storyPoints === 'number' && <span>{s.storyPoints} pts</span>}
                       <span className="ml-auto font-mono text-slate-700">
@@ -309,6 +351,13 @@ function Stat({ label, value }: { label: string; value: string }) {
       <p className="mt-1 font-mono text-2xl text-slate-900">{value}</p>
     </div>
   )
+}
+
+// PR review_status badge color — [Engineer-Sr · Sonnet · run-pr-review-agent-001]
+function reviewStatusTone(rs: string): 'emerald' | 'rose' | 'slate' {
+  if (rs === 'pass') return 'emerald'
+  if (rs === 'block') return 'rose'
+  return 'slate'
 }
 
 function statusTone(status: string): 'amber' | 'blue' | 'emerald' | 'rose' | 'slate' {

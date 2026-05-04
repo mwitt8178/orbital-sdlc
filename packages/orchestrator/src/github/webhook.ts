@@ -168,6 +168,42 @@ async function findTaskByPrNumber(
 }
 
 // ---------------------------------------------------------------------------
+// Task lookup with story_id and tenant_id (for PR review job dispatch)
+// [Engineer-Sr · Sonnet · run-pr-review-agent-001]
+// ---------------------------------------------------------------------------
+
+async function findTaskWithStoryId(
+  db: DB,
+  taskId: string,
+): Promise<{ taskId: string; tenantId: string; storyId: string | null; projectId: string | null } | null> {
+  const rows = await db
+    .select({
+      taskId: tasks.taskId,
+      tenantId: tasks.tenantId,
+      storyId: tasks.storyId,
+    })
+    .from(tasks)
+    .where(eq(tasks.taskId, taskId))
+    .limit(1)
+  const row = rows[0]
+  if (!row) return null
+  // Resolve projectId via cost_ledger (no tasks.project_id col on this branch)
+  try {
+    const { costLedger } = await import('../db/schema/cost.js')
+    const { desc: descOp } = await import('drizzle-orm')
+    const projRows = await db
+      .select({ projectId: costLedger.projectId })
+      .from(costLedger)
+      .where(eq(costLedger.taskId, taskId))
+      .orderBy(descOp(costLedger.occurredAt))
+      .limit(1)
+    return { ...row, projectId: projRows[0]?.projectId ?? null }
+  } catch {
+    return { ...row, projectId: null }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Head SHA to task lookup (for workflow_run / check_suite which may lack PR refs)
 // ---------------------------------------------------------------------------
 
@@ -217,6 +253,30 @@ export interface RegisterGithubWebhookOptions {
    * cache. Inject a fresh DeliveryCache in tests for isolation.
    */
   deliveryCache?: DeliveryCache
+  /**
+   * Optional callback invoked asynchronously when a pull_request.opened event
+   * arrives and a task is resolved. Fires-and-forgets so the webhook handler
+   * returns 200 immediately.
+   *
+   * Payload shape mirrors PrReviewJobPayload from pr-review-processor.ts.
+   * Kept as a loosely-typed Record here so the webhook module has no direct
+   * import of the processor (avoids circular deps and keeps the module testable
+   * without a real Anthropic client).
+   *
+   * [Engineer-Sr · Sonnet · run-pr-review-agent-001]
+   */
+  onPROpenedForReview?: (job: {
+    kind: 'pr_review'
+    tenant_id: string
+    project_id: string | null
+    story_id: string | null
+    task_id: string
+    pr_number: number
+    pr_url: string
+    head_sha: string
+    github_owner: string
+    github_repo: string
+  }) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -302,6 +362,7 @@ export function registerGithubWebhook(
           payload,
           eventStore: options.eventStore,
           db: options.db,
+          onPROpenedForReview: options.onPROpenedForReview,
         })
       } catch (err) {
         logger.error({ err, githubEvent, action }, 'github-webhook: routing failed')
@@ -323,6 +384,8 @@ interface RouteContext {
   payload: Record<string, unknown>
   eventStore: EventStore
   db: DB
+  /** [Engineer-Sr · Sonnet · run-pr-review-agent-001] */
+  onPROpenedForReview?: RegisterGithubWebhookOptions['onPROpenedForReview']
 }
 
 async function routeGithubEvent(ctx: RouteContext): Promise<void> {
@@ -349,7 +412,45 @@ async function routeGithubEvent(ctx: RouteContext): Promise<void> {
       return
     }
 
-    if (action === 'closed') {
+    // -----------------------------------------------------------------------
+    // pull_request.opened → enqueue automated PR review job
+    // [Engineer-Sr · Sonnet · run-pr-review-agent-001]
+    // -----------------------------------------------------------------------
+    if (action === 'opened') {
+      const prData = payload['pull_request'] as Record<string, unknown> | undefined
+      const htmlUrl = prData?.['html_url'] as string | undefined
+      const headSha = (prData?.['head'] as Record<string, unknown> | undefined)?.['sha'] as string | undefined
+      const repoData = payload['repository'] as Record<string, unknown> | undefined
+      const repoFullName = typeof repoData?.['full_name'] === 'string' ? repoData['full_name'] : ''
+      const [githubOwner = '', githubRepo = ''] = repoFullName.split('/')
+
+      // Mark story review_status = 'pending' immediately
+      const taskDetails = await findTaskWithStoryId(db, task.taskId)
+
+      if (ctx.onPROpenedForReview && githubOwner && githubRepo) {
+        ctx.onPROpenedForReview({
+          kind: 'pr_review',
+          tenant_id: taskDetails?.tenantId ?? '00000000-0000-0000-0000-000000000000',
+          project_id: taskDetails?.projectId ?? null,
+          story_id: taskDetails?.storyId ?? null,
+          task_id: task.taskId,
+          pr_number: prNumber,
+          pr_url: htmlUrl ?? `https://github.com/${repoFullName}/pull/${prNumber}`,
+          head_sha: headSha ?? '',
+          github_owner: githubOwner,
+          github_repo: githubRepo,
+        })
+        logger.info(
+          { taskId: task.taskId, prNumber, storyId: taskDetails?.storyId },
+          'github-webhook: PR review job enqueued',
+        )
+      } else {
+        logger.info(
+          { taskId: task.taskId, prNumber, reason: !ctx.onPROpenedForReview ? 'no_review_callback' : 'no_repo_info' },
+          'github-webhook: pull_request.opened received (review callback not configured)',
+        )
+      }
+    } else if (action === 'closed') {
       const prData = payload['pull_request'] as Record<string, unknown> | undefined
       const merged = (prData?.['merged'] as boolean | undefined) ?? false
       const mergedAt = (prData?.['merged_at'] as string | null | undefined) ?? new Date().toISOString()

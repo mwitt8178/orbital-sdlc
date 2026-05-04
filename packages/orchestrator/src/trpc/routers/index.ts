@@ -71,6 +71,9 @@ import { outboxRouter } from './outbox.js'
 // Orbital Review UI — reviewer-facing story operations
 // [Engineer-Principal · Opus · run-orbital-review-ui]
 import { storiesRouter } from './stories.js'
+// Automated PR review router
+// [Engineer-Sr · Sonnet · run-pr-review-agent-001]
+import { prReviewsRouter } from './pr-reviews.js'
 
 // ---------------------------------------------------------------------------
 // Lazy singletons / DI registry
@@ -369,6 +372,9 @@ export const appRouter = router({
   // Orbital Review UI — reviewer-facing story ops (list/byId/timeline/attempts/cost + accept/reject/redirect)
   // [Engineer-Principal · Opus · run-orbital-review-ui]
   stories: storiesRouter,
+  // PR Review Agent — automated PASS/BLOCK reviews on PR open
+  // [Engineer-Sr · Sonnet · run-pr-review-agent-001]
+  pr_reviews: prReviewsRouter,
 })
 
 export type AppRouter = typeof appRouter

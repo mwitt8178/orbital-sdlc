@@ -83,6 +83,9 @@ export type SprintStatus = (typeof SPRINT_STATUS)[number]
 export const SPRINT_PRIORITY_CLASS = ['critical', 'standard', 'background'] as const
 export type SprintPriorityClass = (typeof SPRINT_PRIORITY_CLASS)[number]
 
+export const STORY_REVIEW_STATUS = ['pending', 'pass', 'block'] as const
+export type StoryReviewStatus = (typeof STORY_REVIEW_STATUS)[number]
+
 export const MONDAY_AGGREGATE_TYPE = [
   'epic',
   'story',
@@ -195,6 +198,17 @@ export const stories = pgTable(
      * [Engineer-Principal · Opus · run-orbital-review-ui]
      */
     redirectNote: text('redirect_note'),
+    /**
+     * Migration 0049: automated PR review status from the review-agent persona.
+     * NULL = no review run yet.
+     * 'pending' = review job enqueued or in progress.
+     * 'pass' = latest review verdict is PASS.
+     * 'block' = latest review verdict is BLOCK; story cannot move to Done.
+     * [Engineer-Sr · Sonnet · run-pr-review-agent-001]
+     */
+    reviewStatus: text('review_status', {
+      enum: ['pending', 'pass', 'block'],
+    }),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
       .notNull()
       .defaultNow(),
