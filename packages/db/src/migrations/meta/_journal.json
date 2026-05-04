@@ -5,7 +5,7 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1746072000000,
+      "when": 1746072001000,
       "tag": "0001_events",
       "breakpoints": true
     },
@@ -243,7 +243,7 @@
     {
       "idx": 34,
       "version": "7",
-      "when": 1746576000000,
+      "when": 1747090001000,
       "tag": "0035_local_outbox",
       "breakpoints": true
     },
@@ -262,52 +262,101 @@
       "breakpoints": true
     },
     {
+      "idx": 37,
+      "version": "7",
+      "when": 1747200001000,
+      "tag": "0038_drop_sample_data_flow",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1747200002000,
+      "tag": "0038_worker_runs",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1747200003000,
+      "tag": "0039_github_app",
+      "breakpoints": true
+    },
+    {
       "idx": 40,
+      "version": "7",
+      "when": 1747200004000,
+      "tag": "0040_planning_runs",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
       "version": "7",
       "when": 1747500000000,
       "tag": "0041_redirect_note",
       "breakpoints": true
     },
     {
-      "idx": 41,
+      "idx": 42,
       "version": "7",
       "when": 1747600000000,
       "tag": "0042_projects_scm_columns",
       "breakpoints": true
     },
     {
-      "idx": 42,
+      "idx": 43,
       "version": "7",
       "when": 1747700000000,
       "tag": "0043_install_state",
       "breakpoints": true
     },
     {
-      "idx": 43,
+      "idx": 44,
       "version": "7",
       "when": 1747700001000,
       "tag": "0044_tenant_credentials",
       "breakpoints": true
     },
     {
-      "idx": 44,
+      "idx": 45,
       "version": "7",
       "when": 1747750000000,
       "tag": "0045_cost_budgets_monthly",
       "breakpoints": true
     },
     {
-      "idx": 45,
+      "idx": 46,
       "version": "7",
       "when": 1747800000000,
       "tag": "0046_projects_color_deleted",
       "breakpoints": true
     },
     {
-      "idx": 46,
+      "idx": 47,
       "version": "7",
-      "when": 1777929179598,
-      "tag": "0047_story_pr_runs",
+      "when": 1747800001000,
+      "tag": "0047_project_personas",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1747800002000,
+      "tag": "0048_project_sprint_policy",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1747800003000,
+      "tag": "0049_project_team",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1747800004000,
+      "tag": "0050_story_pr_runs",
       "breakpoints": true
     }
   ]
