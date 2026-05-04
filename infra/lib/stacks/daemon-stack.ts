@@ -45,6 +45,18 @@ export function buildDaemonResources(
 
   const daemonImageDigest = process.env['ORBITAL_DAEMON_IMAGE_DIGEST']
 
+  // Anthropic API key — Secrets-Manager-backed env var injected via ECS
+  // `secrets:` so the value never appears in the task definition or in
+  // CloudTrail. The secret name is fixed; the operator must place the
+  // value out-of-band via `aws secretsmanager put-secret-value`.
+  const anthropicSecretArn =
+    process.env['ANTHROPIC_API_KEY_SECRET_ARN'] ??
+    `arn:aws:secretsmanager:${envConfig.region ?? 'us-east-1'}:${process.env['CDK_DEFAULT_ACCOUNT'] ?? ''}:secret:orbital-${envName}/anthropic-api-key`
+  const secretsFromManager: Record<string, string> = {}
+  if (anthropicSecretArn && /^arn:aws:secretsmanager:/.test(anthropicSecretArn)) {
+    secretsFromManager['ANTHROPIC_API_KEY'] = anthropicSecretArn
+  }
+
   const daemon = new DaemonFargateConstruct(scope, 'Daemon', {
     envName,
     vpc,
@@ -54,6 +66,7 @@ export function buildDaemonResources(
     logRetentionDays: envConfig.logRetentionDays,
     eventsTopic,
     secretEnvVars: daemonSecretEnvVars,
+    secretsFromManager,
     ...(daemonImageDigest !== undefined ? { imageDigest: daemonImageDigest } : {}),
   })
 

@@ -16,6 +16,8 @@
   "dependencies": {
     "@orbital/db": "*",
     "@orbital/orchestrator": "*",
+    "@orbital/story-executor": "*",
+    "@anthropic-ai/sdk": "^0.40.0",
     "@aws-sdk/client-cloudformation": "^3.750.0",
     "@aws-sdk/client-cloudwatch-logs": "^3.750.0",
     "@aws-sdk/client-ecs": "^3.750.0",
