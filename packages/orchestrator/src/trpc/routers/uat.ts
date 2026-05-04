@@ -22,7 +22,8 @@ import { z } from 'zod'
 import { publicProcedure, router } from '../init.js'
 // Round 7-01 — tenant-scoped UAT procedures
 // [Engineer-Sr · Sonnet · run-round7-01-extract-hub]
-import { tenantProcedure } from '../middleware/tenant.js'
+// fix/multi-project-isolation
+import { projectProcedure } from '../middleware/project.js'
 import type { UATService } from '../../uat/service.js'
 import type { DefectService } from '../../uat/defects.js'
 import {
@@ -105,9 +106,9 @@ export function createUATRouter(deps: UATRouterDeps) {
     /**
      * uat.session.start — open (or resume) a UAT session.
      */
-    start: tenantProcedure.input(StartSessionInputSchema).mutation(async ({ input, ctx }) => {
+    start: projectProcedure.input(StartSessionInputSchema).mutation(async ({ input, ctx }) => {
       try {
-        const result = await uatService.startSession(input, { userId: STUB_USER_ID }, ctx.tenantId)
+        const result = await uatService.startSession(input, { userId: STUB_USER_ID }, ctx.tenantId!)
         return {
           session: {
             uat_session_id: result.session.uatSessionId,
@@ -135,9 +136,9 @@ export function createUATRouter(deps: UATRouterDeps) {
     /**
      * uat.session.get — read a session by id.
      */
-    get: tenantProcedure.input(GetSessionInputSchema).query(async ({ input, ctx }) => {
+    get: projectProcedure.input(GetSessionInputSchema).query(async ({ input, ctx }) => {
       try {
-        const result = await uatService.getSession(input.uat_session_id, ctx.tenantId)
+        const result = await uatService.getSession(input.uat_session_id, ctx.tenantId!)
         if (!result) {
           throw new TRPCError({ code: 'NOT_FOUND', message: `session ${input.uat_session_id} not found` })
         }
@@ -169,9 +170,9 @@ export function createUATRouter(deps: UATRouterDeps) {
     /**
      * uat.session.list — all sessions for a ticket.
      */
-    list: tenantProcedure.input(ListSessionsInputSchema).query(async ({ input, ctx }) => {
+    list: projectProcedure.input(ListSessionsInputSchema).query(async ({ input, ctx }) => {
       try {
-        const results = await uatService.listSessions(input.ticket_id, ctx.tenantId)
+        const results = await uatService.listSessions(input.ticket_id, ctx.tenantId!)
         return {
           ticket_id: input.ticket_id,
           sessions: results.map(({ session, acResults }) => ({
@@ -202,9 +203,9 @@ export function createUATRouter(deps: UATRouterDeps) {
     /**
      * uat.ac.mark — mark an AC pass/fail.
      */
-    mark: tenantProcedure.input(MarkACInputSchema).mutation(async ({ input, ctx }) => {
+    mark: projectProcedure.input(MarkACInputSchema).mutation(async ({ input, ctx }) => {
       try {
-        return await uatService.markAC(input, STUB_USER_ID, ctx.tenantId)
+        return await uatService.markAC(input, STUB_USER_ID, ctx.tenantId!)
       } catch (err) {
         throw mapOrbitalError(err)
       }
@@ -213,9 +214,9 @@ export function createUATRouter(deps: UATRouterDeps) {
     /**
      * uat.ac.unmark — revert AC to pending.
      */
-    unmark: tenantProcedure.input(UnmarkACInputSchema).mutation(async ({ input, ctx }) => {
+    unmark: projectProcedure.input(UnmarkACInputSchema).mutation(async ({ input, ctx }) => {
       try {
-        return await uatService.unmarkAC(input, STUB_USER_ID, ctx.tenantId)
+        return await uatService.unmarkAC(input, STUB_USER_ID, ctx.tenantId!)
       } catch (err) {
         throw mapOrbitalError(err)
       }
@@ -236,10 +237,10 @@ export function createUATRouter(deps: UATRouterDeps) {
      * when evidence_kind='ci_run'.
      * [Engineer-Sr · Sonnet · run-round6-06-ci-bridge]
      */
-    evidence: tenantProcedure
+    evidence: projectProcedure
       .input(z.object({ ac_id: z.string().uuid() }))
       .query(async ({ input, ctx }) => {
-        void ctx.tenantId
+        void ctx.tenantId!
         const rows = await db
           .select({
             evidenceId: acCheckEvidence.evidenceId,
@@ -289,7 +290,7 @@ export function createUATRouter(deps: UATRouterDeps) {
      *
      * Round 6 #3 — [Engineer-Sr · Sonnet · run-round6-03-defect-iteration]
      */
-    history: tenantProcedure
+    history: projectProcedure
       .input(z.object({ task_id: z.string().uuid() }))
       .query(async ({ input }) => {
         try {
@@ -319,7 +320,7 @@ export function createUATRouter(deps: UATRouterDeps) {
      *
      * Round 6 #3 — [Engineer-Sr · Sonnet · run-round6-03-defect-iteration]
      */
-    markFixed: tenantProcedure
+    markFixed: projectProcedure
       .input(z.object({ defect_id: z.string().uuid() }))
       .mutation(async ({ input }) => {
         try {
@@ -336,7 +337,7 @@ export function createUATRouter(deps: UATRouterDeps) {
      *
      * Round 6 #3 — [Engineer-Sr · Sonnet · run-round6-03-defect-iteration]
      */
-    report: tenantProcedure
+    report: projectProcedure
       .input(
         z.object({
           task_id: z.string().uuid(),
@@ -370,10 +371,10 @@ export function createUATRouter(deps: UATRouterDeps) {
     /**
      * uat.defects.list — paginated defect list.
      */
-    list: tenantProcedure.input(ListDefectsInputSchema).query(async ({ input, ctx }) => {
+    list: projectProcedure.input(ListDefectsInputSchema).query(async ({ input, ctx }) => {
       try {
         const limit = input.limit ?? 50
-        const conditions = [eq(defectsTable.tenantId, ctx.tenantId)]
+        const conditions = [eq(defectsTable.tenantId, ctx.tenantId!)]
 
         if (input.state) {
           conditions.push(eq(defectsTable.state, input.state))
@@ -445,9 +446,9 @@ export function createUATRouter(deps: UATRouterDeps) {
     /**
      * uat.submit — submit a session (creates defects for failures).
      */
-    submit: tenantProcedure.input(SubmitSessionInputSchema).mutation(async ({ input, ctx }) => {
+    submit: projectProcedure.input(SubmitSessionInputSchema).mutation(async ({ input, ctx }) => {
       try {
-        return await uatService.submit(input, STUB_USER_ID, ctx.tenantId)
+        return await uatService.submit(input, STUB_USER_ID, ctx.tenantId!)
       } catch (err) {
         throw mapOrbitalError(err)
       }
@@ -456,16 +457,16 @@ export function createUATRouter(deps: UATRouterDeps) {
     /**
      * uat.accept — accept a submitted session.
      */
-    accept: tenantProcedure.input(AcceptSessionInputSchema).mutation(async ({ input, ctx }) => {
+    accept: projectProcedure.input(AcceptSessionInputSchema).mutation(async ({ input, ctx }) => {
       try {
         if (input.mode === 'partial') {
-          const session = await uatService.partialAccept(input.uat_session_id, STUB_USER_ID, ctx.tenantId)
+          const session = await uatService.partialAccept(input.uat_session_id, STUB_USER_ID, ctx.tenantId!)
           return {
             uat_session_id: session.uatSessionId,
             state: session.state,
           }
         }
-        const session = await uatService.accept(input.uat_session_id, STUB_USER_ID, ctx.tenantId)
+        const session = await uatService.accept(input.uat_session_id, STUB_USER_ID, ctx.tenantId!)
         return {
           uat_session_id: session.uatSessionId,
           state: session.state,

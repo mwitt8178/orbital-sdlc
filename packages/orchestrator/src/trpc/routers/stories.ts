@@ -42,7 +42,8 @@ import { and, desc, eq, gte, inArray, lt, sql as drizzleSql } from 'drizzle-orm'
 import { randomUUID as uuidv4 } from 'node:crypto'
 
 import { router } from '../init.js'
-import { tenantProcedure } from '../middleware/tenant.js'
+// fix/multi-project-isolation — was tenantProcedure
+import { projectProcedure } from '../middleware/project.js'
 import { db as defaultDb } from '../../db/client.js'
 import { stories } from '../../db/schema/backlog.js'
 import { tasks } from '../../db/schema/orchestration.js'
@@ -126,15 +127,15 @@ async function loadStoryScoped(
   db: typeof defaultDb,
   tenantId: string,
   storyId: string,
+  projectId?: string,
 ) {
-  // Explicit column projection — bundling can produce multiple copies of the
-  // `stories` Drizzle table object, and `select()` (no args) picks columns
-  // off whichever copy is referenced. Listing them defensively guarantees
-  // redirectNote is always returned.
+  // fix/multi-project-isolation — when projectId provided, restrict to that project
+  const conds = [eq(stories.storyId, storyId), eq(stories.tenantId, tenantId)]
+  if (projectId) conds.push(eq(stories.projectId, projectId))
   const rows = await db
     .select()
     .from(stories)
-    .where(and(eq(stories.storyId, storyId), eq(stories.tenantId, tenantId)))
+    .where(and(...conds))
     .limit(1)
   const row = rows[0]
   if (!row) return null
@@ -165,7 +166,11 @@ async function loadLatestTaskForStory(
   db: typeof defaultDb,
   tenantId: string,
   storyId: string,
+  projectId?: string,
 ) {
+  // fix/multi-project-isolation
+  const conds = [eq(tasks.storyId, storyId), eq(tasks.tenantId, tenantId)]
+  if (projectId) conds.push(eq(tasks.projectId, projectId))
   const rows = await db
     .select({
       taskId: tasks.taskId,
@@ -178,7 +183,7 @@ async function loadLatestTaskForStory(
       createdAt: tasks.createdAt,
     })
     .from(tasks)
-    .where(and(eq(tasks.storyId, storyId), eq(tasks.tenantId, tenantId)))
+    .where(and(...conds))
     .orderBy(desc(tasks.createdAt))
     .limit(1)
   const row = rows[0]
@@ -391,10 +396,15 @@ function buildDiffMetaUrl(scm: ProjectScmRow): string | null {
 // ---------------------------------------------------------------------------
 
 export const storiesRouter = router({
-  list: tenantProcedure.input(listInput).query(async ({ ctx, input }) => {
+  list: projectProcedure.input(listInput).query(async ({ ctx, input }) => {
     const db = defaultDb
     const status = input.status ?? 'in_review'
-    const conditions = [eq(stories.tenantId, ctx.tenantId!), eq(stories.status, status)]
+    // fix/multi-project-isolation
+    const conditions = [
+      eq(stories.tenantId, ctx.tenantId!),
+      eq(stories.projectId, ctx.projectId!),
+      eq(stories.status, status),
+    ]
     const rows = await db
       .select({
         storyId: stories.storyId,
@@ -418,7 +428,14 @@ export const storiesRouter = router({
       const taskRows = await db
         .select({ storyId: tasks.storyId, taskId: tasks.taskId })
         .from(tasks)
-        .where(and(eq(tasks.tenantId, ctx.tenantId!), inArray(tasks.storyId, ids)))
+        .where(
+          and(
+            eq(tasks.tenantId, ctx.tenantId!),
+            // fix/multi-project-isolation
+            eq(tasks.projectId, ctx.projectId!),
+            inArray(tasks.storyId, ids),
+          ),
+        )
       const taskIds = taskRows.map((r) => r.taskId)
       if (taskIds.length) {
         const ledger = await db
@@ -452,13 +469,13 @@ export const storiesRouter = router({
     return { stories: filtered }
   }),
 
-  byId: tenantProcedure.input(byIdInput).query(async ({ ctx, input }) => {
+  byId: projectProcedure.input(byIdInput).query(async ({ ctx, input }) => {
     const db = defaultDb
-    const story = await loadStoryScoped(db, ctx.tenantId!, input.story_id)
+    const story = await loadStoryScoped(db, ctx.tenantId!, input.story_id, ctx.projectId!)
     if (!story) {
       throw new TRPCError({ code: 'NOT_FOUND', message: 'Story not found' })
     }
-    const task = await loadLatestTaskForStory(db, ctx.tenantId!, input.story_id)
+    const task = await loadLatestTaskForStory(db, ctx.tenantId!, input.story_id, ctx.projectId!)
     const totalCostUsd = task ? await totalCostForTask(db, task.taskId) : 0
     let projectName: string | null = null
     if (task?.projectId) {
@@ -482,9 +499,9 @@ export const storiesRouter = router({
     }
   }),
 
-  timeline: tenantProcedure.input(byIdInput).query(async ({ ctx, input }) => {
+  timeline: projectProcedure.input(byIdInput).query(async ({ ctx, input }) => {
     const db = defaultDb
-    const story = await loadStoryScoped(db, ctx.tenantId!, input.story_id)
+    const story = await loadStoryScoped(db, ctx.tenantId!, input.story_id, ctx.projectId!)
     if (!story) {
       throw new TRPCError({ code: 'NOT_FOUND', message: 'Story not found' })
     }
@@ -526,7 +543,7 @@ export const storiesRouter = router({
     return { items }
   }),
 
-  attempts: tenantProcedure.input(byIdInput).query(async ({ ctx, input }) => {
+  attempts: projectProcedure.input(byIdInput).query(async ({ ctx, input }) => {
     const db = defaultDb
     // worker_runs is owned by the parallel StoryExecutor agent; it may not
     // exist yet. We probe via raw SQL and degrade gracefully.
@@ -564,7 +581,7 @@ export const storiesRouter = router({
     }
   }),
 
-  costSummary: tenantProcedure.query(async ({ ctx }) => {
+  costSummary: projectProcedure.query(async ({ ctx }) => {
     const db = defaultDb
     const now = new Date()
     const startOfDay = new Date(
@@ -628,11 +645,11 @@ export const storiesRouter = router({
    *
    * [Engineer-Principal · Opus · run-phase-e-review-ui-codecommit]
    */
-  getAttemptDiff: tenantProcedure
+  getAttemptDiff: projectProcedure
     .input(getAttemptDiffInput)
     .query(async ({ ctx, input }) => {
       const db = defaultDb
-      const story = await loadStoryScoped(db, ctx.tenantId!, input.story_id)
+      const story = await loadStoryScoped(db, ctx.tenantId!, input.story_id, ctx.projectId!)
       if (!story) throw new TRPCError({ code: 'NOT_FOUND', message: 'Story not found' })
 
       const scm = await loadProjectScmForStory(db, ctx.tenantId!, input.story_id)
@@ -705,11 +722,11 @@ export const storiesRouter = router({
    * Compare two attempts head-to-head. Branches come from worker_runs.
    * Returns the same shape as getAttemptDiff.
    */
-  getCompareDiff: tenantProcedure
+  getCompareDiff: projectProcedure
     .input(getCompareDiffInput)
     .query(async ({ ctx, input }) => {
       const db = defaultDb
-      const story = await loadStoryScoped(db, ctx.tenantId!, input.story_id)
+      const story = await loadStoryScoped(db, ctx.tenantId!, input.story_id, ctx.projectId!)
       if (!story) throw new TRPCError({ code: 'NOT_FOUND', message: 'Story not found' })
       const scm = await loadProjectScmForStory(db, ctx.tenantId!, input.story_id)
       if (!scm?.repoId) {
@@ -767,9 +784,9 @@ export const storiesRouter = router({
   // Mutations
   // -------------------------------------------------------------------------
 
-  accept: tenantProcedure.input(acceptInput).mutation(async ({ ctx, input }) => {
+  accept: projectProcedure.input(acceptInput).mutation(async ({ ctx, input }) => {
     const db = defaultDb
-    const story = await loadStoryScoped(db, ctx.tenantId!, input.story_id)
+    const story = await loadStoryScoped(db, ctx.tenantId!, input.story_id, ctx.projectId!)
     if (!story) throw new TRPCError({ code: 'NOT_FOUND', message: 'Story not found' })
     if (story.status !== 'in_review') {
       throw new TRPCError({
@@ -875,9 +892,9 @@ export const storiesRouter = router({
     }
   }),
 
-  reject: tenantProcedure.input(rejectInput).mutation(async ({ ctx, input }) => {
+  reject: projectProcedure.input(rejectInput).mutation(async ({ ctx, input }) => {
     const db = defaultDb
-    const story = await loadStoryScoped(db, ctx.tenantId!, input.story_id)
+    const story = await loadStoryScoped(db, ctx.tenantId!, input.story_id, ctx.projectId!)
     if (!story) throw new TRPCError({ code: 'NOT_FOUND', message: 'Story not found' })
     if (story.status !== 'in_review') {
       throw new TRPCError({
@@ -904,9 +921,9 @@ export const storiesRouter = router({
     return { ok: true as const }
   }),
 
-  redirect: tenantProcedure.input(redirectInput).mutation(async ({ ctx, input }) => {
+  redirect: projectProcedure.input(redirectInput).mutation(async ({ ctx, input }) => {
     const db = defaultDb
-    const story = await loadStoryScoped(db, ctx.tenantId!, input.story_id)
+    const story = await loadStoryScoped(db, ctx.tenantId!, input.story_id, ctx.projectId!)
     if (!story) throw new TRPCError({ code: 'NOT_FOUND', message: 'Story not found' })
     if (story.status !== 'in_review') {
       throw new TRPCError({

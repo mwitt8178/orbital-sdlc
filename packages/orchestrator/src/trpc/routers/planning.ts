@@ -18,6 +18,8 @@ import { uuidv7 } from 'uuidv7'
 import { eq, and, desc } from 'drizzle-orm'
 import { router, publicProcedure } from '../init.js'
 import { tenantProcedure } from '../middleware/tenant.js'
+// fix/multi-project-isolation
+import { projectProcedure } from '../middleware/project.js'
 import { db } from '../../db/client.js'
 import { planningRuns, visionDocuments, visionVersions } from '@orbital/db'
 import { epics, stories, storyAcceptanceCriteria } from '@orbital/db'
@@ -116,8 +118,28 @@ export const planningRouter = router({
    * List past planning runs for a vision (tenant-scoped).
    * Most recent first.
    */
-  history: tenantProcedure.input(HistoryInput).query(async ({ input, ctx }) => {
+  history: projectProcedure.input(HistoryInput).query(async ({ input, ctx }) => {
     const tid = tenantId(ctx)
+    // fix/multi-project-isolation — verify the vision belongs to the active project
+    const visionRows = await db
+      .select({ projectId: visionDocuments.projectId })
+      .from(visionDocuments)
+      .where(
+        and(
+          eq(visionDocuments.visionDocumentId, input.visionId),
+          eq(visionDocuments.tenantId, tid),
+        ),
+      )
+      .limit(1)
+    if (
+      visionRows.length === 0 ||
+      visionRows[0]!.projectId !== ctx.projectId
+    ) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'vision document not found in active project',
+      })
+    }
     const rows = await db
       .select({
         runId: planningRuns.runId,
@@ -142,8 +164,25 @@ export const planningRouter = router({
    * Persists a planning_runs row (committed_at = null) for audit.
    * Caller decides whether to commit via planning.commit.
    */
-  regenerate: publicProcedure.input(RegenerateInput).mutation(async ({ input, ctx }) => {
+  regenerate: projectProcedure.input(RegenerateInput).mutation(async ({ input, ctx }) => {
     const tid = tenantId(ctx as { tenantId?: string })
+    // fix/multi-project-isolation — verify vision belongs to active project
+    const vrows = await db
+      .select({ projectId: visionDocuments.projectId })
+      .from(visionDocuments)
+      .where(
+        and(
+          eq(visionDocuments.visionDocumentId, input.visionId),
+          eq(visionDocuments.tenantId, tid),
+        ),
+      )
+      .limit(1)
+    if (vrows.length === 0 || vrows[0]!.projectId !== ctx.projectId) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'vision document not found in active project',
+      })
+    }
     const runId = uuidv7()
     const startedAt = new Date()
 
@@ -226,8 +265,26 @@ export const planningRouter = router({
    * Wraps inserts in a single transaction with OCC retry.
    * Updates the matching planning_runs row with committed_at on success.
    */
-  commit: publicProcedure.input(CommitInput).mutation(async ({ input, ctx }) => {
+  commit: projectProcedure.input(CommitInput).mutation(async ({ input, ctx }) => {
     const tid = tenantId(ctx as { tenantId?: string })
+    const projectId = ctx.projectId!
+    // fix/multi-project-isolation — verify vision belongs to active project
+    const cvrows = await db
+      .select({ projectId: visionDocuments.projectId })
+      .from(visionDocuments)
+      .where(
+        and(
+          eq(visionDocuments.visionDocumentId, input.visionId),
+          eq(visionDocuments.tenantId, tid),
+        ),
+      )
+      .limit(1)
+    if (cvrows.length === 0 || cvrows[0]!.projectId !== projectId) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'vision document not found in active project',
+      })
+    }
 
     const vision = await loadVisionContent(input.visionId)
     if (!vision) {
@@ -264,6 +321,8 @@ export const planningRouter = router({
           await tx.insert(epics).values({
             epicId,
             tenantId: tid,
+            // fix/multi-project-isolation
+            projectId,
             visionVersionId,
             title: ep.title,
             rationale: ep.rationale,
@@ -279,6 +338,8 @@ export const planningRouter = router({
             await tx.insert(stories).values({
               storyId,
               tenantId: tid,
+              // fix/multi-project-isolation
+              projectId,
               epicId,
               title: st.title,
               description: st.description,

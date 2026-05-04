@@ -21,6 +21,8 @@ import { TRPCError } from '@trpc/server'
 import { eq } from 'drizzle-orm'
 import { OrbitalError, type Actor, type EventInput } from '@orbital/types'
 import { router, publicProcedure } from '../init.js'
+// fix/multi-project-isolation
+import { projectProcedure } from '../middleware/project.js'
 import type { DB } from '../../db/client.js'
 import type { EventStore } from '../../events/store.js'
 import { boardSchemas } from '../../db/schema/board-mapping.js'
@@ -112,9 +114,16 @@ export function createBoardsRouter(deps: BoardsRouterDeps) {
     // -----------------------------------------------------------------------
     // discover — read schema, persist, emit event
     // -----------------------------------------------------------------------
-    discover: publicProcedure
+    discover: projectProcedure
       .input(projectIdInput)
-      .mutation(async ({ input }): Promise<BoardDiscoverOutput> => {
+      .mutation(async ({ input, ctx }): Promise<BoardDiscoverOutput> => {
+        // fix/multi-project-isolation
+        if (input.project_id !== ctx.projectId) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'project_id mismatch between input and active project header',
+          })
+        }
         try {
           const project = await db
             .select()
@@ -196,9 +205,16 @@ export function createBoardsRouter(deps: BoardsRouterDeps) {
     // -----------------------------------------------------------------------
     // proposeMapping — read latest schema, propose mapping (no persist)
     // -----------------------------------------------------------------------
-    proposeMapping: publicProcedure
+    proposeMapping: projectProcedure
       .input(projectIdInput)
-      .query(async ({ input }): Promise<BoardMapping> => {
+      .query(async ({ input, ctx }): Promise<BoardMapping> => {
+        // fix/multi-project-isolation
+        if (input.project_id !== ctx.projectId) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'project_id mismatch between input and active project header',
+          })
+        }
         try {
           const project = await db
             .select()
@@ -243,9 +259,16 @@ export function createBoardsRouter(deps: BoardsRouterDeps) {
     // -----------------------------------------------------------------------
     // confirmMapping — persist mapping with confirmed_at = now()
     // -----------------------------------------------------------------------
-    confirmMapping: publicProcedure
+    confirmMapping: projectProcedure
       .input(confirmMappingInput)
-      .mutation(async ({ input }): Promise<{ ok: true }> => {
+      .mutation(async ({ input, ctx }): Promise<{ ok: true }> => {
+        // fix/multi-project-isolation
+        if (input.project_id !== ctx.projectId) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'project_id mismatch between input and active project header',
+          })
+        }
         try {
           // Defensive: the mapping's project_id must match the input project_id.
           if (input.mapping.project_id !== input.project_id) {
@@ -268,9 +291,16 @@ export function createBoardsRouter(deps: BoardsRouterDeps) {
     // -----------------------------------------------------------------------
     // getMapping — current confirmed mapping for a project
     // -----------------------------------------------------------------------
-    getMapping: publicProcedure
+    getMapping: projectProcedure
       .input(projectIdInput)
-      .query(async ({ input }): Promise<BoardMapping | null> => {
+      .query(async ({ input, ctx }): Promise<BoardMapping | null> => {
+        // fix/multi-project-isolation
+        if (input.project_id !== ctx.projectId) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'project_id mismatch between input and active project header',
+          })
+        }
         try {
           return await mappingService.get(input.project_id)
         } catch (err) {
@@ -281,7 +311,7 @@ export function createBoardsRouter(deps: BoardsRouterDeps) {
     // -----------------------------------------------------------------------
     // getSchema — most recent persisted schema for a board
     // -----------------------------------------------------------------------
-    getSchema: publicProcedure
+    getSchema: projectProcedure
       .input(getSchemaInput)
       .query(async ({ input }): Promise<BoardSchemaWithMeta | null> => {
         try {
@@ -304,7 +334,7 @@ export function createBoardsRouter(deps: BoardsRouterDeps) {
     // -----------------------------------------------------------------------
     // states — enumerate Orbital lifecycle states for the mapping UI
     // -----------------------------------------------------------------------
-    states: publicProcedure.query(() => {
+    states: projectProcedure.query(() => {
       return [...ORBITAL_STATES]
     }),
   })

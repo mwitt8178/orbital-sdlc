@@ -21,6 +21,8 @@ import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 import { eq, desc, and, inArray } from 'drizzle-orm'
 import { router, publicProcedure } from '../init.js'
+// fix/multi-project-isolation — require active project header on audit export.
+import { projectProcedure } from '../middleware/project.js'
 import { db, sql as sqlPool } from '../../db/client.js'
 import { createEventStore } from '../../events/store.js'
 import { createAuditQueryService } from '../../audit/query.js'
@@ -105,7 +107,7 @@ export const auditExportRouter = router({
      * Per TRD-12 §6.1 (audit.export.start equivalent).
      * Emits AuditExportRequested synchronously; generation runs async.
      */
-    request: publicProcedure.input(ExportRequestInput).mutation(async ({ input }) => {
+    request: projectProcedure.input(ExportRequestInput).mutation(async ({ input }) => {
       // Validate range
       const rangeStart = new Date(input.range_start)
       const rangeEnd = new Date(input.range_end)
@@ -219,7 +221,7 @@ export const auditExportRouter = router({
      * audit.export.status — poll export status.
      * Per TRD-12 §6.1.
      */
-    status: publicProcedure.input(ExportStatusInput).query(async ({ input }) => {
+    status: projectProcedure.input(ExportStatusInput).query(async ({ input }) => {
       const rows = await db
         .select()
         .from(auditExports)
@@ -258,7 +260,7 @@ export const auditExportRouter = router({
      * audit.export.cancel — cancel a pending or running export.
      * Per TRD-12 §6.1.
      */
-    cancel: publicProcedure.input(ExportCancelInput).mutation(async ({ input }) => {
+    cancel: projectProcedure.input(ExportCancelInput).mutation(async ({ input }) => {
       const rows = await db
         .select()
         .from(auditExports)
@@ -307,7 +309,7 @@ export const auditExportRouter = router({
      * audit.export.list — cursor-paginated list of exports.
      * Per TRD-12 §6.1 and Primitives §12.
      */
-    list: publicProcedure.input(ExportListInput).query(async ({ input }) => {
+    list: projectProcedure.input(ExportListInput).query(async ({ input }) => {
       const conditions = []
 
       if (input.status_filter && input.status_filter.length > 0) {
