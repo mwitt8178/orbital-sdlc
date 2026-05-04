@@ -1,0 +1,10 @@
+{
+  "id": "orbital-vault-sync",
+  "name": "Orbital Vault Sync",
+  "version": "0.1.0",
+  "minAppVersion": "1.4.0",
+  "description": "Two-way bridge between your Obsidian vault and Orbital. Pulls visions, epics, stories, ACs, retros, and memory entries from Orbital into a markdown vault.",
+  "author": "Orbital",
+  "authorUrl": "https://github.com/mwitt8178/orbital-sdlc",
+  "isDesktopOnly": true
+}

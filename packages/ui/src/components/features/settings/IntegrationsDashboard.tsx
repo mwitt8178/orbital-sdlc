@@ -75,6 +75,16 @@ export function IntegrationsDashboard() {
         detail="Single-machine mode unless you've joined a hub via invite URL"
         manageHref="/settings/integrations/hub"
       />
+      {/* Obsidian — first-class human-facing surface, mirrors aggregates to a markdown vault.
+          [Engineer-Principal · Opus · run-obsidian-vault-sync] */}
+      <ProviderCard
+        id="obsidian"
+        name="Obsidian"
+        blurb="Mirror visions, epics, stories, ACs, retros, and memory into a markdown vault you can open in Obsidian."
+        status="unknown"
+        detail="Toggle below to push to S3 or download a vault ZIP"
+        manageHref="/settings/integrations/obsidian"
+      />
     </div>
   )
 }

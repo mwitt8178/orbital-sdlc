@@ -1,0 +1,19 @@
+{
+  "name": "@orbital/obsidian-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Orbital Vault Sync — Obsidian community plugin scaffold (MVP). Pulls aggregates from a tenant-scoped S3 vault into the local Obsidian vault.",
+  "main": "main.js",
+  "scripts": {
+    "build": "esbuild main.ts --bundle --external:obsidian --format=cjs --target=es2020 --outfile=main.js",
+    "dev": "esbuild main.ts --bundle --external:obsidian --format=cjs --target=es2020 --outfile=main.js --watch",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "esbuild": "^0.24.0",
+    "obsidian": "^1.4.11",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}

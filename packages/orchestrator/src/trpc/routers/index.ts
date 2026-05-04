@@ -86,6 +86,18 @@ import { githubRouter } from './github.js'
 // QA test artifact generation + approval
 // [Engineer-Sr · Sonnet · run-ac-test-generation]
 import { testArtifactsRouter } from './test-artifacts.js'
+// Obsidian vault sync — feature-flagged at runtime
+// [Engineer-Principal · Opus · run-obsidian-vault-sync]
+import { createVaultRouter, type VaultRouter } from './vault.js'
+import { createVaultSyncService } from '../../vault-sync/service.js'
+import {
+  createS3VaultStore,
+  createInMemoryVaultStore,
+  type VaultStore,
+} from '../../vault-sync/store.js'
+import { createVaultLinkRepo } from '../../vault-sync/repo.js'
+import { createProjectEntitySource } from '../../vault-sync/entity-source.js'
+import { S3Client } from '@aws-sdk/client-s3'
 
 // ---------------------------------------------------------------------------
 // Lazy singletons / DI registry
@@ -299,6 +311,29 @@ function memoryRouter(): MemoryRouter {
 }
 
 // ---------------------------------------------------------------------------
+// Vault router — singleton, lazily constructed.
+// Real S3 store when ORBITAL_VAULT_BUCKET is set, in-memory otherwise.
+// [Engineer-Principal · Opus · run-obsidian-vault-sync]
+// ---------------------------------------------------------------------------
+
+let _vaultRouter: VaultRouter | null = null
+function vaultRouter(): VaultRouter {
+  if (_vaultRouter !== null) return _vaultRouter
+  const bucket = process.env['ORBITAL_VAULT_BUCKET']
+  const store: VaultStore = bucket
+    ? createS3VaultStore({
+        client: new S3Client({ region: process.env['AWS_REGION'] ?? 'us-east-1' }),
+        bucket,
+      })
+    : createInMemoryVaultStore()
+  const repo = createVaultLinkRepo(db)
+  const entitySource = createProjectEntitySource(db)
+  const vaultSyncService = createVaultSyncService({ store, repo })
+  _vaultRouter = createVaultRouter({ vaultSyncService, store, entitySource, repo })
+  return _vaultRouter
+}
+
+// ---------------------------------------------------------------------------
 // Boards router — singleton (Monday-aware board discovery + mapping)
 // ---------------------------------------------------------------------------
 
@@ -402,6 +437,9 @@ export const appRouter = router({
   // QA-generated failing tests per story (generate/approve/reject)
   // [Engineer-Sr · Sonnet · run-ac-test-generation]
   testArtifacts: testArtifactsRouter,
+  // Obsidian vault sync — push aggregates to S3 markdown vault, ZIP export
+  // [Engineer-Principal · Opus · run-obsidian-vault-sync]
+  vault: vaultRouter(),
 })
 
 export type AppRouter = typeof appRouter

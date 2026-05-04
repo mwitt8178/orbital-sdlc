@@ -140,6 +140,21 @@ const envSchema = z.object({
      */
     EVENTS_TOPIC_ARN: z.string().optional(),
     /**
+     * Obsidian vault sync — feature flag.
+     * When 'off' (default), the vault.* tRPC procedures return a feature-disabled
+     * error instead of touching S3 / DB. Lets the code ship dark until ops opt in.
+     * [Engineer-Principal · Opus · run-obsidian-vault-sync]
+     */
+    ORBITAL_VAULT_ENABLED: z.enum(['on', 'off']).default('off'),
+    /**
+     * Obsidian vault sync — S3 bucket name.
+     * Required when ORBITAL_VAULT_ENABLED=on AND ORBITAL_DEPLOY_TARGET=aws.
+     * Set from CDK stack output OrbitalHub-<env>-VaultBucketName.
+     * Example: orbital-vault-mwitt-111111111111
+     * [Engineer-Principal · Opus · run-obsidian-vault-sync]
+     */
+    ORBITAL_VAULT_BUCKET: z.string().optional(),
+    /**
      * Round 6 #1 — GitHub PR loop feature flag.
      * When 'on', post-task hook pushes branch and opens PR after verifier passes.
      * Default 'off' — safe to ship without a GitHub remote configured.

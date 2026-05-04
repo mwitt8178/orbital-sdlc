@@ -36,6 +36,7 @@ import { GitHubTab } from '../components/features/settings/GitHubTab.js'
 import { BudgetTab } from '../components/features/settings/BudgetTab.js'
 import { SprintPolicyTab } from '../components/features/settings/SprintPolicyTab.js'
 import { HubTab } from '../components/features/settings/HubTab.js'
+import { ObsidianTab } from '../components/features/settings/ObsidianTab.js'
 import { IntegrationsDashboard } from '../components/features/settings/IntegrationsDashboard.js'
 // Per-project integration bindings (distinct from /admin/integrations install-wide tools).
 // [Engineer-Principal · Opus · run-settings-integrations]
@@ -251,6 +252,7 @@ function IntegrationsPage() {
       <Route path="monday" element={<IntegrationDetail title="Monday"><MondayPlaceholder /></IntegrationDetail>} />
       <Route path="anthropic" element={<IntegrationDetail title="Anthropic"><AnthropicPlaceholder /></IntegrationDetail>} />
       <Route path="hub" element={<IntegrationDetail title="Hub"><HubTab /></IntegrationDetail>} />
+      <Route path="obsidian" element={<IntegrationDetail title="Obsidian"><ObsidianTab /></IntegrationDetail>} />
       <Route path="*" element={<Navigate to="" replace />} />
     </Routes>
   )

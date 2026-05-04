@@ -372,6 +372,10 @@
       "version": "7",
       "when": 1746403200000,
       "tag": "0050_story_test_artifacts",
+      "idx": 53,
+      "version": "7",
+      "when": 1762214400000,
+      "tag": "0053_obsidian_vault_links",
       "breakpoints": true
     }
   ]
