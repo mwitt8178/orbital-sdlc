@@ -30,6 +30,22 @@ export function MemoryEntryDetail({ entry, onUpdate, onArchive }: MemoryEntryDet
   const updateMutation = trpc.memory.update.useMutation()
   const archiveMutation = trpc.memory.archive.useMutation()
 
+  async function togglePin() {
+    setSaving(true)
+    setError(null)
+    try {
+      await updateMutation.mutateAsync({
+        entryId: entry.entryId,
+        pinned: !entry.pinned,
+      })
+      onUpdate()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update pin status')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   function startEdit() {
     setEditTitle(entry.title)
     setEditBody(entry.body)
@@ -88,7 +104,7 @@ export function MemoryEntryDetail({ entry, onUpdate, onArchive }: MemoryEntryDet
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span
               className={clsx(
                 'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold',
@@ -97,9 +113,24 @@ export function MemoryEntryDetail({ entry, onUpdate, onArchive }: MemoryEntryDet
             >
               {entry.kind.replace('_', ' ')}
             </span>
+            {entry.pinned && (
+              <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                pinned
+              </span>
+            )}
+            {entry.tags.includes('auto-lesson') && (
+              <span className="inline-flex items-center rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">
+                auto-extracted
+              </span>
+            )}
             <span className="text-xs text-slate-400">
               {entry.confidence} confidence
             </span>
+            {entry.relevanceScore != null && (
+              <span className="text-xs text-brand-600 font-medium">
+                {Math.round(entry.relevanceScore * 100)}% relevant
+              </span>
+            )}
           </div>
           {editing ? (
             <Input
@@ -114,6 +145,16 @@ export function MemoryEntryDetail({ entry, onUpdate, onArchive }: MemoryEntryDet
         </div>
         {entry.status === 'active' && !editing && (
           <div className="flex items-center gap-2 flex-shrink-0">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={togglePin}
+              disabled={saving}
+              aria-label={entry.pinned ? 'Unpin memory entry' : 'Pin memory entry'}
+              title={entry.pinned ? 'Unpin — remove from always-include' : 'Pin — always include in agent briefs'}
+            >
+              {entry.pinned ? 'Unpin' : 'Pin'}
+            </Button>
             <Button variant="secondary" size="sm" onClick={startEdit} aria-label="Edit memory entry">
               Edit
             </Button>
@@ -218,6 +259,13 @@ export function MemoryEntryDetail({ entry, onUpdate, onArchive }: MemoryEntryDet
           </div>
         )}
       </div>
+
+      {/* Persona scope */}
+      {entry.personaScope && (
+        <div className="rounded-md bg-violet-50 px-3 py-2 text-sm text-violet-700">
+          Scoped to persona: <strong>{entry.personaScope}</strong>
+        </div>
+      )}
 
       {/* Status badge */}
       {entry.status !== 'active' && (

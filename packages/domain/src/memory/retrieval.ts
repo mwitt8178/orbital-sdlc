@@ -52,28 +52,180 @@ export interface RetrievalResult {
 }
 
 /**
+ * Options for retrieval — all optional for backwards compatibility.
+ *
+ * [Engineer-Sr · Sonnet · run-memory-prompt-assembly]
+ */
+export interface RetrievalOptions {
+  /**
+   * Multi-tenant scoping.
+   * Sentinel '00000000-0000-0000-0000-000000000000' = local-install default.
+   */
+  tenantId?: string
+  /**
+   * Persona slug — when provided, persona-scoped entries (persona_scope=slug)
+   * are always included, and global entries (persona_scope=NULL) are also
+   * included. Entries scoped to a DIFFERENT persona are excluded.
+   */
+  personaSlug?: string
+  /**
+   * Max number of pinned entries to always include (default: 5).
+   * Pinned entries are included before ranked results.
+   */
+  maxPinned?: number
+}
+
+/** Max pinned entries included unconditionally (before ranked results). */
+const DEFAULT_MAX_PINNED = 5
+
+/**
  * Retrieve top-k memory entries relevant to the given query.
+ *
+ * Algorithm:
+ * 1. Fetch all pinned entries for this project (always included, up to maxPinned).
+ * 2. Run vector or tag-fallback search for the remaining (k - pinnedCount) slots.
+ * 3. Exclude entries whose persona_scope does not match personaSlug (if provided).
+ * 4. Merge pinned + ranked, dedup by entryId.
  *
  * @param db        Drizzle DB instance
  * @param projectId Project to scope retrieval to
  * @param query     Title + description from the task brief
  * @param k         Number of entries to return (default: 8)
+ * @param options   Optional tenant/persona/pinned options
+ *
+ * [Engineer-Sr · Sonnet · run-memory-prompt-assembly]
  */
 export async function retrieveTopN(
   db: DB,
   projectId: string,
   query: RetrievalQuery,
   k = 8,
+  options: RetrievalOptions = {},
 ): Promise<RetrievalResult> {
-  // Try vector search first (requires pgvector extension + stored embeddings)
-  const vectorResult = await tryVectorSearch(db, projectId, query, k)
-  if (vectorResult !== null) {
-    return { entries: vectorResult, method: 'vector' }
+  const {
+    tenantId,
+    personaSlug,
+    maxPinned = DEFAULT_MAX_PINNED,
+  } = options
+
+  // Step 1: fetch pinned entries (always included).
+  const pinnedEntries = await fetchPinnedEntries(db, projectId, tenantId, personaSlug, maxPinned)
+  const pinnedIds = new Set(pinnedEntries.map((e) => e.entryId))
+
+  // Remaining slots for ranked retrieval.
+  const rankedK = Math.max(0, k - pinnedEntries.length)
+
+  let rankedEntries: MemoryEntry[] = []
+  let method: 'vector' | 'tag_fallback' | 'none' = 'none'
+
+  if (rankedK > 0) {
+    // Try vector search first (requires pgvector extension + stored embeddings)
+    const vectorResult = await tryVectorSearch(db, projectId, query, rankedK, tenantId, personaSlug)
+    if (vectorResult !== null) {
+      rankedEntries = vectorResult
+      method = 'vector'
+    } else {
+      // Fallback: tag-based + keyword retrieval
+      rankedEntries = await tagFallbackSearch(db, projectId, query, rankedK, tenantId, personaSlug)
+      method = rankedEntries.length === 0 ? 'none' : 'tag_fallback'
+    }
   }
 
-  // Fallback: tag-based + keyword retrieval
-  const fallbackResult = await tagFallbackSearch(db, projectId, query, k)
-  return { entries: fallbackResult, method: fallbackResult.length === 0 ? 'none' : 'tag_fallback' }
+  // Step 2b: fetch persona-scoped entries (always included for matching persona).
+  // These are entries whose persona_scope exactly matches personaSlug.
+  // They appear regardless of query relevance — they're persona-always-includes.
+  const personaEntries = personaSlug
+    ? await fetchPersonaScopedEntries(db, projectId, tenantId, personaSlug)
+    : []
+
+  // Merge: pinned first, then persona-scoped, then ranked (deduped).
+  const seen = new Set(pinnedIds)
+  const personaDeduped = personaEntries.filter((e) => !seen.has(e.entryId))
+  personaDeduped.forEach((e) => seen.add(e.entryId))
+  const ranked = rankedEntries.filter((e) => !seen.has(e.entryId))
+  const entries = [...pinnedEntries, ...personaDeduped, ...ranked]
+
+  // If all entries came from pinned and there were no ranked results, method=none only
+  // if there were truly no ranked entries retrieved.
+  if ((pinnedEntries.length > 0 || personaDeduped.length > 0) && method === 'none') {
+    method = 'tag_fallback' // pinned/persona entries were found; use tag_fallback as a signal
+  }
+
+  return { entries, method }
+}
+
+// ---------------------------------------------------------------------------
+// Pinned entries fetch — always included regardless of ranking
+// [Engineer-Sr · Sonnet · run-memory-prompt-assembly]
+// ---------------------------------------------------------------------------
+
+async function fetchPinnedEntries(
+  db: DB,
+  projectId: string,
+  tenantId: string | undefined,
+  personaSlug: string | undefined,
+  maxPinned: number,
+): Promise<MemoryEntry[]> {
+  const conditions: ReturnType<typeof eq>[] = [
+    eq(projectMemoryEntries.projectId, projectId),
+    eq(projectMemoryEntries.status, 'active'),
+    eq(projectMemoryEntries.pinned, true),
+  ]
+  if (tenantId) {
+    conditions.push(eq(projectMemoryEntries.tenantId, tenantId))
+  }
+
+  const rows = await db
+    .select()
+    .from(projectMemoryEntries)
+    .where(and(...conditions))
+    .orderBy(desc(projectMemoryEntries.createdAt))
+    .limit(maxPinned)
+
+  const entryIds = rows.map((r) => r.entryId)
+  if (entryIds.length === 0) return []
+
+  const entries = await loadEntriesById(db, entryIds)
+  // Apply persona_scope filter
+  return filterByPersonaScope(entries, personaSlug)
+}
+
+// ---------------------------------------------------------------------------
+// Persona-scoped entries fetch — always included for matching persona
+// [Engineer-Sr · Sonnet · run-memory-prompt-assembly]
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch entries explicitly scoped to a specific persona.
+ * These entries have persona_scope = personaSlug (non-NULL) and are always
+ * included in the brief for that persona, regardless of query relevance.
+ */
+async function fetchPersonaScopedEntries(
+  db: DB,
+  projectId: string,
+  tenantId: string | undefined,
+  personaSlug: string,
+): Promise<MemoryEntry[]> {
+  const conditions = [
+    eq(projectMemoryEntries.projectId, projectId),
+    eq(projectMemoryEntries.status, 'active'),
+    eq(projectMemoryEntries.personaScope, personaSlug),
+  ]
+  if (tenantId) {
+    conditions.push(eq(projectMemoryEntries.tenantId, tenantId))
+  }
+
+  const rows = await db
+    .select()
+    .from(projectMemoryEntries)
+    .where(and(...conditions))
+    .orderBy(desc(projectMemoryEntries.createdAt))
+    .limit(10)
+
+  const entryIds = rows.map((r) => r.entryId)
+  if (entryIds.length === 0) return []
+
+  return loadEntriesById(db, entryIds)
 }
 
 // ---------------------------------------------------------------------------
@@ -85,6 +237,8 @@ async function tryVectorSearch(
   projectId: string,
   query: RetrievalQuery,
   k: number,
+  tenantId?: string,
+  personaSlug?: string,
 ): Promise<MemoryEntry[] | null> {
   // Check if embedding provider is configured
   const embeddingProvider = process.env['EMBEDDING_PROVIDER'] ?? 'none'
@@ -109,13 +263,16 @@ async function tryVectorSearch(
   try {
     // Use raw SQL for pgvector cosine similarity — drizzle-orm doesn't natively
     // support pgvector operators
+    const tenantFilter = tenantId ? dSQL` AND tenant_id = ${tenantId}` : dSQL``
     const rows = await db.execute(
       dSQL`
         SELECT entry_id
         FROM project_memory_entries
         WHERE project_id = ${projectId}
           AND status = 'active'
+          AND pinned = false
           AND embedding IS NOT NULL
+          ${tenantFilter}
         ORDER BY embedding <=> ${vectorStr}::vector
         LIMIT 20
       `,
@@ -125,7 +282,8 @@ async function tryVectorSearch(
     if (entryIds.length === 0) return null
 
     const entries = await loadEntriesById(db, entryIds)
-    return rerankAndSlice(entries, k)
+    const filtered = filterByPersonaScope(entries, personaSlug)
+    return rerankAndSlice(filtered, k)
   } catch (err) {
     logger.warn({ err }, 'memory.retrieval: vector search failed, falling back to tag search')
     return null
@@ -141,6 +299,8 @@ async function tagFallbackSearch(
   projectId: string,
   query: RetrievalQuery,
   k: number,
+  tenantId?: string,
+  personaSlug?: string,
 ): Promise<MemoryEntry[]> {
   // Build keyword tokens from query title + description
   const queryTokens = tokenize(`${query.title} ${query.description}`)
@@ -150,6 +310,15 @@ async function tagFallbackSearch(
   let tagMatchedIds: string[] = []
   const allQueryTerms = [...queryTags, ...queryTokens.slice(0, 10)]
 
+  // Base conditions for non-pinned, active entries scoped to this project.
+  // Pinned entries are fetched separately (fetchPinnedEntries).
+  const baseConditions = [
+    eq(projectMemoryEntries.projectId, projectId),
+    eq(projectMemoryEntries.status, 'active'),
+    eq(projectMemoryEntries.pinned, false),
+  ]
+  if (tenantId) baseConditions.push(eq(projectMemoryEntries.tenantId, tenantId))
+
   if (allQueryTerms.length > 0) {
     const tagRows = await db
       .select({ entryId: projectMemoryTags.entryId })
@@ -157,18 +326,13 @@ async function tagFallbackSearch(
       .where(
         and(
           inArray(projectMemoryTags.tag, allQueryTerms),
-          // Join to filter by project_id + active status
+          // Join to filter by project_id + active status + not pinned
           inArray(
             projectMemoryTags.entryId,
             db
               .select({ entryId: projectMemoryEntries.entryId })
               .from(projectMemoryEntries)
-              .where(
-                and(
-                  eq(projectMemoryEntries.projectId, projectId),
-                  eq(projectMemoryEntries.status, 'active'),
-                ),
-              ),
+              .where(and(...baseConditions)),
           ),
         ),
       )
@@ -192,8 +356,7 @@ async function tagFallbackSearch(
     .from(projectMemoryEntries)
     .where(
       and(
-        eq(projectMemoryEntries.projectId, projectId),
-        eq(projectMemoryEntries.status, 'active'),
+        ...baseConditions,
         keywordConditions.length > 0 ? or(...keywordConditions) : undefined,
       ),
     )
@@ -216,20 +379,17 @@ async function tagFallbackSearch(
     const recentRows = await db
       .select({ entryId: projectMemoryEntries.entryId })
       .from(projectMemoryEntries)
-      .where(
-        and(
-          eq(projectMemoryEntries.projectId, projectId),
-          eq(projectMemoryEntries.status, 'active'),
-        ),
-      )
+      .where(and(...baseConditions))
       .orderBy(desc(projectMemoryEntries.createdAt))
       .limit(k)
 
-    return loadEntriesById(db, recentRows.map((r) => r.entryId))
+    const entries = await loadEntriesById(db, recentRows.map((r) => r.entryId))
+    return filterByPersonaScope(entries, personaSlug)
   }
 
   const entries = await loadEntriesById(db, candidateIds.slice(0, 20))
-  return rerankAndSlice(entries, k)
+  const filtered = filterByPersonaScope(entries, personaSlug)
+  return rerankAndSlice(filtered, k)
 }
 
 // ---------------------------------------------------------------------------
@@ -301,11 +461,34 @@ async function loadEntriesById(db: DB, entryIds: string[]): Promise<MemoryEntry[
           linkValue: l.linkValue,
           createdAt: l.createdAt.toISOString(),
         })),
+        relevanceScore: row.relevanceScore ?? null,
+        pinned: row.pinned ?? false,
+        personaScope: row.personaScope ?? null,
         createdAt: row.createdAt.toISOString(),
         updatedAt: row.updatedAt.toISOString(),
       } satisfies MemoryEntry
     })
     .filter((e): e is MemoryEntry => e !== null)
+}
+
+/**
+ * Filter entries by persona_scope.
+ *
+ * Rules:
+ * - If personaSlug is undefined → include all entries (backwards compatible).
+ * - If personaSlug is defined:
+ *   - Include entries with persona_scope = NULL (global entries).
+ *   - Include entries with persona_scope = personaSlug (persona-specific).
+ *   - Exclude entries with persona_scope = some OTHER slug.
+ *
+ * [Engineer-Sr · Sonnet · run-memory-prompt-assembly]
+ */
+function filterByPersonaScope(entries: MemoryEntry[], personaSlug: string | undefined): MemoryEntry[] {
+  if (!personaSlug) return entries
+  return entries.filter((e) => {
+    const scope = e.personaScope ?? null
+    return scope === null || scope === personaSlug
+  })
 }
 
 /**

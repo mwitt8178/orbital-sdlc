@@ -17,7 +17,7 @@
  * column stores NULL and tag-based retrieval is used instead.
  */
 
-import { pgTable, uuid, text, timestamp, index, primaryKey } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, timestamp, index, primaryKey, doublePrecision, boolean } from 'drizzle-orm/pg-core'
 
 // ---------------------------------------------------------------------------
 // project_memory_entries
@@ -55,12 +55,32 @@ export const projectMemoryEntries = pgTable(
      * since drizzle-orm/pg-core does not natively support pgvector types.
      */
     embedding: text('embedding'),
+    /**
+     * Migration 0051 — memory-prompt-assembly.
+     * Pre-computed relevance score at retrieval time (0.0–1.0).
+     * NULL until a retrieval scores this entry against a task context.
+     * [Engineer-Sr · Sonnet · run-memory-prompt-assembly]
+     */
+    relevanceScore: doublePrecision('relevance_score'),
+    /**
+     * Migration 0051 — pinned entries are always injected into the prompt
+     * regardless of retrieval ranking (up to MAX_PINNED_ENTRIES=5).
+     */
+    pinned: boolean('pinned').notNull().default(false),
+    /**
+     * Migration 0051 — optional persona slug filter.
+     * When non-NULL, entry is only injected for the named persona.
+     * When NULL, entry is injected for all personas.
+     */
+    personaScope: text('persona_scope'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index('pm_entries_project_idx').on(t.projectId, t.status),
     index('pm_entries_kind_idx').on(t.projectId, t.kind, t.status),
+    index('pm_entries_pinned_idx').on(t.projectId, t.pinned),
+    index('pm_entries_tenant_project_idx').on(t.tenantId, t.projectId, t.status),
   ],
 )
 

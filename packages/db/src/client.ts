@@ -169,7 +169,12 @@ if (e.ORBITAL_DEPLOY_TARGET !== 'aws') {
  * Valid in local/Docker mode (ORBITAL_DEPLOY_TARGET unset).
  * In AWS mode use `getDb()` instead.
  */
-export const sql: postgres.Sql = new Proxy({} as postgres.Sql, {
+// The proxy target must be a function so that tagged-template calls
+// (sql`SELECT 1`) and direct calls work. A plain-object target would make
+// `sql` non-callable and throw "sql is not a function" at the call site.
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+const _sqlProxyTarget = function () {} as unknown as postgres.Sql
+export const sql: postgres.Sql = new Proxy(_sqlProxyTarget, {
   get(_t, prop) {
     if (!_sql) {
       throw new Error(
@@ -177,6 +182,14 @@ export const sql: postgres.Sql = new Proxy({} as postgres.Sql, {
       )
     }
     return _sql[prop as keyof postgres.Sql]
+  },
+  apply(_t, _thisArg, args) {
+    if (!_sql) {
+      throw new Error(
+        'sql is not initialised in AWS mode. Call await getDb() before accessing sql.',
+      )
+    }
+    return (_sql as unknown as (...a: unknown[]) => unknown)(...args)
   },
 })
 

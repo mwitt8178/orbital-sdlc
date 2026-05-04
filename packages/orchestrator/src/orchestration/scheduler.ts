@@ -625,6 +625,8 @@ export class DefaultScheduler implements Scheduler {
       let realClaudeContext: import('./spawn.js').RealClaudeContext | undefined
       if (this.realClaude) {
         // Build the persona brief from the task and capability.
+        // Include memory context so the brief contains relevant project memory.
+        // [Engineer-Sr · Sonnet · run-memory-prompt-assembly]
         const briefTask = {
           task_id: task.taskId,
           title: task.title,
@@ -633,7 +635,23 @@ export class DefaultScheduler implements Scheduler {
           risk_class: task.riskClass,
         }
         const { buildBrief } = await import('../personas/brief.js')
-        const brief = await buildBrief(persona, briefTask, issueResult.bundle)
+
+        // Build memoryContext when projectId is available.
+        // projectId comes from scheduler options (per-install active project).
+        // tenantId comes from the task row (multi-tenant scoped).
+        const memoryContext = this.projectId
+          ? {
+              db: this.db,
+              eventStore: this.eventStore,
+              projectId: this.projectId,
+              tenantId: task.tenantId ?? undefined,
+              personaSlug: task.personaId,
+            }
+          : undefined
+
+        const brief = await buildBrief(persona, briefTask, issueResult.bundle, {
+          memoryContext,
+        })
         realClaudeContext = {
           persona,
           task: briefTask,
@@ -663,6 +681,61 @@ export class DefaultScheduler implements Scheduler {
       // 7. track child for monitor.
       this.monitor.track(spawnResult.workerId, spawnResult.child)
       this.children.set(spawnResult.workerId, spawnResult.child)
+
+      // 8. Post-run lesson extraction — fires after the worker exits.
+      // Only runs in real-claude mode (no-op for test surrogates).
+      // Non-blocking: errors are logged, never surface to the tick loop.
+      // [Engineer-Sr · Sonnet · run-memory-prompt-assembly]
+      if (this.realClaude && this.projectId) {
+        const capturedTaskId = task.taskId
+        const capturedPersonaId = task.personaId
+        const capturedTitle = task.title
+        const capturedDescription = task.description
+        const capturedTenantId = task.tenantId ?? '00000000-0000-0000-0000-000000000000'
+        const capturedProjectId = this.projectId
+        const capturedOutputStream = spawnResult.outputStream
+
+        void spawnResult.exited.then(async () => {
+          try {
+            const { extractAndStoreLessons } = await import('../memory/lesson-extractor.js')
+            const { loadEnv } = await import('../config/env.js')
+            const env = loadEnv()
+
+            // Collect worker output from the ring buffer.
+            const outputLines = capturedOutputStream
+              ? capturedOutputStream.getRecentLines(500).map((l) => l.line).join('\n')
+              : ''
+
+            if (outputLines.length === 0) {
+              logger.debug({ taskId: capturedTaskId }, 'scheduler: no worker output for lesson extraction, skipping')
+              return
+            }
+
+            const written = await extractAndStoreLessons({
+              tenantId: capturedTenantId,
+              projectId: capturedProjectId,
+              taskId: capturedTaskId,
+              personaSlug: capturedPersonaId,
+              taskTitle: capturedTitle,
+              taskDescription: capturedDescription ?? '',
+              workerOutput: outputLines,
+              db: this.db,
+              eventStore: this.eventStore,
+              anthropicApiKey: env.ANTHROPIC_API_KEY,
+            })
+
+            logger.info(
+              { taskId: capturedTaskId, personaSlug: capturedPersonaId, written },
+              'scheduler: post-run lesson extraction complete',
+            )
+          } catch (err) {
+            logger.warn(
+              { err, taskId: capturedTaskId },
+              'scheduler: post-run lesson extraction failed (non-fatal)',
+            )
+          }
+        })
+      }
 
       this.onSpawn?.(spawnResult)
     } catch (err) {
