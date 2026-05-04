@@ -195,6 +195,13 @@ export const stories = pgTable(
      * [Engineer-Principal · Opus · run-orbital-review-ui]
      */
     redirectNote: text('redirect_note'),
+    /**
+     * Migration 0045: denormalized PR URL set when the most recent
+     * story_pr_run for this story succeeds. Canonical record lives in
+     * story_pr_runs; this column exists for fast list/detail rendering.
+     * [Engineer-Principal · Opus · run-story-pr-pipeline]
+     */
+    prUrl: text('pr_url'),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
       .notNull()
       .defaultNow(),
