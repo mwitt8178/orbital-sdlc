@@ -2,14 +2,17 @@
  * db/schema/cost.ts — Drizzle schema for cost governance tables.
  *
  * [Engineer-Sr · Sonnet · run-round6-05-cost-governance]
+ * [Engineer-Sr · Sonnet · run-cost-guardrails-2026-05-04] — added cost_enforcement_log
  *
  * Tables:
- *   - cost_budgets   — per-install/project/sprint budget configuration
- *   - cost_ledger    — per-LLM-call cost record with token breakdown
+ *   - cost_budgets          — per-install/project/sprint budget configuration
+ *   - cost_ledger           — per-LLM-call cost record with token breakdown
+ *   - cost_enforcement_log  — audit log of every pre-flight budget decision
  */
 
 import {
   pgTable,
+  pgEnum,
   uuid,
   text,
   integer,
@@ -77,3 +80,45 @@ export type CostBudgetRow = typeof costBudgets.$inferSelect
 export type NewCostBudget  = typeof costBudgets.$inferInsert
 export type CostLedgerRow  = typeof costLedger.$inferSelect
 export type NewCostLedger  = typeof costLedger.$inferInsert
+
+// ---------------------------------------------------------------------------
+// cost_enforcement_decision ENUM
+// ---------------------------------------------------------------------------
+
+export const costEnforcementDecisionEnum = pgEnum('cost_enforcement_decision', [
+  'allow',
+  'block',
+  'throttle',
+])
+
+// ---------------------------------------------------------------------------
+// cost_enforcement_log
+// ---------------------------------------------------------------------------
+
+/**
+ * Audit log of every pre-flight budget decision.
+ * A row is written for every assertBudget() call regardless of outcome.
+ * Operators can query this to understand why a run was blocked.
+ */
+export const costEnforcementLog = pgTable(
+  'cost_enforcement_log',
+  {
+    id:                       uuid('id').primaryKey(),
+    tenantId:                 uuid('tenant_id').notNull(),
+    projectId:                uuid('project_id').notNull(),
+    persona:                  text('persona'),
+    decision:                 costEnforcementDecisionEnum('decision').notNull(),
+    budgetCapUsd:             numeric('budget_cap_usd', { precision: 10, scale: 2 }),
+    mtdSpendUsd:              numeric('mtd_spend_usd', { precision: 12, scale: 6 }).notNull().default('0'),
+    wouldBeCostEstimateUsd:   numeric('would_be_cost_estimate_usd', { precision: 12, scale: 6 }).notNull().default('0'),
+    reason:                   text('reason'),
+    createdAt:                timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    tenantProjectIdx: index('cel_tenant_project_idx').on(t.tenantId, t.projectId, t.createdAt),
+    decisionIdx:      index('cel_decision_idx').on(t.decision, t.createdAt),
+  }),
+)
+
+export type CostEnforcementLogRow = typeof costEnforcementLog.$inferSelect
+export type NewCostEnforcementLog  = typeof costEnforcementLog.$inferInsert

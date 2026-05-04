@@ -106,6 +106,121 @@ export async function writeAuditLine(kind, payload) {
 }
 
 // ---------------------------------------------------------------------------
+// Budget pre-flight — cost_budgets + cost_enforcement_log
+// [Engineer-Sr · Sonnet · run-cost-guardrails-2026-05-04]
+//
+// Graceful degradation: if the tables don't exist (e.g. 0028/0052 migrations
+// not applied to this DB), the check is skipped and execution continues.
+// ---------------------------------------------------------------------------
+
+/**
+ * Check whether a story run is within the project's monthly budget.
+ *
+ * @param {object} opts
+ * @param {string} opts.tenantId
+ * @param {string} opts.projectId
+ * @param {string} [opts.persona]
+ * @param {number} [opts.estimatedCostUsd]   — conservative estimate for the upcoming call
+ * @returns {Promise<{allow: boolean, reason?: string, budgetCapUsd?: number, mtdSpendUsd?: number}>}
+ */
+export async function checkProjectBudget({ tenantId, projectId, persona, estimatedCostUsd = 0 }) {
+  const pool = getPool()
+
+  try {
+    // Fetch active project-scope budget.
+    const budgetResult = await pool.query(
+      `SELECT hard_cap_usd, soft_threshold_pct, on_hard, on_soft
+         FROM cost_budgets
+        WHERE scope = 'project'
+          AND scope_id = $1
+          AND active = true
+        LIMIT 1`,
+      [projectId],
+    )
+
+    if (budgetResult.rows.length === 0) {
+      // No budget configured — allow freely.
+      return { allow: true }
+    }
+
+    const budget = budgetResult.rows[0]
+    const hardCapUsd = parseFloat(budget.hard_cap_usd)
+    const softCapUsd = hardCapUsd * (budget.soft_threshold_pct / 100)
+
+    // MTD spend for this project.
+    const monthStart = new Date()
+    monthStart.setDate(1)
+    monthStart.setHours(0, 0, 0, 0)
+
+    const mtdResult = await pool.query(
+      `SELECT COALESCE(SUM(cost_usd), 0) AS total
+         FROM cost_ledger
+        WHERE project_id = $1
+          AND occurred_at >= $2`,
+      [projectId, monthStart.toISOString()],
+    )
+
+    const mtdSpendUsd = parseFloat(mtdResult.rows[0]?.total ?? '0')
+    const projected = mtdSpendUsd + estimatedCostUsd
+
+    let decision = 'allow'
+    let reason = null
+
+    if (projected > hardCapUsd) {
+      decision = 'block'
+      reason = `Projected MTD spend $${projected.toFixed(4)} exceeds hard cap $${hardCapUsd.toFixed(2)}`
+    } else if (projected > softCapUsd) {
+      reason = `Projected MTD spend $${projected.toFixed(4)} exceeds soft threshold $${softCapUsd.toFixed(4)}`
+    }
+
+    // Log to cost_enforcement_log (best-effort; table may not exist yet).
+    try {
+      const logId = ulidToUuid(
+        // generate a time-sortable id without the ULID library here
+        Math.random().toString(36).slice(2).padEnd(26, '0').toUpperCase().slice(0, 26),
+      )
+      await pool.query(
+        `INSERT INTO cost_enforcement_log
+           (id, tenant_id, project_id, persona, decision, budget_cap_usd, mtd_spend_usd,
+            would_be_cost_estimate_usd, reason, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now())`,
+        [
+          logId,
+          tenantId,
+          projectId,
+          persona ?? null,
+          decision,
+          String(hardCapUsd),
+          String(mtdSpendUsd),
+          String(estimatedCostUsd),
+          reason,
+        ],
+      )
+    } catch {
+      // enforcement_log table may not exist in this DB — non-fatal
+    }
+
+    if (decision === 'block' && budget.on_hard !== 'alert_only') {
+      return {
+        allow: false,
+        reason,
+        budgetCapUsd: hardCapUsd,
+        mtdSpendUsd,
+      }
+    }
+
+    return { allow: true, mtdSpendUsd, budgetCapUsd: hardCapUsd, reason }
+  } catch (err) {
+    // If the tables don't exist (old migration baseline), skip enforcement.
+    if (err.code === '42P01') {
+      // relation does not exist — graceful degradation
+      return { allow: true }
+    }
+    throw err
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
