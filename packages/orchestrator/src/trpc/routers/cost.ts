@@ -29,6 +29,16 @@ import { loadEnv } from '../../config/env.js'
 import { logger } from '../../config/logger.js'
 import type { BudgetPausedPayload } from '../../events/types.js'
 import type { Actor } from '@orbital/types'
+import {
+  billingMonthSummary,
+  billingDailySeries,
+  billingByCategory,
+  billingTopExpensive,
+  billingProjection,
+  billingExportCsv,
+  billingUpdateBudget,
+} from '@orbital/domain/cost/billing.js'
+import { BILLING_CATEGORIES } from '@orbital/domain/cost/categories.js'
 
 const SYSTEM_ACTOR: Actor = { type: 'system', component: 'orchestrator' }
 
@@ -293,5 +303,158 @@ export const costRouter = router({
       return result
     }),
 })
+
+// ---------------------------------------------------------------------------
+// /settings/billing — read aggregations + budget patch + CSV export
+// [Engineer-Principal · Opus · run-settings-billing]
+// ---------------------------------------------------------------------------
+
+const billingRangeInput = z.object({
+  projectId: z.string().uuid(),
+  fromDate:  z.string().datetime().optional(),
+  toDate:    z.string().datetime().optional(),
+})
+
+const billingProjectIdInput = z.object({
+  projectId: z.string().uuid(),
+})
+
+const billingUpdateInput = z.object({
+  projectId: z.string().uuid(),
+  patch: z.object({
+    monthlyCapCents: z.number().int().min(0).max(100_000_000).nullable().optional(),
+    hardStop:        z.boolean().optional(),
+    digestEmails:    z.array(z.string().email()).max(20).optional(),
+  }),
+})
+
+const billingExportInput = z.object({
+  projectId: z.string().uuid(),
+  fromDate:  z.string().datetime(),
+  toDate:    z.string().datetime(),
+})
+
+function defaultMonthRange(input: { fromDate?: string; toDate?: string }): { from: Date; to: Date } {
+  const now = new Date()
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+  const end   = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1))
+  return {
+    from: input.fromDate ? new Date(input.fromDate) : start,
+    to:   input.toDate   ? new Date(input.toDate)   : end,
+  }
+}
+
+export const billingRouter = router({
+  /**
+   * Hero-level summary for the active month: total spend, monthly cap, %
+   * used, hard-stop flag, digest subscribers, all-time total.
+   */
+  summary: publicProcedure
+    .input(billingProjectIdInput)
+    .query(async ({ input }) => {
+      return billingMonthSummary(db, input.projectId)
+    }),
+
+  /**
+   * Day-by-day spend (zero-filled) for the supplied range, default = active
+   * UTC month. Used for the hero sparkline and the month chart.
+   */
+  dailySeries: publicProcedure
+    .input(billingRangeInput)
+    .query(async ({ input }) => {
+      const { from, to } = defaultMonthRange(input)
+      const series = await billingDailySeries(db, input.projectId, from, to)
+      return { fromDate: from.toISOString(), toDate: to.toISOString(), series }
+    }),
+
+  /**
+   * Spend split by billing category for the active month (or supplied range).
+   * Powers the breakdown pie/stacked-bar.
+   */
+  byCategory: publicProcedure
+    .input(billingRangeInput)
+    .query(async ({ input }) => {
+      const { from, to } = defaultMonthRange(input)
+      const totals = await billingByCategory(db, input.projectId, from, to)
+      return {
+        fromDate: from.toISOString(),
+        toDate:   to.toISOString(),
+        categories: BILLING_CATEGORIES,
+        totals,
+      }
+    }),
+
+  /**
+   * Top N most expensive stories (cost_ledger rows aggregated by task_id)
+   * for the active month or supplied range.
+   */
+  topExpensive: publicProcedure
+    .input(
+      billingRangeInput.extend({ limit: z.number().int().min(1).max(50).default(10) }),
+    )
+    .query(async ({ input }) => {
+      const { from, to } = defaultMonthRange(input)
+      const rows = await billingTopExpensive(db, input.projectId, input.limit, from, to)
+      return { rows }
+    }),
+
+  /**
+   * Velocity-based projection for end-of-month spend.
+   */
+  projection: publicProcedure
+    .input(billingProjectIdInput)
+    .query(async ({ input }) => {
+      return billingProjection(db, input.projectId)
+    }),
+
+  /**
+   * CSV export of all cost_ledger rows for a project in a date range.
+   * Returns a base64-encoded CSV that the UI converts to a Blob and downloads.
+   */
+  exportCsv: publicProcedure
+    .input(billingExportInput)
+    .mutation(async ({ input }) => {
+      const from = new Date(input.fromDate)
+      const to   = new Date(input.toDate)
+      const { csv, rowCount, truncated } = await billingExportCsv(db, input.projectId, from, to)
+      const csvBase64 = Buffer.from(csv, 'utf8').toString('base64')
+      logger.info(
+        { projectId: input.projectId, rowCount, truncated, fromDate: input.fromDate, toDate: input.toDate },
+        'cost.exportCsv: generated',
+      )
+      return { csvBase64, rowCount, truncated, filename: `orbital-cost-${input.projectId.slice(0, 8)}-${input.fromDate.slice(0, 10)}.csv` }
+    }),
+
+  /**
+   * Patch the project budget — monthly cap (in cents), hard-stop flag,
+   * digest emails. Returns the updated month summary so the UI can refresh
+   * in one round-trip.
+   */
+  updateBudget: publicProcedure
+    .input(billingUpdateInput)
+    .mutation(async ({ input }) => {
+      const patch: {
+        monthlyCapUsd?: number | null
+        hardStop?: boolean
+        digestEmails?: string[]
+      } = {}
+
+      if (input.patch.monthlyCapCents !== undefined) {
+        patch.monthlyCapUsd =
+          input.patch.monthlyCapCents == null ? null : input.patch.monthlyCapCents / 100
+      }
+      if (input.patch.hardStop !== undefined) patch.hardStop = input.patch.hardStop
+      if (input.patch.digestEmails !== undefined) patch.digestEmails = input.patch.digestEmails
+
+      const summary = await billingUpdateBudget(db, input.projectId, patch)
+      logger.info(
+        { projectId: input.projectId, patch },
+        'cost.updateBudget: project budget patched',
+      )
+      return summary
+    }),
+})
+
+export type BillingRouter = typeof billingRouter
 
 export type CostRouter = typeof costRouter

@@ -38,8 +38,8 @@ import { IntegrationsDashboard } from '../components/features/settings/Integrati
 // [Engineer-Principal · Opus · run-settings-integrations]
 import { ProjectIntegrationsDashboard } from '../components/features/settings/ProjectIntegrationsDashboard.js'
 import { ComingSoonState } from '../components/features/settings/ComingSoonState.js'
-// [Engineer-Principal · Opus · run-settings-general]
 import { ProjectGeneralSettings } from '../components/features/settings/ProjectGeneralSettings.js'
+import { BillingPage as BillingPageContent } from '../components/features/billing/BillingPage.js'
 import { DURATION, EASE } from '../components/onboarding/motion.js'
 
 interface SectionDef {
@@ -347,15 +347,9 @@ function BillingPage() {
     <>
       <PageHeader
         title="Billing"
-        description="Plan, invoices, and usage caps."
+        description="Real cost surface for this project — month spend, breakdown, top stories, caps, projection, and CSV export."
       />
-      <ComingSoonState
-        title="Billing is wired up via Stripe — UI is coming"
-        description="Live mode is metered today via the Anthropic key you supplied; per-org Stripe-backed billing arrives once we onboard our first paid team."
-        actionLabel="Review per-sprint budget"
-        actionHref="/settings/sprints"
-        eta="v2"
-      />
+      <BillingPageContent />
     </>
   )
 }

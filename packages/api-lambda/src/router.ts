@@ -20,7 +20,7 @@ import { auditRouter } from '../../orchestrator/src/trpc/routers/audit.js'
 import { auditExportRouter } from '../../orchestrator/src/trpc/routers/audit-export.js'
 import { channelsRouter } from '../../orchestrator/src/trpc/routers/channels.js'
 import { codeReviewsRouter } from '../../orchestrator/src/trpc/routers/code-reviews.js'
-import { costRouter } from '../../orchestrator/src/trpc/routers/cost.js'
+import { costRouter, billingRouter } from '../../orchestrator/src/trpc/routers/cost.js'
 import { orchestrationRouter } from '../../orchestrator/src/trpc/routers/orchestration.js'
 import { outboxRouter } from '../../orchestrator/src/trpc/routers/outbox.js'
 import { providersRouter } from '../../orchestrator/src/trpc/routers/providers.js'
@@ -256,6 +256,7 @@ export async function getLambdaAppRouter(): Promise<AnyRouter> {
     channel: channelsRouter,
     code_reviews: codeReviewsRouter,
     cost: costRouter,
+    billing: billingRouter,
     memory: memoryR,
     onboarding: onboardingR,
     orchestration: orchestrationRouter,
