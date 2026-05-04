@@ -73,6 +73,9 @@ import { createMemoryService } from '../../orchestrator/src/memory/service.js'
 // daemon hasn't registered a SprintService yet. The api-lambda is read-mostly
 // so write-path sprint procedures are expected to fail without daemon backing.
 import type { SprintService } from '../../orchestrator/src/backlog/sprint-service.js'
+import { DefaultSprintService } from '@orbital/domain/backlog/sprint-service.js'
+import type { Scheduler } from '../../orchestrator/src/orchestration/scheduler.js'
+import type { PauseController } from '../../orchestrator/src/orchestration/pause.js'
 
 import { getDb } from '@orbital/db'
 import type { AnyRouter } from '@trpc/server'
@@ -97,6 +100,33 @@ export function _invalidateRouter(): void {
  */
 export function registerSprintService(service: SprintService): void {
   _sprintService = service
+}
+
+// In-Lambda read-only SprintService. Read paths (list/get) hit the DB
+// directly. Write paths (start/pause/resume/complete) require Scheduler +
+// PauseController which are daemon-shaped — those throw a descriptive error
+// at call time. This unblocks the dashboard's `sprint.list` query that
+// previously 500'd on every render. [run-post-onboarding]
+function buildLambdaSprintService(db: typeof import('@orbital/db').db, events: ReturnType<typeof createEventStore>): SprintService {
+  const noopScheduler = new Proxy({} as Scheduler, {
+    get(_t, prop: string) {
+      return () => {
+        throw new Error(
+          `STARTUP_ERROR: Scheduler.${prop} unavailable in api-lambda; sprint write paths must go through the outbox + daemon`,
+        )
+      }
+    },
+  })
+  const noopPause = new Proxy({} as PauseController, {
+    get(_t, prop: string) {
+      return () => {
+        throw new Error(
+          `STARTUP_ERROR: PauseController.${prop} unavailable in api-lambda; sprint write paths must go through the outbox + daemon`,
+        )
+      }
+    },
+  })
+  return new DefaultSprintService(db, events, noopScheduler, noopPause)
 }
 
 const lazySprintService = new Proxy({} as SprintService, {
@@ -187,6 +217,11 @@ export async function getLambdaAppRouter(): Promise<AnyRouter> {
     backlogService,
     loadVisionContext: async () => null, // Lambda path: vision context is read via vision router separately
   })
+  // Wire a real read-capable SprintService in-process so sprint.list / sprint.get
+  // succeed (write paths throw via the noop scheduler/pause). [run-post-onboarding]
+  if (_sprintService === null) {
+    _sprintService = buildLambdaSprintService(db, events)
+  }
   const sprintR = createSprintRouter({ sprintService: lazySprintService })
 
   // UAT

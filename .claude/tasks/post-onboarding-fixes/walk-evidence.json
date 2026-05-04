@@ -1,0 +1,804 @@
+{
+  "timestamp": "2026-05-04T15:41:20.328Z",
+  "base_url": "https://d2mtgpa71y9c8t.cloudfront.net",
+  "bundle_hash": "index-DQ6yceaZ.js",
+  "lambda_alias_version": "32",
+  "routes": [
+    {
+      "path": "/",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/",
+      "title": "Orbital",
+      "body_snippet": "Orbital\n/\nNo projects\nSearch or type a command\n⌘K\n$0.00\nReconnecting…\nTour\nSM\nWORKFLOW\nSprint Dashboard\nAgents\nBacklog\nChannels\nUAT\nCeremonies\nRetrospective\nLIBRARY\nPersonas\nVision\nAudit Log\nMemory\nCost\nSettings\nLive updates active\nLIVE TELEMETRY\nAgents in flight\n0\nSprint cost\n—\nBudget\n—\nUntitled project\n›\nSprints\nSprint Dashboard\nExport audit\nAvg cycle time\n—\nNo sprint data yet\nVerifier pass rate\n—\nNo sprint data yet\nEscalations\n—\nNo sprint data yet\nCapability denials\n—\nNo sprint data yet\nAgents in flight\nNo agents in flight\n\nDefine a vision, then start a sprint to see agents work.\n\nOpen Vision Intake →\nTeam\n\nNo team members paired yet.\n\nActivity stream\nNo events yet\n\nEvents stream here as agents work.\n\nSee an example →\nTaskStarted\n14:02\ntask\n·\npersona engineer-sr\nVerifierCheckPassed\n14:04\ntask\n·\npersona verifier-test\nTaskCompleted\n14:09\ntask\n·\npersona engineer-sr\nDefine a vision to start →\nNeeds your attention\n\nNothing needs your attention\n\nEscalations, UAT-ready items, and blockers ",
+      "buttons_visible": [
+        "No projects",
+        "Search or type a command\n⌘K",
+        "$0.00",
+        "Tour",
+        "SM",
+        "Personas",
+        "See an example →"
+      ],
+      "links_visible": [
+        "Sprint Dashboard → /",
+        "Agents → /agents",
+        "Backlog → /backlog",
+        "Channels → /channels",
+        "UAT → /uat",
+        "Ceremonies → /ceremonies",
+        "Retrospective → /retro",
+        "Vision → /vision",
+        "Audit Log → /audit",
+        "Memory → /memory",
+        "Cost → /cost",
+        "Settings → /settings",
+        "Export audit → /audit?export=true",
+        "Open Vision Intake → → /vision",
+        "Define a vision to start → → /vision"
+      ],
+      "console_errors": [
+        "WebSocket connection to 'wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/ws' failed: Error during WebSocket handshake: Unexpected response code: 403",
+        "WebSocket connection to 'wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/' failed: Error during WebSocket handshake: Unexpected response code: 403",
+        "Failed to load resource: the server responded with a status of 500 ()",
+        "WebSocket connection to 'wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/' failed: Error during WebSocket handshake: Unexpected response code: 403"
+      ],
+      "http_4xx_5xx": [
+        {
+          "status": 500,
+          "url": "https://hhhfb8pid6.execute-api.us-east-1.amazonaws.com/trpc/cost.summary,sprint.list?batch=1&input=%7B%220%22%3A%7B%22projectId%22%3A%2266af95ae-af18-4063-8baf-71eb1b050875%22%7D%7D"
+        }
+      ],
+      "screenshot": "/tmp/post-onboarding-walk/route-root.png",
+      "cta_clicked": "No projects",
+      "cta_result_url": "https://d2mtgpa71y9c8t.cloudfront.net/",
+      "status": "broken-cta",
+      "issue_summary": "CTA \"No projects\" surfaced an error"
+    },
+    {
+      "path": "/backlog",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/backlog",
+      "title": "Orbital",
+      "body_snippet": "Orbital\n/\nNo projects\nSearch or type a command\n⌘K\n$0.00\nReconnecting…\nTour\nSM\nWORKFLOW\nSprint Dashboard\nAgents\nBacklog\nChannels\nUAT\nCeremonies\nRetrospective\nLIBRARY\nPersonas\nVision\nAudit Log\nMemory\nCost\nSettings\nLive updates active\nLIVE TELEMETRY\nAgents in flight\n0\nSprint cost\n—\nBudget\n—\nUntitled project\n›\nBacklog\nBacklog — Tickets visualized\n\nLightweight view of stories, epics, and sprint commitments — with the orchestration metadata Monday can't show: vision linkage, persona-of-record, AC verifier signals. For full project management, use Monday →\n\nManual\n\nLock your vision first to define what you're building\n\nEvery epic, story, and AC traces back to a locked vision document. Visit Vision to start an intake session, draft, and lock v1.\n\nAll\nIterating\nAwaiting review\nChanges requested\n✨\nWhat do you want to add?\nAuto\nStory\nBug\nEpic\n→\nSuggestions: bug · improvement · ask the PM persona. Press Enter to parse.\nSmoke epic\nACTIVE\n\nseed\n\n1 story\n0%\nWalkthrough story #4\n3 pts\nCANCELLED\nSmoke ",
+      "buttons_visible": [
+        "No projects",
+        "Search or type a command\n⌘K",
+        "$0.00",
+        "Tour",
+        "SM",
+        "Personas",
+        "Manual",
+        "All",
+        "Iterating",
+        "Awaiting review",
+        "Changes requested",
+        "→",
+        "+ New"
+      ],
+      "links_visible": [
+        "Sprint Dashboard → /",
+        "Agents → /agents",
+        "Backlog → /backlog",
+        "Channels → /channels",
+        "UAT → /uat",
+        "Ceremonies → /ceremonies",
+        "Retrospective → /retro",
+        "Vision → /vision",
+        "Audit Log → /audit",
+        "Memory → /memory",
+        "Cost → /cost",
+        "Settings → /settings",
+        "Vision → /vision"
+      ],
+      "console_errors": [
+        "WebSocket connection to 'wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/ws' failed: Error during WebSocket handshake: Unexpected response code: 403",
+        "WebSocket connection to 'wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/' failed: Error during WebSocket handshake: Unexpected response code: 403",
+        "Failed to load resource: the server responded with a status of 500 ()",
+        "WebSocket connection to 'wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/' failed: Error during WebSocket handshake: Unexpected response code: 403"
+      ],
+      "http_4xx_5xx": [
+        {
+          "status": 500,
+          "url": "https://hhhfb8pid6.execute-api.us-east-1.amazonaws.com/trpc/cost.summary,sprint.list?batch=1&input=%7B%220%22%3A%7B%22projectId%22%3A%2266af95ae-af18-4063-8baf-71eb1b050875%22%7D%7D"
+        }
+      ],
+      "screenshot": "/tmp/post-onboarding-walk/route-backlog.png",
+      "cta_clicked": "No projects",
+      "cta_result_url": "https://d2mtgpa71y9c8t.cloudfront.net/backlog",
+      "status": "ok",
+      "issue_summary": null
+    },
+    {
+      "path": "/vision",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/vision",
+      "title": "Orbital",
+      "body_snippet": "Orbital\n/\nNo projects\nSearch or type a command\n⌘K\n$0.00\nReconnecting…\nTour\nSM\nWORKFLOW\nSprint Dashboard\nAgents\nBacklog\nChannels\nUAT\nCeremonies\nRetrospective\nLIBRARY\nPersonas\nVision\nAudit Log\nMemory\nCost\nSettings\nLive updates active\nLIVE TELEMETRY\nAgents in flight\n0\nSprint cost\n—\nBudget\n—\nAcme Product\n›\nBacklog\n›\nVision\nVision\n\nYour project's north star — what you're building and why. Every epic, story, sprint, and AC traces back to it. The PM persona interviews you to write a tight vision document; lock it once you're confident in the direction.\n\nHow visions work\nPM\nProduct Manager\nElicitation interview\n\nDefine your vision\n\nTell the PM persona what you're building. They'll ask 3–5 questions, then draft a vision document you can lock.\n\nStart vision\n\nYou only need one vision per project. Revise the existing one if your direction shifts; create a new one only if you're starting a different product.\n\nSend\n\nNo vision document\n\nA draft will appear here as the PM persona asks questions and yo",
+      "buttons_visible": [
+        "No projects",
+        "Search or type a command\n⌘K",
+        "$0.00",
+        "Tour",
+        "SM",
+        "Personas",
+        "Start vision",
+        "Send",
+        "Generate plan from vision"
+      ],
+      "links_visible": [
+        "Sprint Dashboard → /",
+        "Agents → /agents",
+        "Backlog → /backlog",
+        "Channels → /channels",
+        "UAT → /uat",
+        "Ceremonies → /ceremonies",
+        "Retrospective → /retro",
+        "Vision → /vision",
+        "Audit Log → /audit",
+        "Memory → /memory",
+        "Cost → /cost",
+        "Settings → /settings",
+        "Backlog → /backlog"
+      ],
+      "console_errors": [
+        "WebSocket connection to 'wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/' failed: Error during WebSocket handshake: Unexpected response code: 403",
+        "WebSocket connection to 'wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/ws' failed: Error during WebSocket handshake: Unexpected response code: 403",
+        "Failed to load resource: the server responded with a status of 500 ()",
+        "WebSocket connection to 'wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/' failed: Error during WebSocket handshake: Unexpected response code: 403"
+      ],
+      "http_4xx_5xx": [
+        {
+          "status": 500,
+          "url": "https://hhhfb8pid6.execute-api.us-east-1.amazonaws.com/trpc/cost.summary?batch=1&input=%7B%220%22%3A%7B%22projectId%22%3A%2266af95ae-af18-4063-8baf-71eb1b050875%22%7D%7D"
+        }
+      ],
+      "screenshot": "/tmp/post-onboarding-walk/route-vision.png",
+      "cta_clicked": "No projects",
+      "cta_result_url": "https://d2mtgpa71y9c8t.cloudfront.net/vision",
+      "status": "ok",
+      "issue_summary": null
+    },
+    {
+      "path": "/stories",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/stories",
+      "title": "Orbital",
+      "body_snippet": "Orbital\n/\nNo projects\nSearch or type a command\n⌘K\n$0.00\nConnecting…\nTour\nSM\nWORKFLOW\nSprint Dashboard\nAgents\nBacklog\nChannels\nUAT\nCeremonies\nRetrospective\nLIBRARY\nPersonas\nVision\nAudit Log\nMemory\nCost\nSettings\nLive updates active\nLIVE TELEMETRY\nAgents in flight\n0\nSprint cost\n—\nBudget\n—",
+      "buttons_visible": [
+        "No projects",
+        "Search or type a command\n⌘K",
+        "$0.00",
+        "Tour",
+        "SM",
+        "Personas"
+      ],
+      "links_visible": [
+        "Sprint Dashboard → /",
+        "Agents → /agents",
+        "Backlog → /backlog",
+        "Channels → /channels",
+        "UAT → /uat",
+        "Ceremonies → /ceremonies",
+        "Retrospective → /retro",
+        "Vision → /vision",
+        "Audit Log → /audit",
+        "Memory → /memory",
+        "Cost → /cost",
+        "Settings → /settings"
+      ],
+      "console_errors": [
+        "WebSocket connection to 'wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/ws' failed: Error during WebSocket handshake: Unexpected response code: 403",
+        "WebSocket connection to 'wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/' failed: Error during WebSocket handshake: Unexpected response code: 403",
+        "Failed to load resource: the server responded with a status of 500 ()"
+      ],
+      "http_4xx_5xx": [
+        {
+          "status": 500,
+          "url": "https://hhhfb8pid6.execute-api.us-east-1.amazonaws.com/trpc/cost.summary?batch=1&input=%7B%220%22%3A%7B%22projectId%22%3A%2266af95ae-af18-4063-8baf-71eb1b050875%22%7D%7D"
+        }
+      ],
+      "screenshot": "/tmp/post-onboarding-walk/route-stories.png",
+      "cta_clicked": "No projects",
+      "cta_result_url": "https://d2mtgpa71y9c8t.cloudfront.net/stories",
+      "status": "ok",
+      "issue_summary": null
+    },
+    {
+      "path": "/channels",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/channels",
+      "title": "Orbital",
+      "body_snippet": "Orbital\n/\nNo projects\nSearch or type a command\n⌘K\n$0.00\nConnecting…\nTour\nSM\nWORKFLOW\nSprint Dashboard\nAgents\nBacklog\nChannels\nUAT\nCeremonies\nRetrospective\nLIBRARY\nPersonas\nVision\nAudit Log\nMemory\nCost\nSettings\nLive updates active\nLIVE TELEMETRY\nAgents in flight\n0\nSprint cost\n—\nBudget\n—\nChannels\nChannels\nNo channels yet. Start a sprint to see channels.\nNo channels yet\n\nChannels are auto-created per sprint and per ticket.\n\nStart a sprint →",
+      "buttons_visible": [
+        "No projects",
+        "Search or type a command\n⌘K",
+        "$0.00",
+        "Tour",
+        "SM",
+        "Personas"
+      ],
+      "links_visible": [
+        "Sprint Dashboard → /",
+        "Agents → /agents",
+        "Backlog → /backlog",
+        "Channels → /channels",
+        "UAT → /uat",
+        "Ceremonies → /ceremonies",
+        "Retrospective → /retro",
+        "Vision → /vision",
+        "Audit Log → /audit",
+        "Memory → /memory",
+        "Cost → /cost",
+        "Settings → /settings",
+        "Start a sprint → → /"
+      ],
+      "console_errors": [
+        "Failed to load resource: the server responded with a status of 500 ()",
+        "WebSocket connection to 'wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/ws' failed: Error during WebSocket handshake: Unexpected response code: 403"
+      ],
+      "http_4xx_5xx": [
+        {
+          "status": 500,
+          "url": "https://hhhfb8pid6.execute-api.us-east-1.amazonaws.com/trpc/cost.summary?batch=1&input=%7B%220%22%3A%7B%22projectId%22%3A%2266af95ae-af18-4063-8baf-71eb1b050875%22%7D%7D"
+        }
+      ],
+      "screenshot": "/tmp/post-onboarding-walk/route-channels.png",
+      "cta_clicked": "No projects",
+      "cta_result_url": "https://d2mtgpa71y9c8t.cloudfront.net/channels",
+      "status": "ok",
+      "issue_summary": null
+    },
+    {
+      "path": "/ceremonies",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/ceremonies",
+      "title": "Orbital",
+      "body_snippet": "Orbital\n/\nNo projects\nSearch or type a command\n⌘K\n$0.00\nConnecting…\nTour\nSM\nWORKFLOW\nSprint Dashboard\nAgents\nBacklog\nChannels\nUAT\nCeremonies\nRetrospective\nLIBRARY\nPersonas\nVision\nAudit Log\nMemory\nCost\nSettings\nLive updates active\nLIVE TELEMETRY\nAgents in flight\n0\nSprint cost\n—\nBudget\n—\nUntitled project\n›\nCeremonies\nCeremonies\n\nCeremonies are scheduled automatically when system state crosses a threshold — sprint completes, capacity drops below the grooming line, disagreement raised, etc. Each ceremony shows the trigger that fired it.\n\nOverride\nActive Ceremony\nOverride\n\nNo active ceremony\n\nCeremonies start automatically when system state crosses a threshold (sprint completes, capacity drops, disagreement raised, etc.).\n\nAll ceremonies\n\nNo ceremonies yet\n\nCeremonies will appear here as triggers fire. The system monitors sprint state, backlog health, and agent activity continuously.\n\nHow ceremonies fire\n13 trigger rules",
+      "buttons_visible": [
+        "No projects",
+        "Search or type a command\n⌘K",
+        "$0.00",
+        "Tour",
+        "SM",
+        "Personas",
+        "Override",
+        "Override",
+        "How ceremonies fire\n13 trigger rules"
+      ],
+      "links_visible": [
+        "Sprint Dashboard → /",
+        "Agents → /agents",
+        "Backlog → /backlog",
+        "Channels → /channels",
+        "UAT → /uat",
+        "Ceremonies → /ceremonies",
+        "Retrospective → /retro",
+        "Vision → /vision",
+        "Audit Log → /audit",
+        "Memory → /memory",
+        "Cost → /cost",
+        "Settings → /settings"
+      ],
+      "console_errors": [
+        "WebSocket connection to 'wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/' failed: Error during WebSocket handshake: Unexpected response code: 403",
+        "Failed to load resource: the server responded with a status of 500 ()",
+        "WebSocket connection to 'wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/' failed: Error during WebSocket handshake: Unexpected response code: 403"
+      ],
+      "http_4xx_5xx": [
+        {
+          "status": 500,
+          "url": "https://hhhfb8pid6.execute-api.us-east-1.amazonaws.com/trpc/cost.summary?batch=1&input=%7B%220%22%3A%7B%22projectId%22%3A%2266af95ae-af18-4063-8baf-71eb1b050875%22%7D%7D"
+        }
+      ],
+      "screenshot": "/tmp/post-onboarding-walk/route-ceremonies.png",
+      "cta_clicked": "No projects",
+      "cta_result_url": "https://d2mtgpa71y9c8t.cloudfront.net/ceremonies",
+      "status": "ok",
+      "issue_summary": null
+    },
+    {
+      "path": "/uat",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/uat",
+      "title": "Orbital",
+      "body_snippet": "Orbital\n/\nNo projects\nSearch or type a command\n⌘K\n$0.00\nConnecting…\nTour\nSM\nWORKFLOW\nSprint Dashboard\nAgents\nBacklog\nChannels\nUAT\nCeremonies\nRetrospective\nLIBRARY\nPersonas\nVision\nAudit Log\nMemory\nCost\nSettings\nLive updates active\nLIVE TELEMETRY\nAgents in flight\n0\nSprint cost\n—\nBudget\n—\nUntitled project\n›\nUAT\nUser Acceptance Testing\n\nReview stories that have passed verification and are ready for your acceptance.\n\nStory under review\nSelect a story…\nWalkthrough story #1 (in_review)\nWalkthrough story #2 (in_review)\n\nNo story selected\n\nChoose a story above to begin UAT.\n\nDefects\n\nSelect a story to see defects.",
+      "buttons_visible": [
+        "No projects",
+        "Search or type a command\n⌘K",
+        "$0.00",
+        "Tour",
+        "SM",
+        "Personas"
+      ],
+      "links_visible": [
+        "Sprint Dashboard → /",
+        "Agents → /agents",
+        "Backlog → /backlog",
+        "Channels → /channels",
+        "UAT → /uat",
+        "Ceremonies → /ceremonies",
+        "Retrospective → /retro",
+        "Vision → /vision",
+        "Audit Log → /audit",
+        "Memory → /memory",
+        "Cost → /cost",
+        "Settings → /settings"
+      ],
+      "console_errors": [
+        "Failed to load resource: the server responded with a status of 500 ()"
+      ],
+      "http_4xx_5xx": [
+        {
+          "status": 500,
+          "url": "https://hhhfb8pid6.execute-api.us-east-1.amazonaws.com/trpc/cost.summary,sprint.list?batch=1&input=%7B%220%22%3A%7B%22projectId%22%3A%2266af95ae-af18-4063-8baf-71eb1b050875%22%7D%7D"
+        }
+      ],
+      "screenshot": "/tmp/post-onboarding-walk/route-uat.png",
+      "cta_clicked": "No projects",
+      "cta_result_url": "https://d2mtgpa71y9c8t.cloudfront.net/uat",
+      "status": "ok",
+      "issue_summary": null
+    },
+    {
+      "path": "/retro",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/retro",
+      "title": "Orbital",
+      "body_snippet": "Orbital\n/\nNo projects\nSearch or type a command\n⌘K\n$0.00\nConnecting…\nTour\nSM\nWORKFLOW\nSprint Dashboard\nAgents\nBacklog\nChannels\nUAT\nCeremonies\nRetrospective\nLIBRARY\nPersonas\nVision\nAudit Log\nMemory\nCost\nSettings\nLive updates active\nLIVE TELEMETRY\nAgents in flight\n0\nSprint cost\n—\nBudget\n—\nUntitled project\n›\nRetrospective\nRetrospective\n\nSprint retrospectives, improvement proposals, and system-version rollbacks.\n\nProposals\nSystem Versions\nNo retro report yet\n\nRetros generate automatically after each sprint completes.\n\nSee a sample retro →\nImprovement Proposals\n0\nNo proposals yet\n\nRetros generate after each sprint, with proposals targeting persona configs, skills, hooks, and routing policy.",
+      "buttons_visible": [
+        "No projects",
+        "Search or type a command\n⌘K",
+        "$0.00",
+        "Tour",
+        "SM",
+        "Personas",
+        "Proposals",
+        "System Versions"
+      ],
+      "links_visible": [
+        "Sprint Dashboard → /",
+        "Agents → /agents",
+        "Backlog → /backlog",
+        "Channels → /channels",
+        "UAT → /uat",
+        "Ceremonies → /ceremonies",
+        "Retrospective → /retro",
+        "Vision → /vision",
+        "Audit Log → /audit",
+        "Memory → /memory",
+        "Cost → /cost",
+        "Settings → /settings",
+        "See a sample retro → → /welcome"
+      ],
+      "console_errors": [
+        "WebSocket connection to 'wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/' failed: Error during WebSocket handshake: Unexpected response code: 403",
+        "Failed to load resource: the server responded with a status of 500 ()",
+        "WebSocket connection to 'wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/' failed: Error during WebSocket handshake: Unexpected response code: 403"
+      ],
+      "http_4xx_5xx": [
+        {
+          "status": 500,
+          "url": "https://hhhfb8pid6.execute-api.us-east-1.amazonaws.com/trpc/cost.summary?batch=1&input=%7B%220%22%3A%7B%22projectId%22%3A%2266af95ae-af18-4063-8baf-71eb1b050875%22%7D%7D"
+        }
+      ],
+      "screenshot": "/tmp/post-onboarding-walk/route-retro.png",
+      "cta_clicked": "No projects",
+      "cta_result_url": "https://d2mtgpa71y9c8t.cloudfront.net/retro",
+      "status": "ok",
+      "issue_summary": null
+    },
+    {
+      "path": "/audit",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/audit",
+      "title": "Orbital",
+      "body_snippet": "Orbital\n/\nNo projects\nSearch or type a command\n⌘K\n$0.00\nConnecting…\nTour\nSM\nWORKFLOW\nSprint Dashboard\nAgents\nBacklog\nChannels\nUAT\nCeremonies\nRetrospective\nLIBRARY\nPersonas\nVision\nAudit Log\nMemory\nCost\nSettings\nLive updates active\nLIVE TELEMETRY\nAgents in flight\n0\nSprint cost\n—\nBudget\n—\nUntitled project\n›\nAudit Log\nAudit Log\n\nImmutable event log. Every state change from every agent, hook, and capability grant is recorded here.\n\nExport\nRecent exports\n\nNo exports yet\n\nClick Export above to request an immutable audit package.\n\nEvent Timeline\nCursor-paginated · newest first\nDecrypt instructions\n\nAGGREGATE TYPE\n\ntask\nsprint\ncapability\nchannel\nchannel_post\nceremony\npersona\naudit_export\nsystem_version\ninstall\nverification\n\nDATE RANGE\n\nAll time\nToday\nLast 7d\nLast 30d\nCustom\n\nACTOR TYPE\n\nPersona\nUser\nSystem\nHook\nHas replay capture\n5/4/2026, 10:40:10 AM\ninstall · 019df3a4\nOnboardingCompleted\nsystem\n5/4/2026, 10:40:07 AM\ninstall · 019df3a4\nOnboardingCompleted\nsystem\n5/4/2026, 10:40:07 AM\ninstall ·",
+      "buttons_visible": [
+        "No projects",
+        "Search or type a command\n⌘K",
+        "$0.00",
+        "Tour",
+        "SM",
+        "Personas",
+        "Export",
+        "Decrypt instructions",
+        "task",
+        "sprint",
+        "capability",
+        "channel",
+        "channel_post",
+        "ceremony",
+        "persona",
+        "audit_export",
+        "system_version",
+        "install",
+        "verification",
+        "All time",
+        "Today",
+        "Last 7d",
+        "Last 30d",
+        "Custom",
+        "Persona",
+        "User",
+        "System",
+        "Hook"
+      ],
+      "links_visible": [
+        "Sprint Dashboard → /",
+        "Agents → /agents",
+        "Backlog → /backlog",
+        "Channels → /channels",
+        "UAT → /uat",
+        "Ceremonies → /ceremonies",
+        "Retrospective → /retro",
+        "Vision → /vision",
+        "Audit Log → /audit",
+        "Memory → /memory",
+        "Cost → /cost",
+        "Settings → /settings"
+      ],
+      "console_errors": [
+        "Failed to load resource: the server responded with a status of 500 ()"
+      ],
+      "http_4xx_5xx": [
+        {
+          "status": 500,
+          "url": "https://hhhfb8pid6.execute-api.us-east-1.amazonaws.com/trpc/cost.summary?batch=1&input=%7B%220%22%3A%7B%22projectId%22%3A%2266af95ae-af18-4063-8baf-71eb1b050875%22%7D%7D"
+        }
+      ],
+      "screenshot": "/tmp/post-onboarding-walk/route-audit.png",
+      "cta_clicked": "No projects",
+      "cta_result_url": "https://d2mtgpa71y9c8t.cloudfront.net/audit",
+      "status": "ok",
+      "issue_summary": null
+    },
+    {
+      "path": "/memory",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/memory",
+      "title": "Orbital",
+      "body_snippet": "Orbital\n/\nNo projects\nSearch or type a command\n⌘K\n$0.00\nConnecting…\nTour\nSM\nWORKFLOW\nSprint Dashboard\nAgents\nBacklog\nChannels\nUAT\nCeremonies\nRetrospective\nLIBRARY\nPersonas\nVision\nAudit Log\nMemory\nCost\nSettings\nLive updates active\nLIVE TELEMETRY\nAgents in flight\n0\nSprint cost\n—\nBudget\n—\nProject\n›\nMemory\nProject Memory\n\nDecisions, conventions, and learnings that persist across sprints. Agents read this context automatically when briefed.\n\nAll kinds\nDecisions\nConventions\nLearnings\nAnti-patterns\nGlossary\nActive\nArchived\nSuperseded\n\nNo project selected\n\nSelect a project to view its memory.\n\nSelect an entry to view details",
+      "buttons_visible": [
+        "No projects",
+        "Search or type a command\n⌘K",
+        "$0.00",
+        "Tour",
+        "SM",
+        "Personas",
+        "All kinds",
+        "Decisions",
+        "Conventions",
+        "Learnings",
+        "Anti-patterns",
+        "Glossary",
+        "Active",
+        "Archived",
+        "Superseded"
+      ],
+      "links_visible": [
+        "Sprint Dashboard → /",
+        "Agents → /agents",
+        "Backlog → /backlog",
+        "Channels → /channels",
+        "UAT → /uat",
+        "Ceremonies → /ceremonies",
+        "Retrospective → /retro",
+        "Vision → /vision",
+        "Audit Log → /audit",
+        "Memory → /memory",
+        "Cost → /cost",
+        "Settings → /settings"
+      ],
+      "console_errors": [
+        "WebSocket connection to 'wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/' failed: Error during WebSocket handshake: Unexpected response code: 403",
+        "Failed to load resource: the server responded with a status of 500 ()"
+      ],
+      "http_4xx_5xx": [
+        {
+          "status": 500,
+          "url": "https://hhhfb8pid6.execute-api.us-east-1.amazonaws.com/trpc/cost.summary?batch=1&input=%7B%220%22%3A%7B%22projectId%22%3A%2266af95ae-af18-4063-8baf-71eb1b050875%22%7D%7D"
+        }
+      ],
+      "screenshot": "/tmp/post-onboarding-walk/route-memory.png",
+      "cta_clicked": "No projects",
+      "cta_result_url": "https://d2mtgpa71y9c8t.cloudfront.net/memory",
+      "status": "ok",
+      "issue_summary": null
+    },
+    {
+      "path": "/agents",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/agents",
+      "title": "Orbital",
+      "body_snippet": "Orbital\n/\nNo projects\nSearch or type a command\n⌘K\n$0.00\nConnecting…\nTour\nSM\nWORKFLOW\nSprint Dashboard\nAgents\nBacklog\nChannels\nUAT\nCeremonies\nRetrospective\nLIBRARY\nPersonas\nVision\nAudit Log\nMemory\nCost\nSettings\nLive updates active\nLIVE TELEMETRY\nAgents in flight\n0\nSprint cost\n—\nBudget\n—\nAgent Inspector\n\nLive view of all active agent workers\n\n0 active\nFilter:\nall\nrunning\nawaiting\nidle\nterminated\nNo workers match the current filter",
+      "buttons_visible": [
+        "No projects",
+        "Search or type a command\n⌘K",
+        "$0.00",
+        "Tour",
+        "SM",
+        "Personas",
+        "all",
+        "running",
+        "awaiting",
+        "idle",
+        "terminated"
+      ],
+      "links_visible": [
+        "Sprint Dashboard → /",
+        "Agents → /agents",
+        "Backlog → /backlog",
+        "Channels → /channels",
+        "UAT → /uat",
+        "Ceremonies → /ceremonies",
+        "Retrospective → /retro",
+        "Vision → /vision",
+        "Audit Log → /audit",
+        "Memory → /memory",
+        "Cost → /cost",
+        "Settings → /settings"
+      ],
+      "console_errors": [
+        "Failed to load resource: the server responded with a status of 500 ()",
+        "WebSocket connection to 'wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/ws' failed: Error during WebSocket handshake: Unexpected response code: 403"
+      ],
+      "http_4xx_5xx": [
+        {
+          "status": 500,
+          "url": "https://hhhfb8pid6.execute-api.us-east-1.amazonaws.com/trpc/cost.summary?batch=1&input=%7B%220%22%3A%7B%22projectId%22%3A%2266af95ae-af18-4063-8baf-71eb1b050875%22%7D%7D"
+        }
+      ],
+      "screenshot": "/tmp/post-onboarding-walk/route-agents.png",
+      "cta_clicked": "No projects",
+      "cta_result_url": "https://d2mtgpa71y9c8t.cloudfront.net/agents",
+      "status": "ok",
+      "issue_summary": null
+    },
+    {
+      "path": "/cost",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/cost",
+      "title": "Orbital",
+      "body_snippet": "Orbital\n/\nNo projects\nSearch or type a command\n⌘K\n$0.00\nConnecting…\nTour\nSM\nWORKFLOW\nSprint Dashboard\nAgents\nBacklog\nChannels\nUAT\nCeremonies\nRetrospective\nLIBRARY\nPersonas\nVision\nAudit Log\nMemory\nCost\nSettings\nLive updates active\nLIVE TELEMETRY\nAgents in flight\n0\nSprint cost\n—\nBudget\n—\nOrbital\n›\nCost\nCost Governance\n\nLive cost burn, per-task ledger, and budget management.\n\nLive burn\n1h\n24h\n7d\nBurn (24h)\n$0.2500\n$0.5000\n$0.7500\n$1.0000\nNo cost data yet\nPer-call ledger\nNo cost entries yet. LLM calls will appear here once workers are running.\nBudget configuration\nPROJECT\n\nProject 66af95ae…\n\nOn track\nSpent\n$0.00\nSoft threshold\n\n80%\n\nOn hard\n\npause\n\nOn soft\n\nalert\n\nEdit budget\nHard kill switch\n\nSIGTERM all active workers in this project scope immediately. Use only in emergencies or when budget is critically exceeded.\n\nKill all workers",
+      "buttons_visible": [
+        "No projects",
+        "Search or type a command\n⌘K",
+        "$0.00",
+        "Tour",
+        "SM",
+        "Personas",
+        "1h",
+        "24h",
+        "7d",
+        "Edit budget",
+        "Kill all workers"
+      ],
+      "links_visible": [
+        "Sprint Dashboard → /",
+        "Agents → /agents",
+        "Backlog → /backlog",
+        "Channels → /channels",
+        "UAT → /uat",
+        "Ceremonies → /ceremonies",
+        "Retrospective → /retro",
+        "Vision → /vision",
+        "Audit Log → /audit",
+        "Memory → /memory",
+        "Cost → /cost",
+        "Settings → /settings"
+      ],
+      "console_errors": [
+        "WebSocket connection to 'wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/ws' failed: Error during WebSocket handshake: Unexpected response code: 403",
+        "Failed to load resource: the server responded with a status of 500 ()"
+      ],
+      "http_4xx_5xx": [
+        {
+          "status": 500,
+          "url": "https://hhhfb8pid6.execute-api.us-east-1.amazonaws.com/trpc/cost.summary?batch=1&input=%7B%220%22%3A%7B%22projectId%22%3A%2266af95ae-af18-4063-8baf-71eb1b050875%22%7D%7D"
+        }
+      ],
+      "screenshot": "/tmp/post-onboarding-walk/route-cost.png",
+      "cta_clicked": "No projects",
+      "cta_result_url": "https://d2mtgpa71y9c8t.cloudfront.net/cost",
+      "status": "broken-cta",
+      "issue_summary": "CTA \"No projects\" surfaced an error"
+    },
+    {
+      "path": "/settings",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/settings/general",
+      "title": "Orbital",
+      "body_snippet": "Orbital\n/\nNo projects\nSearch or type a command\n⌘K\n$0.00\nConnecting…\nTour\nSM\nWORKFLOW\nSprint Dashboard\nAgents\nBacklog\nChannels\nUAT\nCeremonies\nRetrospective\nLIBRARY\nPersonas\nVision\nAudit Log\nMemory\nCost\nSettings\nLive updates active\nLIVE TELEMETRY\nAgents in flight\n0\nSprint cost\n—\nBudget\n—\n\nWORKSPACE\n\nSettings\n\nConfigure how Orbital runs on your project. Most values are read-only in v1; the Coming Soon sections are wireframed and will land in v2.\n\nGeneral\nMode, identity, vision, notifications.\nIntegrations\nAnthropic, GitHub, Monday, Hub.\nAgents\nPersonas, routing, models, hooks.\nSprints\nCeremonies, board, budget.\nTeam\nHub members and roles.\nBilling\nPlan and invoices.\nGeneral\n\nMode, identity, notifications, and the project vision summary.\n\nIDENTITY\nInstallation\nInstall ID\n019df3a4-5478-724e-937f-c1ab63bf74cf\nMode\nunknown\nAnthropic API key\nMISSING\nMonday connection\nNOT CONFIGURED\nSubsystems\ndatabase\nDOWN\nsql2 is not a function\nws_hub\nDEGRADED\nmcp_gateway\nDEGRADED\nMCP gateway socket not presen",
+      "buttons_visible": [
+        "No projects",
+        "Search or type a command\n⌘K",
+        "$0.00",
+        "Tour",
+        "SM",
+        "Personas",
+        "Go to Vision",
+        "Blocked",
+        "Send test toast"
+      ],
+      "links_visible": [
+        "Sprint Dashboard → /",
+        "Agents → /agents",
+        "Backlog → /backlog",
+        "Channels → /channels",
+        "UAT → /uat",
+        "Ceremonies → /ceremonies",
+        "Retrospective → /retro",
+        "Vision → /vision",
+        "Audit Log → /audit",
+        "Memory → /memory",
+        "Cost → /cost",
+        "Settings → /settings",
+        "General\nMode, identity, vision, notifications. → /settings/general/general",
+        "Integrations\nAnthropic, GitHub, Monday, Hub. → /settings/general/integrations",
+        "Agents\nPersonas, routing, models, hooks. → /settings/general/agents",
+        "Sprints\nCeremonies, board, budget. → /settings/general/sprints",
+        "Team\nHub members and roles. → /settings/general/team",
+        "Billing\nPlan and invoices. → /settings/general/billing",
+        "Open Admin Backups → → /admin/backups"
+      ],
+      "console_errors": [
+        "Failed to load resource: the server responded with a status of 500 ()"
+      ],
+      "http_4xx_5xx": [
+        {
+          "status": 500,
+          "url": "https://hhhfb8pid6.execute-api.us-east-1.amazonaws.com/trpc/cost.summary?batch=1&input=%7B%220%22%3A%7B%22projectId%22%3A%2266af95ae-af18-4063-8baf-71eb1b050875%22%7D%7D"
+        }
+      ],
+      "screenshot": "/tmp/post-onboarding-walk/route-settings.png",
+      "cta_clicked": "No projects",
+      "cta_result_url": "https://d2mtgpa71y9c8t.cloudfront.net/settings/general",
+      "status": "ok",
+      "issue_summary": null
+    },
+    {
+      "path": "/settings/general",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/welcome",
+      "title": "Orbital",
+      "body_snippet": "Orbital\nDocs\n\nWELCOME TO ORBITAL\n\nShip a sprint by end of day.\n\nOrbital wires up your board, your repo, your CI — and teaches a roster of agents how to actually work on your codebase. Pick the path that matches you. Setup takes between two and ten minutes.\n\nReal provisioning — Monday board, GitHub repo, CI workflow.\nAgents are taught your conventions, not generic ones.\nSkip any step and recover it later in Settings.\nRecommended · ≈ 7 min\nStart a new project\n\nOrbital creates the Monday board, the GitHub repo, the CI pipeline — then teaches a roster of agents how to work on it. Best for greenfield work.\n\nMonday board\nGitHub repo\nCI + webhooks\nAgent memory\nStart setup\nOR\n≈ 10 min · ~$0.85 LLM\nConnect an existing repo\n\nPoint us at your Monday board + GitHub repo. Orbital reads your stack, infers your conventions, and gets to work.\n\nStart\n≈ 2 min · free\nJoin a team hub\n\nPaste an invite URL from a teammate to land directly on their workspace. No setup required.\n\nStart\n\nRefresh mid-flow and y",
+      "buttons_visible": [],
+      "links_visible": [
+        "Docs → https://orbital.dev/docs"
+      ],
+      "console_errors": [
+        "WebSocket connection to 'wss://zc2367u5d1.execute-api.us-east-1.amazonaws.com/ws' failed: Error during WebSocket handshake: Unexpected response code: 403"
+      ],
+      "http_4xx_5xx": [],
+      "screenshot": "/tmp/post-onboarding-walk/route-settings-general.png",
+      "cta_clicked": null,
+      "cta_result_url": null,
+      "status": "ok",
+      "issue_summary": null
+    },
+    {
+      "path": "/settings/integrations",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/welcome",
+      "title": "Orbital",
+      "body_snippet": "Orbital\nDocs\n\nWELCOME TO ORBITAL\n\nShip a sprint by end of day.\n\nOrbital wires up your board, your repo, your CI — and teaches a roster of agents how to actually work on your codebase. Pick the path that matches you. Setup takes between two and ten minutes.\n\nReal provisioning — Monday board, GitHub repo, CI workflow.\nAgents are taught your conventions, not generic ones.\nSkip any step and recover it later in Settings.\nRecommended · ≈ 7 min\nStart a new project\n\nOrbital creates the Monday board, the GitHub repo, the CI pipeline — then teaches a roster of agents how to work on it. Best for greenfield work.\n\nMonday board\nGitHub repo\nCI + webhooks\nAgent memory\nStart setup\nOR\n≈ 10 min · ~$0.85 LLM\nConnect an existing repo\n\nPoint us at your Monday board + GitHub repo. Orbital reads your stack, infers your conventions, and gets to work.\n\nStart\n≈ 2 min · free\nJoin a team hub\n\nPaste an invite URL from a teammate to land directly on their workspace. No setup required.\n\nStart\n\nRefresh mid-flow and y",
+      "buttons_visible": [],
+      "links_visible": [
+        "Docs → https://orbital.dev/docs"
+      ],
+      "console_errors": [],
+      "http_4xx_5xx": [],
+      "screenshot": "/tmp/post-onboarding-walk/route-settings-integrations.png",
+      "cta_clicked": null,
+      "cta_result_url": null,
+      "status": "ok",
+      "issue_summary": null
+    },
+    {
+      "path": "/settings/agents",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/welcome",
+      "title": "Orbital",
+      "body_snippet": "Orbital\nDocs\n\nWELCOME TO ORBITAL\n\nShip a sprint by end of day.\n\nOrbital wires up your board, your repo, your CI — and teaches a roster of agents how to actually work on your codebase. Pick the path that matches you. Setup takes between two and ten minutes.\n\nReal provisioning — Monday board, GitHub repo, CI workflow.\nAgents are taught your conventions, not generic ones.\nSkip any step and recover it later in Settings.\nRecommended · ≈ 7 min\nStart a new project\n\nOrbital creates the Monday board, the GitHub repo, the CI pipeline — then teaches a roster of agents how to work on it. Best for greenfield work.\n\nMonday board\nGitHub repo\nCI + webhooks\nAgent memory\nStart setup\nOR\n≈ 10 min · ~$0.85 LLM\nConnect an existing repo\n\nPoint us at your Monday board + GitHub repo. Orbital reads your stack, infers your conventions, and gets to work.\n\nStart\n≈ 2 min · free\nJoin a team hub\n\nPaste an invite URL from a teammate to land directly on their workspace. No setup required.\n\nStart\n\nRefresh mid-flow and y",
+      "buttons_visible": [],
+      "links_visible": [
+        "Docs → https://orbital.dev/docs"
+      ],
+      "console_errors": [],
+      "http_4xx_5xx": [],
+      "screenshot": "/tmp/post-onboarding-walk/route-settings-agents.png",
+      "cta_clicked": null,
+      "cta_result_url": null,
+      "status": "ok",
+      "issue_summary": null
+    },
+    {
+      "path": "/settings/sprints",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/welcome",
+      "title": "Orbital",
+      "body_snippet": "Orbital\nDocs\n\nWELCOME TO ORBITAL\n\nShip a sprint by end of day.\n\nOrbital wires up your board, your repo, your CI — and teaches a roster of agents how to actually work on your codebase. Pick the path that matches you. Setup takes between two and ten minutes.\n\nReal provisioning — Monday board, GitHub repo, CI workflow.\nAgents are taught your conventions, not generic ones.\nSkip any step and recover it later in Settings.\nRecommended · ≈ 7 min\nStart a new project\n\nOrbital creates the Monday board, the GitHub repo, the CI pipeline — then teaches a roster of agents how to work on it. Best for greenfield work.\n\nMonday board\nGitHub repo\nCI + webhooks\nAgent memory\nStart setup\nOR\n≈ 10 min · ~$0.85 LLM\nConnect an existing repo\n\nPoint us at your Monday board + GitHub repo. Orbital reads your stack, infers your conventions, and gets to work.\n\nStart\n≈ 2 min · free\nJoin a team hub\n\nPaste an invite URL from a teammate to land directly on their workspace. No setup required.\n\nStart\n\nRefresh mid-flow and y",
+      "buttons_visible": [],
+      "links_visible": [
+        "Docs → https://orbital.dev/docs"
+      ],
+      "console_errors": [],
+      "http_4xx_5xx": [],
+      "screenshot": "/tmp/post-onboarding-walk/route-settings-sprints.png",
+      "cta_clicked": null,
+      "cta_result_url": null,
+      "status": "ok",
+      "issue_summary": null
+    },
+    {
+      "path": "/settings/team",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/welcome",
+      "title": "Orbital",
+      "body_snippet": "Orbital\nDocs\n\nWELCOME TO ORBITAL\n\nShip a sprint by end of day.\n\nOrbital wires up your board, your repo, your CI — and teaches a roster of agents how to actually work on your codebase. Pick the path that matches you. Setup takes between two and ten minutes.\n\nReal provisioning — Monday board, GitHub repo, CI workflow.\nAgents are taught your conventions, not generic ones.\nSkip any step and recover it later in Settings.\nRecommended · ≈ 7 min\nStart a new project\n\nOrbital creates the Monday board, the GitHub repo, the CI pipeline — then teaches a roster of agents how to work on it. Best for greenfield work.\n\nMonday board\nGitHub repo\nCI + webhooks\nAgent memory\nStart setup\nOR\n≈ 10 min · ~$0.85 LLM\nConnect an existing repo\n\nPoint us at your Monday board + GitHub repo. Orbital reads your stack, infers your conventions, and gets to work.\n\nStart\n≈ 2 min · free\nJoin a team hub\n\nPaste an invite URL from a teammate to land directly on their workspace. No setup required.\n\nStart\n\nRefresh mid-flow and y",
+      "buttons_visible": [],
+      "links_visible": [
+        "Docs → https://orbital.dev/docs"
+      ],
+      "console_errors": [],
+      "http_4xx_5xx": [],
+      "screenshot": "/tmp/post-onboarding-walk/route-settings-team.png",
+      "cta_clicked": null,
+      "cta_result_url": null,
+      "status": "ok",
+      "issue_summary": null
+    },
+    {
+      "path": "/settings/billing",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/welcome",
+      "title": "Orbital",
+      "body_snippet": "Orbital\nDocs\n\nWELCOME TO ORBITAL\n\nShip a sprint by end of day.\n\nOrbital wires up your board, your repo, your CI — and teaches a roster of agents how to actually work on your codebase. Pick the path that matches you. Setup takes between two and ten minutes.\n\nReal provisioning — Monday board, GitHub repo, CI workflow.\nAgents are taught your conventions, not generic ones.\nSkip any step and recover it later in Settings.\nRecommended · ≈ 7 min\nStart a new project\n\nOrbital creates the Monday board, the GitHub repo, the CI pipeline — then teaches a roster of agents how to work on it. Best for greenfield work.\n\nMonday board\nGitHub repo\nCI + webhooks\nAgent memory\nStart setup\nOR\n≈ 10 min · ~$0.85 LLM\nConnect an existing repo\n\nPoint us at your Monday board + GitHub repo. Orbital reads your stack, infers your conventions, and gets to work.\n\nStart\n≈ 2 min · free\nJoin a team hub\n\nPaste an invite URL from a teammate to land directly on their workspace. No setup required.\n\nStart\n\nRefresh mid-flow and y",
+      "buttons_visible": [],
+      "links_visible": [
+        "Docs → https://orbital.dev/docs"
+      ],
+      "console_errors": [],
+      "http_4xx_5xx": [],
+      "screenshot": "/tmp/post-onboarding-walk/route-settings-billing.png",
+      "cta_clicked": null,
+      "cta_result_url": null,
+      "status": "ok",
+      "issue_summary": null
+    },
+    {
+      "path": "/admin",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/admin",
+      "title": "Orbital",
+      "body_snippet": "Orbital\n›\nAdmin\nOperations console\n\nHealth, workers, keys, backups, verify, and reset — every operation that was previously a CLI command, now in one place.\n\nSet admin token\nHealth\nWorkers\nKeys\nBackups\nVerify\nReset\nHygiene\n\nUPTIME\n\n5m 25s\n\nSTARTED AT\n\n5/4/2026, 10:35:49 AM\n\nINSTALL ID\n\n019df3a6-5e87-7838-b696-f779b8ed7d33\n\nSubsystems\n\ndatabase\n\nsql2 is not a function\n\nDOWN\n\nws_hub\n\nDEGRADED\n\nmcp_gateway\n\nMCP gateway socket not present at <orbital_home>/orbital.sock\n\nDEGRADED\nMetrics snapshot\n\ncollected 10:41:13 AM\n\nACTIVE WORKERS\n0\nCAPABILITY DENIALS\n0\nTOTAL EVENTS\n238\nSPRINT COST\n$0.00\nSPRINT BUDGET\n—\nEXPORTS COMPLETED\n0",
+      "buttons_visible": [
+        "Set admin token"
+      ],
+      "links_visible": [
+        "Health → /admin",
+        "Workers → /admin/workers",
+        "Keys → /admin/keys",
+        "Backups → /admin/backups",
+        "Verify → /admin/verify",
+        "Reset → /admin/reset",
+        "Hygiene → /admin/hygiene"
+      ],
+      "console_errors": [],
+      "http_4xx_5xx": [],
+      "screenshot": "/tmp/post-onboarding-walk/route-admin.png",
+      "cta_clicked": "Set admin token",
+      "cta_result_url": "https://d2mtgpa71y9c8t.cloudfront.net/admin",
+      "status": "ok",
+      "issue_summary": null
+    },
+    {
+      "path": "/admin/integrations",
+      "url_after_load": "https://d2mtgpa71y9c8t.cloudfront.net/admin/integrations",
+      "title": "Orbital",
+      "body_snippet": "Orbital\n›\nAdmin\n›\nIntegrations\nTool integrations\n\nConfigure the external services Orbital uses on behalf of every project in this install. Each connection persists for all users; individual onboarding wizards no longer ask for these credentials.\n\nOverview\nAnthropic\nMonday\nGitHub\nOverview\n\nStatus of every install-wide connection. Click a card to manage credentials.\n\nAnthropic\n\nLLM provider. Powers every persona's reasoning + drafting.\n\nNot connected\n\nNo key on file\n\nTest connection\nManage →\nGitHub\n\nRepo creation, PR loop, webhooks, CI workflow commits.\n\nNot connected\n\nNot installed\n\nManage →\nMonday\n\nBacklog board mirror. Optional — Orbital ships an internal backlog if absent.\n\nNot connected\n\nNo token on file\n\nManage →\nTeam hub\n\nFederated team workspace. Connect to a teammate's hub via invite URL.\n\nUnknown\n\nSingle-machine mode unless you've joined a hub via invite URL\n\nManage →",
+      "buttons_visible": [
+        "Test connection"
+      ],
+      "links_visible": [
+        "Orbital → /",
+        "Admin → /admin/integrations",
+        "Overview → /admin/integrations",
+        "Anthropic → /admin/integrations/anthropic",
+        "Monday → /admin/integrations/monday",
+        "GitHub → /admin/integrations/github",
+        "Manage → → /settings/integrations/anthropic",
+        "Manage → → /settings/integrations/github",
+        "Manage → → /settings/integrations/monday",
+        "Manage → → /settings/integrations/hub"
+      ],
+      "console_errors": [],
+      "http_4xx_5xx": [],
+      "screenshot": "/tmp/post-onboarding-walk/route-admin-integrations.png",
+      "cta_clicked": "Test connection",
+      "cta_result_url": "https://d2mtgpa71y9c8t.cloudfront.net/admin/integrations",
+      "status": "ok",
+      "issue_summary": null
+    }
+  ]
+}

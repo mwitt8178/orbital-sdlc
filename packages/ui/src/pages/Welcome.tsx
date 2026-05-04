@@ -16,6 +16,7 @@ import { OrbitalMark } from '../components/onboarding/OrbitalMark.js'
 import { Button } from '../components/ui/Button.js'
 import { DURATION, EASE, fadeInUp } from '../components/onboarding/motion.js'
 import { JOIN_HUB_STEPS, prettifyStepId } from '../components/features/onboarding/flow-steps.js'
+import { useActiveProjectStore } from '../store/active-project.js'
 
 type FlowKind = 'new_project' | 'existing_repo' | 'join_hub'
 
@@ -74,9 +75,15 @@ export default function Welcome() {
     setResumed(true)
   }
 
-  const finalize = async () => {
+  const setActiveProject = useActiveProjectStore((s) => s.setActiveProject)
+
+  const finalize = async (projectId: string | null = null) => {
+    if (projectId) {
+      setActiveProject(projectId)
+    }
     await completeOldRouter.mutateAsync().catch(() => null)
     await utils.onboarding.status.invalidate()
+    await utils.projects.list.invalidate().catch(() => null)
     navigate('/')
   }
 
@@ -107,7 +114,7 @@ export default function Welcome() {
           initialState={activeSession.stateJson}
           hasAnthropic={status.data?.hasAnthropicToken ?? false}
           hasMonday={status.data?.hasMondayToken ?? false}
-          onComplete={() => void finalize()}
+          onComplete={(projectId) => void finalize(projectId)}
           onAbandon={() => void dropResumed()}
         />
       )

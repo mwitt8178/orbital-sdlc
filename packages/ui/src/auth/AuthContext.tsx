@@ -15,6 +15,10 @@ import {
   type SessionTokens,
 } from './cognito.js'
 import { clearSession, loadSession, saveSession, type PersistedSession } from './storage.js'
+// Wire WS auth accessor: the WebSocket client also needs the id token so the
+// $connect Lambda accepts the handshake (?token=<jwt>).
+// [Engineer-Principal · Opus · run-post-onboarding-100]
+import { registerWsIdTokenAccessor } from '../services/ws.js'
 
 interface AuthUser {
   email: string
@@ -136,9 +140,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setGlobalIdTokenAccessor(getIdToken)
     setGlobalSignOut(signOut)
+    registerWsIdTokenAccessor(getIdToken)
     return () => {
       setGlobalIdTokenAccessor(() => null)
       setGlobalSignOut(() => undefined)
+      registerWsIdTokenAccessor(() => null)
     }
   }, [getIdToken, signOut])
 

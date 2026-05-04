@@ -108,8 +108,13 @@ import {
 import { createMemoryService } from '../../memory/service.js'
 import { createMondayClient } from '../../backlog/monday-client.js'
 import { createGithubClient } from '../../github/client.js'
+import { createProjectsService, type ProjectsService } from '../../projects/service.js'
+import { getScmClient } from '../../scm/factory.js'
+import { OrbitalError } from '@orbital/types'
 import type { Actor } from '@orbital/types'
 import { logger } from '../../config/logger.js'
+import { onboardingSessions } from '@orbital/db'
+import { eq as drizzleEq } from 'drizzle-orm'
 
 // ---------------------------------------------------------------------------
 // Keychain account names
@@ -137,6 +142,7 @@ let _githubProvisioner: DefaultGithubProvisioner | null = null
 let _codebaseAnalyzer: CodebaseAnalyzer | null = null
 let _memorySeeder: MemorySeeder | null = null
 let _systemTeacher: SystemTeacher | null = null
+let _projectsService: ProjectsService | null = null
 
 function getEventStore(): ReturnType<typeof createEventStore> {
   if (_eventStore === null) _eventStore = createEventStore(db, sqlPool)
@@ -200,6 +206,23 @@ function getMemorySeeder(): MemorySeeder {
   return _memorySeeder
 }
 
+function getProjectsService(): ProjectsService {
+  if (_projectsService === null) {
+    const monday = createMondayClient()
+    const github = createGithubClient()
+    const scmClient = getScmClient(
+      { scmProvider: 'internal' },
+      { region: process.env['AWS_REGION'] ?? 'us-east-1', githubClient: github },
+    )
+    _projectsService = createProjectsService(db, getEventStore(), {
+      mondayClient: monday,
+      githubClient: github,
+      scmClient,
+    })
+  }
+  return _projectsService
+}
+
 function getSystemTeacher(): SystemTeacher {
   if (_systemTeacher === null) {
     let provisioner: DefaultGithubProvisioner | null = null
@@ -225,6 +248,7 @@ export function resetOnboardingRouterSingletons(): void {
   _codebaseAnalyzer = null
   _memorySeeder = null
   _systemTeacher = null
+  _projectsService = null
 }
 
 const SYSTEM_ACTOR: Actor = { type: 'system', component: 'audit_service' }
@@ -571,7 +595,76 @@ export function createOnboardingRouter() {
       .output(completeFlowOutputSchema)
       .mutation(async ({ input }) => {
         try {
-          const row = await getFlowService().complete(input.sessionId, input.projectId ?? null)
+          // ------------------------------------------------------------------
+          // B1 fix — materialise a real `projects` row from session state
+          // before flipping the session to completed. Idempotent on slug.
+          // [Engineer-Principal · Opus · run-post-onboarding]
+          // ------------------------------------------------------------------
+          let canonicalProjectId: string | null = input.projectId ?? null
+          try {
+            const sessionRows = await db
+              .select()
+              .from(onboardingSessions)
+              .where(drizzleEq(onboardingSessions.sessionId, input.sessionId))
+              .limit(1)
+            const sessionRow = sessionRows[0]
+            if (sessionRow) {
+              const stateJson = (sessionRow.stateJson as Record<string, unknown> | null) ?? {}
+              const basics = (stateJson['basics'] as Record<string, unknown> | undefined) ?? {}
+              const tooling = (stateJson['tooling'] as Record<string, unknown> | undefined) ?? {}
+              const name = typeof basics['name'] === 'string' ? (basics['name'] as string).trim() : ''
+              const rawSlug = typeof basics['slug'] === 'string' ? (basics['slug'] as string) : ''
+              const slug = rawSlug.length > 0
+                ? rawSlug.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '')
+                : ''
+              const description = typeof basics['description'] === 'string'
+                ? (basics['description'] as string)
+                : undefined
+              const scmProviderRaw = typeof tooling['scmProvider'] === 'string'
+                ? (tooling['scmProvider'] as string)
+                : 'internal'
+              const ticketProviderRaw = typeof tooling['ticketProvider'] === 'string'
+                ? (tooling['ticketProvider'] as string)
+                : 'internal'
+
+              if (name.length > 0 && slug.length > 0) {
+                const projectsService = getProjectsService()
+                try {
+                  const created = await projectsService.create({
+                    name,
+                    slug,
+                    description,
+                    scmProvider: (scmProviderRaw as 'internal' | 'github' | 'codecommit'),
+                    ticketProvider: (ticketProviderRaw as 'internal' | 'monday'),
+                  })
+                  canonicalProjectId = created.projectId
+                } catch (createErr) {
+                  // Idempotent recovery: slug already exists → look it up.
+                  const isConflict =
+                    createErr instanceof OrbitalError &&
+                    String(createErr.code).includes('CONFLICT_SLUG')
+                  if (isConflict) {
+                    const { loadOrCreateInstall } = await import('../../config/install.js')
+                    const install = await loadOrCreateInstall()
+                    const existing = await projectsService.getBySlug(slug, install.install_id)
+                    if (existing) canonicalProjectId = existing.projectId
+                  } else {
+                    logger.warn(
+                      { err: createErr instanceof Error ? createErr.message : String(createErr) },
+                      'completeSession: projectsService.create failed (non-fatal)',
+                    )
+                  }
+                }
+              }
+            }
+          } catch (provErr) {
+            logger.warn(
+              { err: provErr instanceof Error ? provErr.message : String(provErr) },
+              'completeSession: project provisioning side-effect failed (non-fatal)',
+            )
+          }
+
+          const row = await getFlowService().complete(input.sessionId, canonicalProjectId)
           // B2: also mark install-level setup complete server-side so the
           // SetupGate stops bouncing every protected route to /welcome.
           // Without this, the user can finish the wizard and still be locked.

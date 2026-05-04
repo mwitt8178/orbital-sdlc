@@ -442,7 +442,26 @@ function buildWsUrl(cursor: string | null): string | null {
   }).env
 
   const fromEnv = env?.['VITE_WS_URL']
-  const cursorParam = cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''
+
+  // For API Gateway WebSocket the $connect Lambda requires `?token=<jwt>`
+  // (Cognito browser auth path). Without it the upgrade returns 401 and the
+  // browser surfaces "WebSocket connection failed" as a console error on
+  // every authenticated route. Read the cached id token at connect time —
+  // if absent (not signed in yet) we skip the WS to avoid a guaranteed
+  // failure loop; AppShell will re-init once auth lands.
+  // [Engineer-Principal · Opus · run-post-onboarding-100]
+  let token: string | null = null
+  try {
+    token = readIdTokenForWs()
+  } catch {
+    token = null
+  }
+
+  const params = new URLSearchParams()
+  if (cursor) params.set('cursor', cursor)
+  if (token) params.set('token', token)
+  const qs = params.toString()
+  const cursorParam = qs ? `?${qs}` : ''
 
   if (fromEnv && fromEnv.length > 0) {
     const base = fromEnv.replace(/\/$/, '')
@@ -454,6 +473,11 @@ function buildWsUrl(cursor: string | null): string | null {
       base.includes('execute-api.') ||
       /\/\$default(?:$|\?)/.test(base) ||
       base.endsWith('/$default')
+    // If this is an API GW WS and we have no token, do not attempt to connect:
+    // the upgrade will be rejected with 401 by the $connect Lambda. Returning
+    // null keeps the connection store in 'disconnected' rather than spamming
+    // the console with handshake failures.
+    if (isApiGwWs && !token) return null
     const withPath = isApiGwWs || base.endsWith('/ws') ? base : `${base}/ws`
     return `${withPath}${cursorParam}`
   }
@@ -461,6 +485,17 @@ function buildWsUrl(cursor: string | null): string | null {
   if (typeof window === 'undefined' || !window.location?.host) return null
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   return `${proto}//${window.location.host}/ws${cursorParam}`
+}
+
+// Late-bound accessor so we don't create a hard module dependency from ws.ts
+// onto AuthContext. AuthContext registers its accessor on mount; until that
+// happens we treat it as "no token yet".
+let _wsIdTokenAccessor: () => string | null = () => null
+export function registerWsIdTokenAccessor(fn: () => string | null): void {
+  _wsIdTokenAccessor = fn
+}
+function readIdTokenForWs(): string | null {
+  return _wsIdTokenAccessor()
 }
 
 // ---------------------------------------------------------------------------
