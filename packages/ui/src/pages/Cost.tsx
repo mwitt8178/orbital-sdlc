@@ -15,6 +15,7 @@ import { useState, useEffect, useRef } from 'react'
 import { trpc } from '../services/trpc.js'
 import { buildPublicWsUrl } from '../services/ws.js'
 import { useActiveProjectStore } from '../store/active-project.js'
+import { ProjectBreadcrumb } from '../components/layout/ProjectBreadcrumb.js'
 import { LiveBurnChart } from '../components/features/cost/LiveBurnChart.js'
 import { BudgetCard } from '../components/features/cost/BudgetCard.js'
 import { CostLedgerTable } from '../components/features/cost/CostLedgerTable.js'
@@ -103,7 +104,7 @@ export default function Cost() {
     <div className="mx-auto max-w-[1400px] px-8 py-6">
       <header className="mb-6">
         <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
-          <span>Orbital</span>
+          <ProjectBreadcrumb />
           <span aria-hidden="true">›</span>
           <span>Cost</span>
         </div>

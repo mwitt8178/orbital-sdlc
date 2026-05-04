@@ -17,6 +17,7 @@ import { useActiveProject } from '../services/use-active-project.js'
 import { trpc } from '../services/trpc.js'
 import { MemoryEntryList, type MemoryEntryListItem } from '../components/features/memory/MemoryEntryList.js'
 import { MemoryEntryDetail } from '../components/features/memory/MemoryEntryDetail.js'
+import { ProjectBreadcrumb } from '../components/layout/ProjectBreadcrumb.js'
 import { Button } from '../components/ui/Button.js'
 import { Input } from '../components/ui/Input.js'
 import { Modal } from '../components/ui/Modal.js'
@@ -224,7 +225,7 @@ export default function Memory() {
         <div className="flex items-start justify-between">
           <div>
             <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
-              <span>Project</span>
+              <ProjectBreadcrumb />
               <span aria-hidden="true">›</span>
               <span>Memory</span>
             </div>

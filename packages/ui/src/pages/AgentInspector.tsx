@@ -28,6 +28,7 @@ import type { WorkerInspection } from '../components/features/inspection/types.j
 // [Engineer-Sr · Sonnet · run-round7-08-operator-attribution]
 import { OperatorBadge, type TeamMember } from '../components/identity/OperatorBadge.js'
 import { OperatorFilter, type OperatorFilterValue } from '../components/identity/OperatorFilter.js'
+import { ProjectBreadcrumb } from '../components/layout/ProjectBreadcrumb.js'
 
 // ---------------------------------------------------------------------------
 // Detail drawer
@@ -293,6 +294,11 @@ export default function AgentInspector() {
       <div className="border-b border-slate-200 bg-white px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
+            <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
+              <ProjectBreadcrumb />
+              <span aria-hidden="true">›</span>
+              <span>Agents</span>
+            </div>
             <h1 className="text-lg font-semibold text-slate-900">Agent Inspector</h1>
             <p className="text-sm text-slate-500">Live view of all active agent workers</p>
           </div>

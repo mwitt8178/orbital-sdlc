@@ -32,6 +32,7 @@ import { ErrorMessage } from '../components/ui/ErrorMessage.js'
 import { Button } from '../components/ui/Button.js'
 import { Modal } from '../components/ui/Modal.js'
 import { Badge } from '../components/ui/Badge.js'
+import { ProjectBreadcrumb } from '../components/layout/ProjectBreadcrumb.js'
 import { EmptyState } from '../components/ui/EmptyState.js'
 import { addStorySubscription, removeStorySubscription } from '../store/storySubs.js'
 
@@ -186,6 +187,15 @@ export default function StoryDetail() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 p-6">
+      <div className="flex items-center gap-2 text-xs text-slate-500">
+        <ProjectBreadcrumb />
+        <span aria-hidden="true">›</span>
+        <Link to="/stories" className="hover:text-slate-700 hover:underline">
+          Review queue
+        </Link>
+        <span aria-hidden="true">›</span>
+        <span>Story</span>
+      </div>
       <Link to="/stories" className="text-sm text-brand-600 hover:underline">
         ← Back to queue
       </Link>

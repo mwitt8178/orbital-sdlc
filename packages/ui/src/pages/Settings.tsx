@@ -23,6 +23,7 @@ import { PersonasTab } from '../components/features/settings/PersonasTab.js'
 import { RoutingPolicyTab } from '../components/features/settings/RoutingPolicyTab.js'
 import { HooksTab } from '../components/features/settings/HooksTab.js'
 import { CeremoniesTab } from '../components/features/settings/CeremoniesTab.js'
+import { ProjectBreadcrumb } from '../components/layout/ProjectBreadcrumb.js'
 import { BackupsTab } from '../components/features/settings/BackupsTab.js'
 import { NotificationsTab } from '../components/features/settings/NotificationsTab.js'
 import { IdentityTab } from '../components/features/settings/IdentityTab.js'
@@ -117,6 +118,11 @@ function SettingsShell() {
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-6 md:px-8">
       <header className="mb-6">
+        <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
+          <ProjectBreadcrumb />
+          <span aria-hidden="true">›</span>
+          <span>Settings</span>
+        </div>
         <p className="text-eyebrow font-semibold uppercase text-slate-500">Workspace</p>
         <h1 className="mt-1 text-display-lg text-slate-900">Settings</h1>
         <p className="mt-1 text-sm text-slate-600">
