@@ -58,7 +58,7 @@ import { prsRouter } from './prs.js'
 import { replayRouter } from './replay.js'
 // Round 6 #5 — Cost Governance + Hard Kill Switches
 // [Engineer-Sr · Sonnet · run-round6-05-cost-governance]
-import { costRouter } from './cost.js'
+import { costRouter, billingRouter } from './cost.js'
 // Round 6 #2 — Code-Review Persona + Agent-to-Agent Review Loop
 // [Engineer-Sr · Sonnet · run-round6-02-reviewer-persona]
 import { codeReviewsRouter } from './code-reviews.js'
@@ -357,6 +357,9 @@ export const appRouter = router({
   // Round 6 #5 — Cost Governance + Hard Kill Switches
   // [Engineer-Sr · Sonnet · run-round6-05-cost-governance]
   cost: costRouter,
+  // /settings/billing — real cost surface per project
+  // [Engineer-Principal · Opus · run-settings-billing]
+  billing: billingRouter,
   // Round 6 #2 — Code-Review Persona + Agent-to-Agent Review Loop
   // [Engineer-Sr · Sonnet · run-round6-02-reviewer-persona]
   code_reviews: codeReviewsRouter,

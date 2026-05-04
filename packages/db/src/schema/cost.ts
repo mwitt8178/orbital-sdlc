@@ -19,6 +19,7 @@ import {
   index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 
 // ---------------------------------------------------------------------------
 // cost_budgets
@@ -34,6 +35,22 @@ export const costBudgets = pgTable(
     softThresholdPct:  integer('soft_threshold_pct').notNull().default(80),
     onSoft:            text('on_soft').notNull().default('alert'),
     onHard:            text('on_hard').notNull().default('pause'),
+    /**
+     * Migration 0045: monthly cap (separate from per-sprint hardCapUsd).
+     * NULL means no monthly cap configured.
+     */
+    monthlyCapUsd:     numeric('monthly_cap_usd', { precision: 10, scale: 2 }),
+    /**
+     * Migration 0045: when hardStop = true, agents PAUSE on any cap breach
+     * (sprint, week, month). When false, the cap is advisory and only WARNS.
+     * Distinct from onHard (which only governs the existing per-sprint hardCapUsd).
+     */
+    hardStop:          boolean('hard_stop').notNull().default(false),
+    /**
+     * Migration 0045: list of email addresses opted in to daily/weekly digest.
+     * Empty array means no digest subscribers.
+     */
+    digestEmails:      text('digest_emails').array().notNull().default(sql`'{}'::text[]`),
     active:            boolean('active').notNull().default(true),
     createdAt:         timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt:         timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
