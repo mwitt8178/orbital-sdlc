@@ -35,6 +35,8 @@ import { BudgetTab } from '../components/features/settings/BudgetTab.js'
 import { HubTab } from '../components/features/settings/HubTab.js'
 import { IntegrationsDashboard } from '../components/features/settings/IntegrationsDashboard.js'
 import { ComingSoonState } from '../components/features/settings/ComingSoonState.js'
+// [Engineer-Principal · Opus · run-settings-general]
+import { ProjectGeneralSettings } from '../components/features/settings/ProjectGeneralSettings.js'
 import { DURATION, EASE } from '../components/onboarding/motion.js'
 
 interface SectionDef {
@@ -214,9 +216,11 @@ function GeneralPage() {
     <>
       <PageHeader
         title="General"
-        description="Mode, identity, notifications, and the project vision summary."
+        description="Project identity, metadata, sprint context, provisioned resources, and danger-zone actions."
       />
-      <PageSection title="Identity">
+      {/* [Engineer-Principal · Opus · run-settings-general] */}
+      <ProjectGeneralSettings />
+      <PageSection title="Installation identity">
         <IdentityTab />
       </PageSection>
       <PageSection title="Vision">

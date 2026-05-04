@@ -72,6 +72,20 @@ export const projects = pgTable(
     repoCloneUrl: text('repo_clone_url'),
     /** Soft-delete flag. NULL = active. */
     archivedAt: timestamp('archived_at', { withTimezone: true, mode: 'date' }),
+    /**
+     * Display theme color for the project (oklch / hex / named token; <=32 chars).
+     * Surfaced in /settings/general.
+     * [Engineer-Principal · Opus · run-settings-general]
+     */
+    color: text('color'),
+    /**
+     * Hard-delete tombstone. Distinct from archivedAt. NULL = not deleted.
+     * Admin-only action; emits ProjectDeleted event.
+     * [Engineer-Principal · Opus · run-settings-general]
+     */
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+    /** Logical FK into audit.events for delete provenance. */
+    deletedByEventId: uuid('deleted_by_event_id'),
     /** Logical FK into audit.events. Helps trace creation provenance. */
     createdByEventId: uuid('created_by_event_id'),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
