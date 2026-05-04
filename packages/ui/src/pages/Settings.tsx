@@ -22,6 +22,8 @@ import { motion } from 'framer-motion'
 import { PersonasTab } from '../components/features/settings/PersonasTab.js'
 import { RoutingPolicyTab } from '../components/features/settings/RoutingPolicyTab.js'
 import { HooksTab } from '../components/features/settings/HooksTab.js'
+import { PersonaClaimOrderTab } from '../components/features/settings/PersonaClaimOrderTab.js'
+import { PersonaCostSummary } from '../components/features/settings/PersonaCostSummary.js'
 import { CeremoniesTab } from '../components/features/settings/CeremoniesTab.js'
 import { ProjectBreadcrumb } from '../components/layout/ProjectBreadcrumb.js'
 import { BackupsTab } from '../components/features/settings/BackupsTab.js'
@@ -291,6 +293,9 @@ function AgentsPage() {
       <PageSection title="Personas">
         <PersonasTab />
       </PageSection>
+      <PageSection title="Claim order">
+        <PersonaClaimOrderTab />
+      </PageSection>
       <PageSection title="Routing policy">
         <RoutingPolicyTab />
       </PageSection>
@@ -299,6 +304,9 @@ function AgentsPage() {
       </PageSection>
       <PageSection title="Hooks">
         <HooksTab />
+      </PageSection>
+      <PageSection title="Cost summary">
+        <PersonaCostSummary />
       </PageSection>
     </>
   )

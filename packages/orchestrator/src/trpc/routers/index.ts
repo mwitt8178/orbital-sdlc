@@ -74,6 +74,9 @@ import { storiesRouter } from './stories.js'
 // Settings → Integrations: per-project webhook delivery surface
 // [Engineer-Principal · Opus · run-settings-integrations]
 import { webhooksRouter } from './webhooks.js'
+// Settings → Agents — per-project persona configuration
+// [Engineer-Principal · Opus · run-settings-agents]
+import { projectPersonasRouter } from './project-personas.js'
 
 // ---------------------------------------------------------------------------
 // Lazy singletons / DI registry
@@ -378,6 +381,9 @@ export const appRouter = router({
   // Settings → Integrations: per-project webhook delivery surface
   // [Engineer-Principal · Opus · run-settings-integrations]
   webhooks: webhooksRouter,
+  // Settings → Agents — per-project persona configuration
+  // [Engineer-Principal · Opus · run-settings-agents]
+  projectPersonas: projectPersonasRouter,
 })
 
 export type AppRouter = typeof appRouter

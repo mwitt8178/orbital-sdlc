@@ -31,6 +31,9 @@ import { visionRouter } from '../../orchestrator/src/trpc/routers/vision.js'
 // Orbital Review UI — reviewer-facing story ops
 // [Engineer-Principal · Opus · run-orbital-review-ui]
 import { storiesRouter } from '../../orchestrator/src/trpc/routers/stories.js'
+// Settings → Agents — per-project persona configuration
+// [Engineer-Principal · Opus · run-settings-agents]
+import { projectPersonasRouter } from '../../orchestrator/src/trpc/routers/project-personas.js'
 
 // Factory router imports — we control when they construct
 import {
@@ -270,6 +273,9 @@ export async function getLambdaAppRouter(): Promise<AnyRouter> {
     // Orbital Review UI — reviewer queue + per-story actions
     // [Engineer-Principal · Opus · run-orbital-review-ui]
     stories: storiesRouter,
+    // Settings → Agents — per-project persona configuration
+    // [Engineer-Principal · Opus · run-settings-agents]
+    projectPersonas: projectPersonasRouter,
     team: teamRouter,
     uat: uatR,
     vision: visionRouter,
