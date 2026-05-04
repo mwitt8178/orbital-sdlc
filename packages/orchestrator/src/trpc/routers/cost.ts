@@ -19,6 +19,8 @@ import { eq, and, desc, lte } from 'drizzle-orm'
 import { uuidv7 } from 'uuidv7'
 
 import { router, publicProcedure } from '../init.js'
+// fix/multi-project-isolation
+import { projectProcedure } from '../middleware/project.js'
 import { db, sql as sqlPool } from '../../db/client.js'
 import { createEventStore } from '../../events/store.js'
 import { costLedger, costEnforcementLog } from '../../db/schema/cost.js'
@@ -157,10 +159,17 @@ export const costRouter = router({
    * Aggregate cost summary for a project (optionally scoped to a sprint).
    * Includes hard cap, pct used, and today's spend.
    */
-  summary: publicProcedure
+  summary: projectProcedure
     .input(summaryInput)
     .output(summaryOutput)
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      // fix/multi-project-isolation
+      if (input.projectId !== ctx.projectId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'projectId mismatch between input and active project header',
+        })
+      }
       const svc = getCostService()
       const summary = await svc.summarize(input.projectId, input.sprintId ?? null)
       return summary
@@ -170,10 +179,17 @@ export const costRouter = router({
    * Paginated cost_ledger rows for a project/sprint/task.
    * Cursor is ISO timestamp of last row (occurred_at).
    */
-  ledger: publicProcedure
+  ledger: projectProcedure
     .input(ledgerInput)
     .output(ledgerOutput)
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      // fix/multi-project-isolation
+      if (input.projectId !== ctx.projectId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'projectId mismatch between input and active project header',
+        })
+      }
       const conditions = [eq(costLedger.projectId, input.projectId)]
       if (input.sprintId)  conditions.push(eq(costLedger.sprintId, input.sprintId))
       if (input.taskId)    conditions.push(eq(costLedger.taskId, input.taskId))

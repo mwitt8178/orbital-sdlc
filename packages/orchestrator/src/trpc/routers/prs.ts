@@ -18,8 +18,10 @@
 
 import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { router, publicProcedure } from '../init.js'
+// fix/multi-project-isolation
+import { projectProcedure } from '../middleware/project.js'
 import { db as defaultDb } from '../../db/client.js'
 import { tasks } from '../../db/schema/orchestration.js'
 import { projects } from '../../db/schema/projects.js'
@@ -82,9 +84,9 @@ async function fetchCheckRuns(
 }
 
 export const prsRouter = router({
-  byTask: publicProcedure
+  byTask: projectProcedure
     .input(byTaskInputSchema)
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       // Round 7-02 — hub proxy: PR state is shared data stored on the hub.
       // [Engineer-Sr · Sonnet · run-round7-02-local-hub-split]
       const hub = getHubClient()
@@ -97,6 +99,7 @@ export const prsRouter = router({
       }
 
       const db = defaultDb
+      // fix/multi-project-isolation — scope task by tenant + project
       const rows = await db
         .select({
           taskId: tasks.taskId,
@@ -107,7 +110,13 @@ export const prsRouter = router({
           githubPrState: tasks.githubPrState,
         })
         .from(tasks)
-        .where(eq(tasks.taskId, input.task_id))
+        .where(
+          and(
+            eq(tasks.taskId, input.task_id),
+            eq(tasks.tenantId, ctx.tenantId!),
+            eq(tasks.projectId, ctx.projectId!),
+          ),
+        )
         .limit(1)
 
       const row = rows[0]
@@ -145,9 +154,16 @@ export const prsRouter = router({
    * @returns { ok: false, error: string } on failure (does NOT throw — UI renders error inline)
    * @returns 404 NOT_FOUND when project does not exist
    */
-  testConnection: publicProcedure
+  testConnection: projectProcedure
     .input(testConnectionInputSchema)
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      // fix/multi-project-isolation — input.project_id must match active project
+      if (input.project_id !== ctx.projectId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'project_id mismatch between input and active project header',
+        })
+      }
       const db = defaultDb
       const rows = await db
         .select({
@@ -156,7 +172,12 @@ export const prsRouter = router({
           githubRepo: projects.githubRepo,
         })
         .from(projects)
-        .where(eq(projects.projectId, input.project_id))
+        .where(
+          and(
+            eq(projects.projectId, input.project_id),
+            eq(projects.tenantId, ctx.tenantId!),
+          ),
+        )
         .limit(1)
 
       const project = rows[0]
@@ -214,9 +235,9 @@ export const prsRouter = router({
    * @input   {string} task_id — UUID of the task
    * @returns Array of check_run rows with name, conclusion, status, duration, links.
    */
-  checkRuns: publicProcedure
+  checkRuns: projectProcedure
     .input(z.object({ task_id: z.string().uuid() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const db = defaultDb
       const rows = await db
         .select({
@@ -225,7 +246,13 @@ export const prsRouter = router({
           githubHeadSha: tasks.githubHeadSha,
         })
         .from(tasks)
-        .where(eq(tasks.taskId, input.task_id))
+        .where(
+          and(
+            eq(tasks.taskId, input.task_id),
+            eq(tasks.tenantId, ctx.tenantId!),
+            eq(tasks.projectId, ctx.projectId!),
+          ),
+        )
         .limit(1)
 
       const row = rows[0]
@@ -304,9 +331,9 @@ export const prsRouter = router({
    * @input   {string} task_id — UUID of the task
    * @returns { triggered: number } — count of re-run requests sent.
    */
-  rerunFailed: publicProcedure
+  rerunFailed: projectProcedure
     .input(z.object({ task_id: z.string().uuid() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = defaultDb
       const rows = await db
         .select({
@@ -315,7 +342,13 @@ export const prsRouter = router({
           githubHeadSha: tasks.githubHeadSha,
         })
         .from(tasks)
-        .where(eq(tasks.taskId, input.task_id))
+        .where(
+          and(
+            eq(tasks.taskId, input.task_id),
+            eq(tasks.tenantId, ctx.tenantId!),
+            eq(tasks.projectId, ctx.projectId!),
+          ),
+        )
         .limit(1)
 
       const row = rows[0]

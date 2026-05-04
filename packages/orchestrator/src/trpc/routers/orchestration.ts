@@ -32,6 +32,8 @@ import { router, publicProcedure } from '../init.js'
 // Round 7-01 — tenant-scoped task procedures
 // [Engineer-Sr · Sonnet · run-round7-01-extract-hub]
 import { tenantProcedure } from '../middleware/tenant.js'
+// fix/multi-project-isolation
+import { projectProcedure } from '../middleware/project.js'
 import { getInspectionService } from '../../inspection/service.js'
 
 // ---------------------------------------------------------------------------
@@ -79,7 +81,7 @@ export const orchestrationRouter = router({
   // tasks namespace
   // ------------------------------------------------------------------------
   tasks: router({
-    list: tenantProcedure
+    list: projectProcedure
       .input(
         z
           .object({
@@ -106,7 +108,7 @@ export const orchestrationRouter = router({
         // [Engineer-Sr · Sonnet · run-round7-02-local-hub-split]
         const hub = getHubClient()
         if (hub !== null) {
-          const result = await hub.tasks.list(ctx.tenantId, input.sprint_id)
+          const result = await hub.tasks.list(ctx.tenantId!, input.sprint_id)
           if (!result.ok) {
             throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: result.message })
           }
@@ -162,7 +164,9 @@ export const orchestrationRouter = router({
 
         const conditions: SQL[] = [
           // Round 7-01: tenant isolation on tasks
-          eq(tasks.tenantId, ctx.tenantId),
+          eq(tasks.tenantId, ctx.tenantId!),
+          // fix/multi-project-isolation — project scoping
+          eq(tasks.projectId, ctx.projectId!),
         ]
         if (input.sprint_id) conditions.push(eq(tasks.sprintId, input.sprint_id))
         if (input.state && input.state.length > 0) {
@@ -198,14 +202,14 @@ export const orchestrationRouter = router({
         }
       }),
 
-    get: tenantProcedure
+    get: projectProcedure
       .input(z.object({ task_id: z.string().uuid() }))
       .query(async ({ input, ctx }) => {
         // Round 7-02 — hub proxy
         // [Engineer-Sr · Sonnet · run-round7-02-local-hub-split]
         const hub = getHubClient()
         if (hub !== null) {
-          const result = await hub.tasks.get(ctx.tenantId, input.task_id)
+          const result = await hub.tasks.get(ctx.tenantId!, input.task_id)
           if (!result.ok) {
             throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: result.message })
           }
@@ -243,7 +247,14 @@ export const orchestrationRouter = router({
         const rows = await db
           .select()
           .from(tasks)
-          .where(and(eq(tasks.taskId, input.task_id), eq(tasks.tenantId, ctx.tenantId)))
+          .where(
+            and(
+              eq(tasks.taskId, input.task_id),
+              eq(tasks.tenantId, ctx.tenantId!),
+              // fix/multi-project-isolation
+              eq(tasks.projectId, ctx.projectId!),
+            ),
+          )
           .limit(1)
         return rows[0] ?? null
       }),
@@ -252,7 +263,7 @@ export const orchestrationRouter = router({
      * Round 5D: returns PR status for a task.
      * Returns null when no PR has been opened for this task.
      */
-    prStatus: tenantProcedure
+    prStatus: projectProcedure
       .input(z.object({ task_id: z.string().uuid() }))
       .query(async ({ input, ctx }) => {
         const rows = await db
@@ -262,7 +273,14 @@ export const orchestrationRouter = router({
             merged_at: tasks.githubPrMergedAt,
           })
           .from(tasks)
-          .where(and(eq(tasks.taskId, input.task_id), eq(tasks.tenantId, ctx.tenantId)))
+          .where(
+            and(
+              eq(tasks.taskId, input.task_id),
+              eq(tasks.tenantId, ctx.tenantId!),
+              // fix/multi-project-isolation
+              eq(tasks.projectId, ctx.projectId!),
+            ),
+          )
           .limit(1)
         const row = rows[0]
         if (!row || row.pr_number === null || row.pr_number === undefined) return null
@@ -426,7 +444,7 @@ export const orchestrationRouter = router({
   // escalations namespace
   // ------------------------------------------------------------------------
   escalations: router({
-    list: tenantProcedure
+    list: projectProcedure
       .input(
         z
           .object({
@@ -441,7 +459,9 @@ export const orchestrationRouter = router({
         // escalations has no tenant_id — scope via tasks.tenant_id JOIN.
         // [Engineer-Sr · Sonnet · run-round7-01-extract-hub]
         const conditions: SQL[] = [
-          eq(tasks.tenantId, ctx.tenantId),
+          eq(tasks.tenantId, ctx.tenantId!),
+          // fix/multi-project-isolation — restrict via parent task projectId
+          eq(tasks.projectId, ctx.projectId!),
         ]
         if (input.state && input.state.length > 0) {
           conditions.push(inArray(escalations.state, input.state))

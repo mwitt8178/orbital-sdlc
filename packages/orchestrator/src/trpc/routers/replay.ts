@@ -16,6 +16,9 @@
 import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 import { router, publicProcedure } from '../init.js'
+// fix/multi-project-isolation — require active project header. Replay captures
+// don't carry project_id today; deeper filtering is tracked separately.
+import { projectProcedure } from '../middleware/project.js'
 import { getReplayService } from '../../replay/service.js'
 
 // ---------------------------------------------------------------------------
@@ -47,7 +50,7 @@ export const replayRouter = router({
    * List captures matching the optional filter. Newest first; capped at
    * `limit` (default 50, max 500).
    */
-  list: publicProcedure.input(ListInput).query(async ({ input }) => {
+  list: projectProcedure.input(ListInput).query(async ({ input }) => {
     const svc = getReplayService()
     const filter: Parameters<typeof svc.list>[0] = { limit: input.limit }
     if (input.worker_id !== undefined) filter.workerId = input.worker_id
@@ -58,7 +61,7 @@ export const replayRouter = router({
   }),
 
   /** Get a single capture's metadata. */
-  get: publicProcedure.input(GetInput).query(async ({ input }) => {
+  get: projectProcedure.input(GetInput).query(async ({ input }) => {
     const svc = getReplayService()
     const record = await svc.getCapture(input.capture_id)
     if (!record) {
@@ -74,7 +77,7 @@ export const replayRouter = router({
    * Execute a replay. Returns recorded request/response, the replay-time
    * response (or null for inspect), and matched_hash flag.
    */
-  replay: publicProcedure.input(ReplayInput).mutation(async ({ input }) => {
+  replay: projectProcedure.input(ReplayInput).mutation(async ({ input }) => {
     const svc = getReplayService()
     try {
       return await svc.replay(input.capture_id, input.mode)
@@ -94,7 +97,7 @@ export const replayRouter = router({
    * Convenience: returns the count of captures attached to a given event_id.
    * Used by the UI to gate the 🔁 icon on each event row.
    */
-  countForEvent: publicProcedure
+  countForEvent: projectProcedure
     .input(z.object({ event_id: z.string().uuid() }))
     .query(async ({ input }) => {
       const svc = getReplayService()

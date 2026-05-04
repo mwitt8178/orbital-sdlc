@@ -22,7 +22,7 @@
 import { z } from 'zod'
 import { uuidv7 } from 'uuidv7'
 import { TRPCError } from '@trpc/server'
-import { eq, and, desc, lt, inArray, type SQL, sql as dSQL } from 'drizzle-orm'
+import { eq, and, desc, lt, inArray, isNull, type SQL, sql as dSQL } from 'drizzle-orm'
 // Round 7-02 — hub client for proxy mode
 // [Engineer-Sr · Sonnet · run-round7-02-local-hub-split]
 import { getHubClient } from '../../hub-client/index.js'
@@ -37,10 +37,11 @@ import {
   type ChannelKind,
   type ChannelPostType,
 } from '../../db/schema/channels.js'
-import { router, publicProcedure } from '../init.js'
+import { router } from '../init.js'
 // Round 7-01 — tenant-scoped channel procedures
 // [Engineer-Sr · Sonnet · run-round7-01-extract-hub]
-import { tenantProcedure } from '../middleware/tenant.js'
+// fix/multi-project-isolation — project-scoped procedures
+import { projectProcedure } from '../middleware/project.js'
 import { DefaultChannelsService } from '../../comms/channels.js'
 import { loadOrCreateInstall } from '../../config/install.js'
 import type { Actor, ChannelId } from '@orbital/types'
@@ -106,7 +107,7 @@ export const channelsRouter = router({
   // Round 7-02: hub-proxied when ORBITAL_HUB_URL set.
   // [Engineer-Sr · Sonnet · run-round7-01-extract-hub]
   // [Engineer-Sr · Sonnet · run-round7-02-local-hub-split]
-  list: tenantProcedure
+  list: projectProcedure
     .input(
       z
         .object({
@@ -129,7 +130,7 @@ export const channelsRouter = router({
           next_cursor: string | null
           has_more: boolean
         }
-        const result = await hub.query<ChannelListResult>('channel.list', input, ctx.tenantId)
+        const result = await hub.query<ChannelListResult>('channel.list', input, ctx.tenantId!)
         if (!result.ok) {
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: result.message })
         }
@@ -138,13 +139,15 @@ export const channelsRouter = router({
 
       const conditions: SQL[] = []
       // Filter by tenant
-      conditions.push(eq(channels.tenantId, ctx.tenantId))
+      conditions.push(eq(channels.tenantId, ctx.tenantId!))
+      // fix/multi-project-isolation — project scoping
+      conditions.push(eq(channels.projectId, ctx.projectId!))
       if (input.kind && input.kind.length > 0) {
         conditions.push(inArray(channels.kind, input.kind))
       }
       if (!input.include_archived) {
         // archived_at IS NULL
-        conditions.push(eq(channels.archivedAt as never, null as never))
+        conditions.push(isNull(channels.archivedAt))
       }
       const cursor = decodeCursor(input.after)
       if (cursor) {
@@ -197,7 +200,7 @@ export const channelsRouter = router({
     }),
 
   posts: router({
-    read: tenantProcedure
+    read: projectProcedure
       .input(
         z.object({
           channel_id: z.string().uuid(),
@@ -210,8 +213,30 @@ export const channelsRouter = router({
         const conditions: SQL[] = [
           eq(channelPosts.channelId, input.channel_id),
           // Round 7-01: tenant isolation on channel_posts
-          eq(channelPosts.tenantId, ctx.tenantId),
+          eq(channelPosts.tenantId, ctx.tenantId!),
         ]
+        // fix/multi-project-isolation — channel_posts has no project_id column;
+        // enforce project scoping by validating the parent channel belongs to
+        // the active project before any read.
+        const channelOwner = await db
+          .select({ projectId: channels.projectId })
+          .from(channels)
+          .where(
+            and(
+              eq(channels.channelId, input.channel_id),
+              eq(channels.tenantId, ctx.tenantId!),
+            ),
+          )
+          .limit(1)
+        if (
+          channelOwner.length === 0 ||
+          channelOwner[0]!.projectId !== ctx.projectId
+        ) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'channel not found in active project',
+          })
+        }
         if (input.post_types && input.post_types.length > 0) {
           conditions.push(inArray(channelPosts.postType, input.post_types))
         }
@@ -265,7 +290,7 @@ export const channelsRouter = router({
   }),
 
   post: router({
-    create: tenantProcedure
+    create: projectProcedure
       .input(
         z.object({
           channel_id: z.string().uuid(),
@@ -294,6 +319,26 @@ export const channelsRouter = router({
         }),
       )
       .mutation(async ({ input, ctx }) => {
+        // fix/multi-project-isolation — verify channel belongs to active project
+        const channelOwner = await db
+          .select({ projectId: channels.projectId })
+          .from(channels)
+          .where(
+            and(
+              eq(channels.channelId, input.channel_id),
+              eq(channels.tenantId, ctx.tenantId!),
+            ),
+          )
+          .limit(1)
+        if (
+          channelOwner.length === 0 ||
+          channelOwner[0]!.projectId !== ctx.projectId
+        ) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'channel not found in active project',
+          })
+        }
         const service = new DefaultChannelsService(db, eventStore())
         const actor = await userActor()
         const payload =
@@ -317,7 +362,7 @@ export const channelsRouter = router({
               ref_id: c.ref_id,
             })),
             justification: input.justification,
-            tenantId: ctx.tenantId,
+            tenantId: ctx.tenantId!,
           },
         )
 
@@ -325,7 +370,7 @@ export const channelsRouter = router({
       }),
   }),
 
-  subscribe: tenantProcedure
+  subscribe: projectProcedure
     .input(
       z.object({
         channel_id: z.string().uuid(),
@@ -333,12 +378,32 @@ export const channelsRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      // fix/multi-project-isolation — verify channel belongs to active project
+      const channelOwner = await db
+        .select({ projectId: channels.projectId })
+        .from(channels)
+        .where(
+          and(
+            eq(channels.channelId, input.channel_id),
+            eq(channels.tenantId, ctx.tenantId!),
+          ),
+        )
+        .limit(1)
+      if (
+        channelOwner.length === 0 ||
+        channelOwner[0]!.projectId !== ctx.projectId
+      ) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'channel not found in active project',
+        })
+      }
       const service = new DefaultChannelsService(db, eventStore())
       const actor = await userActor()
       const subs = await service.subscribe(actor, [input.channel_id as ChannelId], {
         source: 'explicit',
         justification: input.justification,
-        tenantId: ctx.tenantId,
+        tenantId: ctx.tenantId!,
       })
       const first = subs[0]
       if (!first) {
@@ -363,7 +428,7 @@ export const channelsRouter = router({
    *
    * @returns paginated list of posts with channel name, post type, excerpt, cost
    */
-  byWorker: tenantProcedure
+  byWorker: projectProcedure
     .input(
       z.object({
         worker_id: z.string().uuid(),
@@ -376,7 +441,10 @@ export const channelsRouter = router({
       const conditions: SQL[] = []
 
       // Round 7-01: tenant isolation
-      conditions.push(eq(channelPosts.tenantId, ctx.tenantId) as unknown as SQL)
+      conditions.push(eq(channelPosts.tenantId, ctx.tenantId!) as unknown as SQL)
+
+      // fix/multi-project-isolation — restrict via parent channel projectId
+      conditions.push(eq(channels.projectId, ctx.projectId!) as unknown as SQL)
 
       // Filter by persona session (worker_id maps to session_id in actor JSON)
       // channel_posts.author_actor is JSONB with session_id field
@@ -453,7 +521,7 @@ export const channelsRouter = router({
    *
    * @returns list of escalations with task context and resolution status
    */
-  escalations: tenantProcedure
+  escalations: projectProcedure
     .input(
       z.object({
         sprint_id: z.string().uuid(),
@@ -477,7 +545,9 @@ export const channelsRouter = router({
         .where(
           and(
             // Round 7-01: tenant isolation
-            eq(channelPosts.tenantId, ctx.tenantId),
+            eq(channelPosts.tenantId, ctx.tenantId!),
+            // fix/multi-project-isolation — project isolation via channel
+            eq(channels.projectId, ctx.projectId!),
             eq(channelPosts.postType, 'escalation_note'),
             dSQL`${channels.name} LIKE '#escalation-%'`,
             // Check sprint cross-reference in the payload or channel name contains sprint_id

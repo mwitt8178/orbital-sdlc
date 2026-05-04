@@ -16,6 +16,8 @@
 
 import { TRPCError } from '@trpc/server'
 import { router, publicProcedure } from '../init.js'
+// fix/multi-project-isolation
+import { projectProcedure } from '../middleware/project.js'
 import { db } from '../../db/client.js'
 import { sql as sqlPool } from '../../db/client.js'
 import { createEventStore } from '../../events/store.js'
@@ -154,7 +156,7 @@ const DraftInputSchema = z.object({
 
 export const visionRouter = router({
   /** Start a vision intake session. Spawns PM persona. */
-  start: publicProcedure
+  start: projectProcedure
     .input(SessionStartInputSchema)
     .mutation(async ({ input }) => {
       try {
@@ -179,7 +181,7 @@ export const visionRouter = router({
     }),
 
   /** Send a message in an open vision session. */
-  sendMessage: publicProcedure
+  sendMessage: projectProcedure
     .input(SendMessageInputSchema)
     .mutation(async ({ input }) => {
       try {
@@ -200,7 +202,7 @@ export const visionRouter = router({
     }),
 
   /** PM persona produces a draft snapshot. */
-  draft: publicProcedure
+  draft: projectProcedure
     .input(DraftInputSchema)
     .mutation(async ({ input }) => {
       try {
@@ -219,7 +221,7 @@ export const visionRouter = router({
     }),
 
   /** Review the current draft and receive a confirmation token for locking. */
-  reviewDraft: publicProcedure
+  reviewDraft: projectProcedure
     .input(z.object({ vision_document_id: z.string() }))
     .query(async ({ input }) => {
       try {
@@ -231,7 +233,7 @@ export const visionRouter = router({
     }),
 
   /** Lock the current draft (user must supply confirmation_token from reviewDraft). */
-  lock: publicProcedure
+  lock: projectProcedure
     .input(LockInputSchema)
     .mutation(async ({ input }) => {
       try {
@@ -257,7 +259,7 @@ export const visionRouter = router({
     }),
 
   /** Create a new revision of a locked document. */
-  revise: publicProcedure
+  revise: projectProcedure
     .input(ReviseInputSchema)
     .mutation(async ({ input }) => {
       try {
@@ -283,7 +285,7 @@ export const visionRouter = router({
     }),
 
   /** Get the current (or a specific) version of a vision document. */
-  get: publicProcedure
+  get: projectProcedure
     .input(GetInputSchema)
     .query(async ({ input }) => {
       try {
@@ -313,7 +315,7 @@ export const visionRouter = router({
     }),
 
   /** List all versions of a document. */
-  history: publicProcedure
+  history: projectProcedure
     .input(HistoryInputSchema)
     .query(async ({ input }) => {
       try {
@@ -339,7 +341,7 @@ export const visionRouter = router({
    * v1: templated heuristic (no LLM). v2 will swap in a real Anthropic
    * completion without changing the public API.
    */
-  suggestEpics: publicProcedure
+  suggestEpics: projectProcedure
     .input(
       z.object({
         vision_document_id: z.string(),

@@ -101,6 +101,9 @@ import { S3Client } from '@aws-sdk/client-s3'
 // Automated PR review router
 // [Engineer-Sr · Sonnet · run-pr-review-agent-001]
 import { prReviewsRouter } from './pr-reviews.js'
+// Planning + GitHub routers — mount under appRouter so UI can call them
+import { planningRouter } from './planning.js'
+import { githubRouter } from './github.js'
 
 // ---------------------------------------------------------------------------
 // Lazy singletons / DI registry
@@ -446,6 +449,10 @@ export const appRouter = router({
   // PR Review Agent — automated PASS/BLOCK reviews on PR open
   // [Engineer-Sr · Sonnet · run-pr-review-agent-001]
   pr_reviews: prReviewsRouter,
+  // Planning ceremonies — sprint planning runs
+  planning: planningRouter,
+  // GitHub installation + PR linkage
+  github: githubRouter,
 })
 
 export type AppRouter = typeof appRouter

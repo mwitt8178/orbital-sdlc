@@ -31,6 +31,8 @@ import { TRPCError } from '@trpc/server'
 
 import { router, publicProcedure } from '../init.js'
 import { tenantProcedure } from '../middleware/tenant.js'
+// fix/multi-project-isolation
+import { projectProcedure } from '../middleware/project.js'
 import { db } from '../../db/client.js'
 import { githubInstallations, githubRepoBindings } from '@orbital/db'
 import {
@@ -254,7 +256,7 @@ export const githubRouter = router({
       }
       await db.insert(githubInstallations).values({
         installationId,
-        tenantId: ctx.tenantId,
+        tenantId: ctx.tenantId!,
         githubAccountLogin: 'pending',
         githubAccountType: 'pending',
         githubAccountId: 0,
@@ -274,7 +276,7 @@ export const githubRouter = router({
         uninstalledAt: githubInstallations.uninstalledAt,
       })
       .from(githubInstallations)
-      .where(eq(githubInstallations.tenantId, ctx.tenantId))
+      .where(eq(githubInstallations.tenantId, ctx.tenantId!))
       .orderBy(desc(githubInstallations.installedAt))
     return rows
   }),
@@ -319,13 +321,20 @@ export const githubRouter = router({
     }),
 
   /** Bind an Orbital project to a (installation_id, full_name) pair. */
-  bindRepo: tenantProcedure.input(bindRepoInput).mutation(async ({ ctx, input }) => {
+  bindRepo: projectProcedure.input(bindRepoInput).mutation(async ({ ctx, input }) => {
+    // fix/multi-project-isolation — input.projectId must match active project
+    if (input.projectId !== ctx.projectId) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'projectId mismatch between input and active project header',
+      })
+    }
     const installationId = asNumber(input.installationId)
     const githubRepoId = asNumber(input.githubRepoId)
     const bindingId = uuidv7()
     await db.insert(githubRepoBindings).values({
       bindingId,
-      tenantId: ctx.tenantId,
+      tenantId: ctx.tenantId!,
       projectId: input.projectId,
       installationId,
       githubRepoId,
@@ -336,7 +345,14 @@ export const githubRouter = router({
   }),
 
   /** List active bindings for a project. */
-  listBindings: tenantProcedure.input(listBindingsInput).query(async ({ ctx, input }) => {
+  listBindings: projectProcedure.input(listBindingsInput).query(async ({ ctx, input }) => {
+    // fix/multi-project-isolation
+    if (input.projectId !== ctx.projectId) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'projectId mismatch between input and active project header',
+      })
+    }
     const rows = await db
       .select({
         bindingId: githubRepoBindings.bindingId,
@@ -348,7 +364,7 @@ export const githubRouter = router({
       .from(githubRepoBindings)
       .where(
         and(
-          eq(githubRepoBindings.tenantId, ctx.tenantId),
+          eq(githubRepoBindings.tenantId, ctx.tenantId!),
           eq(githubRepoBindings.projectId, input.projectId),
           isNull(githubRepoBindings.removedAt),
         ),

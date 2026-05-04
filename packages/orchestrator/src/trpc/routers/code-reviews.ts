@@ -17,6 +17,8 @@ import { router, publicProcedure } from '../init.js'
 // Round 7-01 — tenant-scoped code-review procedures
 // [Engineer-Sr · Sonnet · run-round7-01-extract-hub]
 import { tenantProcedure } from '../middleware/tenant.js'
+// fix/multi-project-isolation
+import { projectProcedure } from '../middleware/project.js'
 // Round 7-02 — hub client for proxy mode
 // [Engineer-Sr · Sonnet · run-round7-02-local-hub-split]
 import { getHubClient } from '../../hub-client/index.js'
@@ -55,7 +57,7 @@ const requestReworkInputSchema = z.object({
  * @returns 404 NOT_FOUND when no reviews exist for this PR number.
  */
 export const codeReviewsRouter = router({
-  byPR: tenantProcedure
+  byPR: projectProcedure
     .input(byPRInputSchema)
     .query(async ({ input, ctx }) => {
       // Round 7-02 — hub proxy: code reviews are shared data.
@@ -68,16 +70,35 @@ export const codeReviewsRouter = router({
           comments_count: number; body: string | null; posted_at: string | null;
           created_at: string;
         }
-        const result = await hub.query<{ pr_number: number; reviews: ReviewEntry[] }>('code_reviews.byPR', input, ctx.tenantId)
+        const result = await hub.query<{ pr_number: number; reviews: ReviewEntry[] }>('code_reviews.byPR', input, ctx.tenantId!)
         if (!result.ok) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: result.message })
         return result.data
       }
 
       const db = defaultDb
+      // fix/multi-project-isolation — scope via parent task projectId
       const rows = await db
-        .select()
+        .select({
+          reviewId: codeReviews.reviewId,
+          prTaskId: codeReviews.prTaskId,
+          reviewerTaskId: codeReviews.reviewerTaskId,
+          prNumber: codeReviews.prNumber,
+          reviewerPersonaId: codeReviews.reviewerPersonaId,
+          state: codeReviews.state,
+          commentsCount: codeReviews.commentsCount,
+          body: codeReviews.body,
+          postedAt: codeReviews.postedAt,
+          createdAt: codeReviews.createdAt,
+        })
         .from(codeReviews)
-        .where(and(eq(codeReviews.prNumber, input.pr_number), eq(codeReviews.tenantId, ctx.tenantId)))
+        .innerJoin(tasks, eq(codeReviews.prTaskId, tasks.taskId))
+        .where(
+          and(
+            eq(codeReviews.prNumber, input.pr_number),
+            eq(codeReviews.tenantId, ctx.tenantId!),
+            eq(tasks.projectId, ctx.projectId!),
+          ),
+        )
         .orderBy(codeReviews.createdAt)
 
       return {
@@ -110,7 +131,7 @@ export const codeReviewsRouter = router({
    * @returns 404 NOT_FOUND when review does not exist
    * @returns 409 CONFLICT when author task is already in 'ready' or 'in_progress' state
    */
-  requestRework: tenantProcedure
+  requestRework: projectProcedure
     .input(requestReworkInputSchema)
     .mutation(async ({ input, ctx }) => {
       const db = defaultDb
@@ -120,7 +141,7 @@ export const codeReviewsRouter = router({
       const [reviewRow] = await db
         .select()
         .from(codeReviews)
-        .where(and(eq(codeReviews.reviewId, input.review_id), eq(codeReviews.tenantId, ctx.tenantId)))
+        .where(and(eq(codeReviews.reviewId, input.review_id), eq(codeReviews.tenantId, ctx.tenantId!)))
         .limit(1)
 
       if (!reviewRow) {
@@ -130,11 +151,18 @@ export const codeReviewsRouter = router({
         })
       }
 
-      // Load the author task scoped to this tenant
+      // Load the author task scoped to tenant + project
+      // fix/multi-project-isolation — verify task is in active project
       const [authorTask] = await db
         .select()
         .from(tasks)
-        .where(and(eq(tasks.taskId, reviewRow.prTaskId), eq(tasks.tenantId, ctx.tenantId)))
+        .where(
+          and(
+            eq(tasks.taskId, reviewRow.prTaskId),
+            eq(tasks.tenantId, ctx.tenantId!),
+            eq(tasks.projectId, ctx.projectId!),
+          ),
+        )
         .limit(1)
 
       if (!authorTask) {
@@ -171,7 +199,14 @@ export const codeReviewsRouter = router({
           description: updatedDescription,
           codeReviewState: 'changes_requested',
         })
-        .where(and(eq(tasks.taskId, reviewRow.prTaskId), eq(tasks.tenantId, ctx.tenantId)))
+        .where(
+          and(
+            eq(tasks.taskId, reviewRow.prTaskId),
+            eq(tasks.tenantId, ctx.tenantId!),
+            // fix/multi-project-isolation
+            eq(tasks.projectId, ctx.projectId!),
+          ),
+        )
 
       // Emit CodeReviewIterationRequested
       const traceId = uuidv7()

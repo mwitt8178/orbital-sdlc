@@ -18,6 +18,11 @@ import { z } from 'zod'
 import { eq, desc, and, gte, lte, type SQL } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
 import { router, publicProcedure } from '../init.js'
+// fix/multi-project-isolation — require active project header on audit reads.
+// Note: audit events table has no project_id today; scoping by aggregate FK
+// is a deeper change tracked separately. The header requirement still
+// prevents a same-tenant project switcher from silently spanning projects.
+import { projectProcedure } from '../middleware/project.js'
 import { db, sql as sqlPool } from '../../db/client.js'
 import { createEventStore } from '../../events/store.js'
 import { createAuditQueryService } from '../../audit/query.js'
@@ -86,7 +91,7 @@ export const auditRouter = router({
      * audit.events.query — filterable, paginated event log query.
      * Per TRD-07 §6.1.1.
      */
-    query: publicProcedure.input(QueryEventsInput).query(async ({ input }) => {
+    query: projectProcedure.input(QueryEventsInput).query(async ({ input }) => {
       const service = getQueryService()
       try {
         return await service.query(input.filters)
@@ -107,7 +112,7 @@ export const auditRouter = router({
      * Requires audit:admin capability (enforced at MCP gateway layer in full impl).
      * Justification is required per Primitives §14.
      */
-    trigger: publicProcedure.input(TriggerReconcileInput).mutation(async ({ input }) => {
+    trigger: projectProcedure.input(TriggerReconcileInput).mutation(async ({ input }) => {
       const reconciler = getReconciler()
 
       try {
@@ -139,7 +144,7 @@ export const auditRouter = router({
      * audit.reconciliation.list — list historical reconciliation runs.
      * Per TRD-07 §6.1.4.
      */
-    list: publicProcedure.input(ListReconciliationRunsInput).query(async ({ input }) => {
+    list: projectProcedure.input(ListReconciliationRunsInput).query(async ({ input }) => {
       const conditions: SQL[] = []
 
       if (input.filters.trigger !== undefined) {
@@ -200,7 +205,7 @@ export const auditRouter = router({
      * audit.drift.list — paginated list of drift events.
      * Per TRD-07 §6.1.3.
      */
-    list: publicProcedure
+    list: projectProcedure
       .input(
         z.object({
           filters: z

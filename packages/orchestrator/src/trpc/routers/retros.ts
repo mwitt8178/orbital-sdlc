@@ -19,7 +19,8 @@ import { eq, and, inArray, isNull, or } from 'drizzle-orm'
 import { router, publicProcedure } from '../init.js'
 // Round 7-01 — tenant-scoped retro procedures
 // [Engineer-Sr · Sonnet · run-round7-01-extract-hub]
-import { tenantProcedure } from '../middleware/tenant.js'
+// fix/multi-project-isolation
+import { projectProcedure } from '../middleware/project.js'
 // Round 7-02 — hub client for proxy mode
 // [Engineer-Sr · Sonnet · run-round7-02-local-hub-split]
 import { getHubClient } from '../../hub-client/index.js'
@@ -52,7 +53,7 @@ export function createRetrosRouter(deps: RetrosRouterDeps) {
     // retro.report.get
     // -----------------------------------------------------------------------
     report: router({
-      get: tenantProcedure
+      get: projectProcedure
         .input(z.object({ retro_report_id: z.string().uuid() }))
         .query(async ({ input, ctx }) => {
           // Round 7-02 — hub proxy
@@ -80,7 +81,7 @@ export function createRetrosRouter(deps: RetrosRouterDeps) {
               }>
               layers: Array<{ retroProposalId: string; layers: unknown[] }>
             }
-            const result = await hub.query<RetroReportResult>('retro.report.get', input, ctx.tenantId)
+            const result = await hub.query<RetroReportResult>('retro.report.get', input, ctx.tenantId!)
             if (!result.ok) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: result.message })
             return result.data
           }
@@ -88,7 +89,7 @@ export function createRetrosRouter(deps: RetrosRouterDeps) {
           const reports = await db
             .select()
             .from(retroReports)
-            .where(and(eq(retroReports.retroReportId, input.retro_report_id), eq(retroReports.tenantId, ctx.tenantId)))
+            .where(and(eq(retroReports.retroReportId, input.retro_report_id), eq(retroReports.tenantId, ctx.tenantId!)))
             .limit(1)
           if (reports.length === 0) {
             throw new Error(`NOT_FOUND_RETRO_REPORT: ${input.retro_report_id}`)
@@ -155,7 +156,7 @@ export function createRetrosRouter(deps: RetrosRouterDeps) {
     // retro.proposal.list / approve / reject / defer
     // -----------------------------------------------------------------------
     proposal: router({
-      list: tenantProcedure
+      list: projectProcedure
         .input(
           z
             .object({
@@ -166,7 +167,7 @@ export function createRetrosRouter(deps: RetrosRouterDeps) {
             .optional(),
         )
         .query(async ({ input, ctx }) => {
-          const conditions = [eq(retroProposals.tenantId, ctx.tenantId)]
+          const conditions = [eq(retroProposals.tenantId, ctx.tenantId!)]
           if (input?.retro_report_id) {
             conditions.push(eq(retroProposals.retroReportId, input.retro_report_id))
           }
@@ -204,7 +205,7 @@ export function createRetrosRouter(deps: RetrosRouterDeps) {
           }))
         }),
 
-      approve: tenantProcedure
+      approve: projectProcedure
         .input(
           z.object({
             retro_proposal_id: z.string().uuid(),
@@ -229,7 +230,7 @@ export function createRetrosRouter(deps: RetrosRouterDeps) {
           }
         }),
 
-      reject: tenantProcedure
+      reject: projectProcedure
         .input(
           z.object({
             retro_proposal_id: z.string().uuid(),
@@ -248,7 +249,7 @@ export function createRetrosRouter(deps: RetrosRouterDeps) {
           return { retro_proposal_id: result.retroProposalId }
         }),
 
-      defer: tenantProcedure
+      defer: projectProcedure
         .input(
           z.object({
             retro_proposal_id: z.string().uuid(),
@@ -276,7 +277,7 @@ export function createRetrosRouter(deps: RetrosRouterDeps) {
     // -----------------------------------------------------------------------
     // retro.rollback
     // -----------------------------------------------------------------------
-    rollback: tenantProcedure
+    rollback: projectProcedure
       .input(
         z.object({
           rolled_back_system_version_id: z.string().uuid(),
@@ -308,7 +309,7 @@ export function createRetrosRouter(deps: RetrosRouterDeps) {
     // retro.outcomes.list
     // -----------------------------------------------------------------------
     outcomes: router({
-      list: tenantProcedure
+      list: projectProcedure
         .input(
           z
             .object({
@@ -323,7 +324,7 @@ export function createRetrosRouter(deps: RetrosRouterDeps) {
           const tenantProposalRows = await db
             .select({ retroProposalId: retroProposals.retroProposalId })
             .from(retroProposals)
-            .where(eq(retroProposals.tenantId, ctx.tenantId))
+            .where(eq(retroProposals.tenantId, ctx.tenantId!))
           const tenantProposalIds = tenantProposalRows.map((r) => r.retroProposalId)
 
           if (tenantProposalIds.length === 0) return []
@@ -359,14 +360,14 @@ export function createRetrosRouter(deps: RetrosRouterDeps) {
     // retro.versions.list  - convenience listing of system_versions
     // -----------------------------------------------------------------------
     versions: router({
-      list: tenantProcedure.query(async ({ ctx }) => {
+      list: projectProcedure.query(async ({ ctx }) => {
         // systemVersions has no tenantId — scope via retroReports (which does).
         // Include versions whose retroReportId belongs to this tenant, plus
         // versions with no retroReportId (global/rollback versions).
         const tenantReportRows = await db
           .select({ retroReportId: retroReports.retroReportId })
           .from(retroReports)
-          .where(eq(retroReports.tenantId, ctx.tenantId))
+          .where(eq(retroReports.tenantId, ctx.tenantId!))
         const tenantReportIds = tenantReportRows.map((r) => r.retroReportId)
 
         const rows = await db

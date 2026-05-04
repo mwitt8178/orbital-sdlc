@@ -16,7 +16,8 @@ import { z } from 'zod'
 import { router, publicProcedure, idempotentProcedure } from '../init.js'
 // Round 7-01 — tenant-scoped procedures
 // [Engineer-Sr · Sonnet · run-round7-01-extract-hub]
-import { tenantProcedure } from '../middleware/tenant.js'
+// fix/multi-project-isolation
+import { projectProcedure } from '../middleware/project.js'
 import type { BacklogService } from '../../backlog/service.js'
 import type { SprintService } from '../../backlog/sprint-service.js'
 import {
@@ -67,7 +68,7 @@ export function createBacklogRouter(deps: BacklogRouterDeps) {
     epics: router({
       // Round 7-01: tenant-scoped — backlogService filters by ctx.tenantId.
       // [Engineer-Sr · Sonnet · run-round7-01-extract-hub]
-      list: tenantProcedure
+      list: projectProcedure
         .input(
           z
             .object({
@@ -80,13 +81,13 @@ export function createBacklogRouter(deps: BacklogRouterDeps) {
           const filter: { status?: string; visionVersionId?: string } = {}
           if (input?.status) filter.status = input.status
           if (input?.vision_version_id) filter.visionVersionId = input.vision_version_id
-          return await backlogService.listEpics(filter, ctx.tenantId)
+          return await backlogService.listEpics(filter, ctx.tenantId!)
         }),
 
       // Round 3 S5: idempotentProcedure ensures retries with the same
       // Idempotency-Key header don't double-create the epic event.
       // Round 7-01: also tenant-scoped.
-      create: tenantProcedure
+      create: projectProcedure
         .use(
           // compose idempotency on top of tenant procedure
           ({ ctx, type, path, next }) => {
@@ -96,20 +97,20 @@ export function createBacklogRouter(deps: BacklogRouterDeps) {
         )
         .input(CreateEpicInputSchema)
         .mutation(async ({ input, ctx }) => {
-          return await backlogService.createEpic(input, undefined, ctx.tenantId)
+          return await backlogService.createEpic(input, undefined, ctx.tenantId!)
         }),
 
-      get: tenantProcedure
+      get: projectProcedure
         .input(z.object({ epic_id: z.string().uuid() }))
         .query(async ({ input, ctx }) => {
-          return await backlogService.getEpic(input.epic_id, ctx.tenantId)
+          return await backlogService.getEpic(input.epic_id, ctx.tenantId!)
         }),
     }),
 
     stories: router({
       // Round 7-01: tenant-scoped.
       // [Engineer-Sr · Sonnet · run-round7-01-extract-hub]
-      list: tenantProcedure
+      list: projectProcedure
         .input(
           z
             .object({
@@ -133,28 +134,28 @@ export function createBacklogRouter(deps: BacklogRouterDeps) {
           const filter: Parameters<typeof backlogService.listStories>[0] = {}
           if (input?.epic_id) filter.epicId = input.epic_id
           if (input?.status) filter.status = input.status
-          return await backlogService.listStories(filter, ctx.tenantId)
+          return await backlogService.listStories(filter, ctx.tenantId!)
         }),
 
-      get: tenantProcedure
+      get: projectProcedure
         .input(z.object({ story_id: z.string().uuid() }))
         .query(async ({ input, ctx }) => {
-          return await backlogService.getStory(input.story_id, ctx.tenantId)
+          return await backlogService.getStory(input.story_id, ctx.tenantId!)
         }),
 
-      create: tenantProcedure
+      create: projectProcedure
         .input(CreateStoryInputSchema)
         .mutation(async ({ input, ctx }) => {
-          return await backlogService.createStory(input, undefined, ctx.tenantId)
+          return await backlogService.createStory(input, undefined, ctx.tenantId!)
         }),
 
-      update: tenantProcedure
+      update: projectProcedure
         .input(UpdateStoryInputSchema)
         .mutation(async ({ input, ctx }) => {
-          return await backlogService.updateStory(input, undefined, ctx.tenantId)
+          return await backlogService.updateStory(input, undefined, ctx.tenantId!)
         }),
 
-      prioritize: tenantProcedure
+      prioritize: projectProcedure
         .input(
           z.object({
             story_id: z.string().uuid(),
@@ -162,12 +163,12 @@ export function createBacklogRouter(deps: BacklogRouterDeps) {
           }),
         )
         .mutation(async ({ input, ctx }) => {
-          await backlogService.movStoryToPosition(input.story_id, input.position, undefined, ctx.tenantId)
+          await backlogService.movStoryToPosition(input.story_id, input.position, undefined, ctx.tenantId!)
           return { ok: true }
         }),
     }),
 
-    groom: tenantProcedure
+    groom: projectProcedure
       .input(
         z.object({
           story_id: z.string().uuid(),
@@ -188,7 +189,7 @@ export function createBacklogRouter(deps: BacklogRouterDeps) {
           ...(input.story_points !== undefined && { storyPoints: input.story_points }),
           ...(input.rationale !== undefined && { rationale: input.rationale }),
           ...(input.ceremony_id !== undefined && { ceremonyId: input.ceremony_id }),
-        }, undefined, ctx.tenantId)
+        }, undefined, ctx.tenantId!)
       }),
 
     /**
@@ -209,7 +210,7 @@ export function createBacklogRouter(deps: BacklogRouterDeps) {
      * Going via the existing create paths preserves the audit / event flow
      * (EpicCreated / StoryCreated) bit-for-bit.
      */
-    parseAndCreate: tenantProcedure
+    parseAndCreate: projectProcedure
       .input(
         z.object({
           prompt: z.string().min(1).max(4000),
@@ -260,7 +261,7 @@ export function createBacklogRouter(deps: BacklogRouterDeps) {
         // Always include existing epic titles even when no vision is locked.
         if (context.existingEpicTitles.length === 0) {
           try {
-            const epics = await backlogService.listEpics({}, ctx.tenantId)
+            const epics = await backlogService.listEpics({}, ctx.tenantId!)
             context = {
               ...context,
               existingEpicTitles: epics.map((e) => e.title),
@@ -299,7 +300,7 @@ export function createSprintRouter(deps: SprintRouterDeps) {
   return router({
     // Round 7-01: tenant-scoped sprint procedures.
     // [Engineer-Sr · Sonnet · run-round7-01-extract-hub]
-    list: tenantProcedure
+    list: projectProcedure
       .input(
         z
           .object({
@@ -310,50 +311,50 @@ export function createSprintRouter(deps: SprintRouterDeps) {
           .optional(),
       )
       .query(async ({ input, ctx }) => {
-        return await sprintService.list(input?.status ? { status: input.status } : {}, ctx.tenantId)
+        return await sprintService.list(input?.status ? { status: input.status } : {}, ctx.tenantId!)
       }),
 
-    get: tenantProcedure
+    get: projectProcedure
       .input(z.object({ sprint_id: z.string().uuid() }))
       .query(async ({ input, ctx }) => {
-        return await sprintService.get(input.sprint_id, ctx.tenantId)
+        return await sprintService.get(input.sprint_id, ctx.tenantId!)
       }),
 
-    create: tenantProcedure
+    create: projectProcedure
       .input(CreateSprintInputSchema)
       .mutation(async ({ input, ctx }) => {
-        return await sprintService.create(input, undefined, ctx.tenantId)
+        return await sprintService.create(input, undefined, ctx.tenantId!)
       }),
 
-    commit: tenantProcedure
+    commit: projectProcedure
       .input(SprintCommitmentInputSchema)
       .mutation(async ({ input, ctx }) => {
-        await sprintService.createCommitment(input, undefined, ctx.tenantId)
+        await sprintService.createCommitment(input, undefined, ctx.tenantId!)
         return { ok: true }
       }),
 
-    start: tenantProcedure
+    start: projectProcedure
       .input(z.object({ sprint_id: z.string().uuid() }))
       .mutation(async ({ input, ctx }) => {
-        return await sprintService.start(input.sprint_id, undefined, ctx.tenantId)
+        return await sprintService.start(input.sprint_id, undefined, ctx.tenantId!)
       }),
 
-    pause: tenantProcedure
+    pause: projectProcedure
       .input(z.object({ sprint_id: z.string().uuid(), reason: z.string().min(1) }))
       .mutation(async ({ input, ctx }) => {
-        return await sprintService.pause(input.sprint_id, input.reason, undefined, ctx.tenantId)
+        return await sprintService.pause(input.sprint_id, input.reason, undefined, ctx.tenantId!)
       }),
 
-    resume: tenantProcedure
+    resume: projectProcedure
       .input(z.object({ sprint_id: z.string().uuid() }))
       .mutation(async ({ input, ctx }) => {
-        return await sprintService.resume(input.sprint_id, undefined, ctx.tenantId)
+        return await sprintService.resume(input.sprint_id, undefined, ctx.tenantId!)
       }),
 
-    complete: tenantProcedure
+    complete: projectProcedure
       .input(z.object({ sprint_id: z.string().uuid() }))
       .mutation(async ({ input, ctx }) => {
-        return await sprintService.complete(input.sprint_id, undefined, ctx.tenantId)
+        return await sprintService.complete(input.sprint_id, undefined, ctx.tenantId!)
       }),
 
     /**
