@@ -63,6 +63,12 @@ import {
   type RetroSprintContext,
   type RetroAnalystProposal,
 } from '../personas/prompts/retro-analyst.js'
+// Round cost-guardrails — pre-flight budget check before retro-analyst Claude call.
+// [Engineer-Sr · Sonnet · run-cost-guardrails-2026-05-04]
+import { assertBudget, BudgetExceededError } from '@orbital/domain/cost/assert-budget.js'
+// Estimated cost: claude-sonnet-4-6 at 8k input + 3k output for retro analysis.
+// 8000/1M * $3.00 + 3072/1M * $15.00 = $0.024 + $0.046 = $0.070
+const RETRO_ESTIMATED_COST_USD = 0.070
 
 // ---------------------------------------------------------------------------
 // Service interface
@@ -99,6 +105,14 @@ export interface RetroServiceOptions {
    * queued; production worker spawn is left to the scheduler tick).
    */
   driver?: AnthropicDriver | null
+  /**
+   * Optional project ID for pre-flight budget enforcement on the retro-analyst
+   * Claude call. When present, assertBudget() is called before driver.invoke().
+   * When absent, budget check is skipped (retro is low-frequency; no projectId
+   * is available from sprint context alone without an extra DB join).
+   * [Engineer-Sr · Sonnet · run-cost-guardrails-2026-05-04]
+   */
+  projectId?: string
 }
 
 export interface AnalyzeResult {
@@ -142,6 +156,8 @@ export class DefaultRetroService implements RetroService {
   private readonly onAnalysisComplete?: (reportId: string, sprintId: string) => void
   private readonly scheduler?: Scheduler
   private readonly driver: AnthropicDriver | null
+  // [Engineer-Sr · Sonnet · run-cost-guardrails-2026-05-04]
+  private readonly projectId?: string
 
   constructor(
     private readonly db: DB,
@@ -164,6 +180,9 @@ export class DefaultRetroService implements RetroService {
       this.scheduler = options.scheduler
     }
     this.driver = options.driver ?? null
+    if (options.projectId !== undefined) {
+      this.projectId = options.projectId
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -780,6 +799,39 @@ export class DefaultRetroService implements RetroService {
   ): Promise<void> {
     if (!this.driver) {
       throw new AnthropicDriverNoKeyError()
+    }
+
+    // Pre-flight budget check — block if monthly hard cap would be exceeded.
+    // [Engineer-Sr · Sonnet · run-cost-guardrails-2026-05-04]
+    if (this.projectId) {
+      // Sprint tenantId is not available here without a DB lookup; we use the
+      // sentinel tenant (install-scoped). Real tenant is wired via RetroServiceOptions.projectId.
+      const sprintRows = await this.db
+        .select({ tenantId: sprints.tenantId })
+        .from(sprints)
+        .where(eq(sprints.sprintId, sprintId))
+        .limit(1)
+      const tenantId = sprintRows[0]?.tenantId ?? '00000000-0000-0000-0000-000000000000'
+
+      try {
+        await assertBudget({
+          tenantId,
+          projectId:         this.projectId,
+          sprintId,
+          persona:           'retro-analyst',
+          estimatedCostUsd:  RETRO_ESTIMATED_COST_USD,
+          db:                this.db,
+        })
+      } catch (budgetErr) {
+        if (budgetErr instanceof BudgetExceededError) {
+          logger.warn(
+            { retroReportId, sprintId, message: budgetErr.message },
+            'RetroService: retro-analyst blocked by budget cap — skipping driver invoke',
+          )
+          throw budgetErr
+        }
+        throw budgetErr
+      }
     }
 
     // 1. Build the sprint context blob from the metrics rows already persisted.

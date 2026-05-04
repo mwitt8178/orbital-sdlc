@@ -21,7 +21,7 @@ import { uuidv7 } from 'uuidv7'
 import { router, publicProcedure } from '../init.js'
 import { db, sql as sqlPool } from '../../db/client.js'
 import { createEventStore } from '../../events/store.js'
-import { costLedger } from '../../db/schema/cost.js'
+import { costLedger, costEnforcementLog } from '../../db/schema/cost.js'
 import { getCostService } from '../../cost/service.js'
 import { getCostEnforcer } from '../../cost/enforcer.js'
 import { authorizeAdminRequest } from '../../admin/auth.js'
@@ -301,6 +301,68 @@ export const costRouter = router({
       )
 
       return result
+    }),
+
+  /**
+   * Paginated cost_enforcement_log rows for a project.
+   * Used by the Billing page to show recent allow/block decisions.
+   * [Engineer-Sr · Sonnet · run-cost-guardrails-2026-05-04]
+   */
+  enforcementLog: publicProcedure
+    .input(z.object({
+      projectId: z.string().uuid(),
+      limit:     z.number().int().min(1).max(200).default(50),
+      cursor:    z.string().optional(),
+    }))
+    .output(z.object({
+      rows: z.array(z.object({
+        id:                     z.string(),
+        tenantId:               z.string(),
+        projectId:              z.string(),
+        persona:                z.string().nullable(),
+        decision:               z.enum(['allow', 'block', 'throttle']),
+        budgetCapUsd:           z.number().nullable(),
+        mtdSpendUsd:            z.number(),
+        wouldBeCostEstimateUsd: z.number(),
+        reason:                 z.string().nullable(),
+        createdAt:              z.string(),
+      })),
+      nextCursor: z.string().nullable(),
+    }))
+    .query(async ({ input }) => {
+      const conditions = [eq(costEnforcementLog.projectId, input.projectId)]
+      if (input.cursor) {
+        conditions.push(lte(costEnforcementLog.createdAt, new Date(input.cursor)))
+      }
+
+      const rows = await db
+        .select()
+        .from(costEnforcementLog)
+        .where(and(...conditions))
+        .orderBy(desc(costEnforcementLog.createdAt))
+        .limit(input.limit + 1)
+
+      const hasMore = rows.length > input.limit
+      const pageRows = hasMore ? rows.slice(0, input.limit) : rows
+      const nextCursor = hasMore
+        ? pageRows[pageRows.length - 1]?.createdAt.toISOString() ?? null
+        : null
+
+      return {
+        rows: pageRows.map((r) => ({
+          id:                     r.id,
+          tenantId:               r.tenantId,
+          projectId:              r.projectId,
+          persona:                r.persona ?? null,
+          decision:               r.decision as 'allow' | 'block' | 'throttle',
+          budgetCapUsd:           r.budgetCapUsd != null ? Number(r.budgetCapUsd) : null,
+          mtdSpendUsd:            Number(r.mtdSpendUsd),
+          wouldBeCostEstimateUsd: Number(r.wouldBeCostEstimateUsd),
+          reason:                 r.reason ?? null,
+          createdAt:              r.createdAt.toISOString(),
+        })),
+        nextCursor,
+      }
     }),
 })
 

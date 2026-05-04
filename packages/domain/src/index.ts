@@ -35,6 +35,10 @@ export type { EventStore } from './events/store.js'
 
 // Cost
 export { createCostService } from './cost/service.js'
+// Cost enforcement pre-flight helper
+// [Engineer-Sr · Sonnet · run-cost-guardrails-2026-05-04]
+export { assertBudget, BudgetExceededError } from './cost/assert-budget.js'
+export type { AssertBudgetParams, BudgetEnforcementResult } from './cost/assert-budget.js'
 
 // Vision and Replay stay in @orbital/orchestrator until Phase 3.7.
 // Consumers of createVisionService / createReplayService import directly
