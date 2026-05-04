@@ -38,6 +38,9 @@ import { projectPersonasRouter } from '../../orchestrator/src/trpc/routers/proje
 // Settings → Sprints — per-project sprint policy
 // [Engineer-Principal · Opus · run-settings-sprints]
 import { sprintPolicyRouter } from '../../orchestrator/src/trpc/routers/sprint-policy.js'
+// Vision decomposition planning router — generatePlan / approvePlan / discardPlan
+// [Engineer-Sr · Sonnet · run-vision-decompose]
+import { planningRouter } from '../../orchestrator/src/trpc/routers/planning.js'
 
 // Factory router imports — we control when they construct
 import {
@@ -289,6 +292,9 @@ export async function getLambdaAppRouter(): Promise<AnyRouter> {
     team: teamRouter,
     uat: uatR,
     vision: visionRouter,
+    // Vision decomposition planning — generatePlan / approvePlan / discardPlan
+    // [Engineer-Sr · Sonnet · run-vision-decompose]
+    planning: planningRouter,
   }) as AnyRouter
 
   return _router
