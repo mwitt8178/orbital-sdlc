@@ -195,6 +195,17 @@ export function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
+/**
+ * Module-level synchronous accessor for the current id token. Used by
+ * non-React callers (the WebSocket client) that need to encode the JWT
+ * into the connect URL as `?token=…` since browsers can't set headers on
+ * WS upgrades. Returns null if not authenticated or the cached token is
+ * expired. Mirrors the React `useAuth().getIdToken` accessor.
+ */
+export function getIdToken(): string | null {
+  return _getIdToken()
+}
+
 export function externalSignOut(): void {
   _signOut()
 }

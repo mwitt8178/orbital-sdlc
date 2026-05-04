@@ -13,6 +13,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { trpc } from '../services/trpc.js'
+import { buildPublicWsUrl } from '../services/ws.js'
 import { useActiveProjectStore } from '../store/active-project.js'
 import { LiveBurnChart } from '../components/features/cost/LiveBurnChart.js'
 import { BudgetCard } from '../components/features/cost/BudgetCard.js'
@@ -41,18 +42,8 @@ function useWsLedgerEvents(projectId: string | null, onEntry: (p: CostLedgerAppe
     // Mirror services/ws.ts URL resolution. When VITE_WS_URL is unset and we're
     // not running on an origin that can serve same-origin /ws, skip the
     // connection so we don't error-loop in CloudFront-only builds.
-    const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env
-    const fromEnv = env?.['VITE_WS_URL']
-    let url: string
-    if (fromEnv && fromEnv.length > 0) {
-      const base = fromEnv.replace(/\/$/, '')
-      url = base.endsWith('/ws') ? base : `${base}/ws`
-    } else if (typeof window !== 'undefined' && window.location?.host) {
-      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      url = `${proto}//${window.location.host}/ws`
-    } else {
-      return
-    }
+    const url = buildPublicWsUrl()
+    if (!url) return
     const ws = new WebSocket(url)
     wsRef.current = ws
 

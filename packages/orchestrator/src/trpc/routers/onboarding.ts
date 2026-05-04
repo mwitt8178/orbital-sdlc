@@ -108,8 +108,14 @@ import {
 import { createMemoryService } from '../../memory/service.js'
 import { createMondayClient } from '../../backlog/monday-client.js'
 import { createGithubClient } from '../../github/client.js'
+import { createProjectsService } from '../../projects/service.js'
+import type { ProjectsService } from '../../projects/service.js'
 import type { Actor } from '@orbital/types'
+import { OrbitalError } from '@orbital/types'
+import { PROJECTS_ERROR_CODES } from '../../projects/types.js'
 import { logger } from '../../config/logger.js'
+import { onboardingSessions } from '../../db/schema/onboarding.js'
+import { eq } from 'drizzle-orm'
 
 // ---------------------------------------------------------------------------
 // Keychain account names
@@ -137,6 +143,7 @@ let _githubProvisioner: DefaultGithubProvisioner | null = null
 let _codebaseAnalyzer: CodebaseAnalyzer | null = null
 let _memorySeeder: MemorySeeder | null = null
 let _systemTeacher: SystemTeacher | null = null
+let _projectsService: ProjectsService | null = null
 
 function getEventStore(): ReturnType<typeof createEventStore> {
   if (_eventStore === null) _eventStore = createEventStore(db, sqlPool)
@@ -214,6 +221,24 @@ function getSystemTeacher(): SystemTeacher {
 }
 
 /**
+ * Lazy projects-service singleton mirroring the construction in
+ * trpc/routers/index.ts (`projectsRouter`). Used by `completeSession` to
+ * materialise a real `projects` row from the wizard's collected basics so the
+ * UI's projects list is non-empty after onboarding.
+ */
+function getProjectsService(): ProjectsService {
+  if (_projectsService === null) {
+    const monday = createMondayClient()
+    const github = createGithubClient()
+    _projectsService = createProjectsService(db, getEventStore(), {
+      mondayClient: monday,
+      githubClient: github,
+    })
+  }
+  return _projectsService
+}
+
+/**
  * Test/integration helper — reset the lazy singletons so a re-import of the
  * router picks up env overrides. Mirrors the pattern in install-state tests.
  */
@@ -225,6 +250,7 @@ export function resetOnboardingRouterSingletons(): void {
   _codebaseAnalyzer = null
   _memorySeeder = null
   _systemTeacher = null
+  _projectsService = null
 }
 
 const SYSTEM_ACTOR: Actor = { type: 'system', component: 'audit_service' }
@@ -571,7 +597,90 @@ export function createOnboardingRouter() {
       .output(completeFlowOutputSchema)
       .mutation(async ({ input }) => {
         try {
-          const row = await getFlowService().complete(input.sessionId, input.projectId ?? null)
+          // Resolve the canonical projectId. Precedence:
+          //   1. Caller-supplied input.projectId (existing-repo / join flow)
+          //   2. Existing session.projectId (already materialised by an earlier call)
+          //   3. Materialise from session.stateJson.basics.{name,slug} (new_project)
+          //
+          // This is the bridge that turns the wizard's collected state into a
+          // real `projects` row so the post-onboarding UI is non-empty. Done
+          // here (not in flows.ts) to keep persistence concerns in the router
+          // and the flow service focused on session state machine semantics.
+          let canonicalProjectId: string | null = input.projectId ?? null
+          if (canonicalProjectId === null) {
+            const sessionRows = await db
+              .select()
+              .from(onboardingSessions)
+              .where(eq(onboardingSessions.sessionId, input.sessionId))
+              .limit(1)
+            const existingProjectId = sessionRows[0]?.projectId ?? null
+            if (existingProjectId) {
+              canonicalProjectId = existingProjectId
+            } else {
+              const state = (sessionRows[0]?.stateJson ?? {}) as Record<string, unknown>
+              const basics = (state['basics'] ?? {}) as Record<string, unknown>
+              const tooling = (state['tooling'] ?? {}) as Record<string, unknown>
+              const name = typeof basics['name'] === 'string' ? (basics['name'] as string) : null
+              const rawSlug =
+                typeof basics['slug'] === 'string' ? (basics['slug'] as string) : null
+              if (name && rawSlug) {
+                const slug = rawSlug
+                  .toLowerCase()
+                  .replace(/[^a-z0-9-]+/g, '-')
+                  .replace(/^-+|-+$/g, '')
+                const description =
+                  typeof basics['description'] === 'string'
+                    ? (basics['description'] as string)
+                    : undefined
+                const scmProvider =
+                  typeof tooling['scmProvider'] === 'string'
+                    ? (tooling['scmProvider'] as 'internal' | 'codecommit' | 'github')
+                    : 'internal'
+                const ticketProvider =
+                  typeof tooling['ticketProvider'] === 'string'
+                    ? (tooling['ticketProvider'] as 'internal' | 'monday')
+                    : 'internal'
+                try {
+                  const created = await getProjectsService().create({
+                    name,
+                    slug,
+                    ...(description !== undefined ? { description } : {}),
+                    scmProvider,
+                    ticketProvider,
+                  })
+                  canonicalProjectId = created.projectId
+                } catch (createErr) {
+                  if (
+                    createErr instanceof OrbitalError &&
+                    createErr.code === PROJECTS_ERROR_CODES.CONFLICT_SLUG
+                  ) {
+                    // Idempotent: a prior completeSession call already created
+                    // this project. Look it up and reuse the id.
+                    try {
+                      const installState = await readInstallState()
+                      const existing = await getProjectsService().getBySlug(
+                        slug,
+                        installState.installId,
+                      )
+                      canonicalProjectId = existing?.projectId ?? null
+                    } catch (lookupErr) {
+                      logger.warn(
+                        { err: lookupErr instanceof Error ? lookupErr.message : String(lookupErr) },
+                        'completeSession: getBySlug after CONFLICT_SLUG failed',
+                      )
+                    }
+                  } else {
+                    logger.warn(
+                      { err: createErr instanceof Error ? createErr.message : String(createErr) },
+                      'completeSession: project materialise failed (non-fatal)',
+                    )
+                  }
+                }
+              }
+            }
+          }
+
+          const row = await getFlowService().complete(input.sessionId, canonicalProjectId)
           // B2: also mark install-level setup complete server-side so the
           // SetupGate stops bouncing every protected route to /welcome.
           // Without this, the user can finish the wizard and still be locked.

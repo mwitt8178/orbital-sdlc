@@ -12,6 +12,7 @@ import { VisionHistoryPanel } from '../components/features/vision/VisionHistoryP
 import { PlanningPanel } from '../components/features/vision/PlanningPanel.js'
 import { useVisionStore } from '../store/vision.js'
 import { trpc } from '../services/trpc.js'
+import { useActiveProject } from '../services/use-active-project.js'
 
 export default function Vision() {
   const documentId = useVisionStore((s) => s.currentDocumentId)
@@ -27,7 +28,7 @@ export default function Vision() {
     <div className="mx-auto max-w-[1400px] px-8 py-6">
       <header className="mb-6">
         <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
-          <span>Acme Product</span>
+          <span>{useActiveProject().activeProject?.name ?? "Untitled project"}</span>
           <span aria-hidden="true">›</span>
           <Link
             to="/backlog"

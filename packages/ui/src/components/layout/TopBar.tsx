@@ -6,6 +6,7 @@ import { useSprintsStore } from '../../store/sprints.js'
 import { useCommandRegistry } from '../../services/command-registry.js'
 import { ProjectSwitcher } from '../features/projects/ProjectSwitcher.js'
 import { trpc } from '../../services/trpc.js'
+import { buildPublicWsUrl } from '../../services/ws.js'
 import { useActiveProjectStore } from '../../store/active-project.js'
 import type { CostLedgerAppendedPayload } from '../../types/events.js'
 // Round 7-02 — hub status indicator in topbar
@@ -100,18 +101,8 @@ function LiveBurnWidget() {
   // same-origin /ws) skip the connection rather than error-loop.
   useEffect(() => {
     if (!activeProjectId) return
-    const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env
-    const fromEnv = env?.['VITE_WS_URL']
-    let url: string
-    if (fromEnv && fromEnv.length > 0) {
-      const base = fromEnv.replace(/\/$/, '')
-      url = base.endsWith('/ws') ? base : `${base}/ws`
-    } else if (typeof window !== 'undefined' && window.location?.host) {
-      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      url = `${proto}//${window.location.host}/ws`
-    } else {
-      return
-    }
+    const url = buildPublicWsUrl()
+    if (!url) return
     const ws = new WebSocket(url)
     wsRef.current = ws
     ws.onmessage = (ev) => {

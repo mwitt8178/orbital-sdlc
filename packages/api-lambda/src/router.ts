@@ -21,6 +21,8 @@ import { auditExportRouter } from '../../orchestrator/src/trpc/routers/audit-exp
 import { channelsRouter } from '../../orchestrator/src/trpc/routers/channels.js'
 import { codeReviewsRouter } from '../../orchestrator/src/trpc/routers/code-reviews.js'
 import { costRouter } from '../../orchestrator/src/trpc/routers/cost.js'
+import { createCostService, registerCostService } from '../../orchestrator/src/cost/service.js'
+import { loadOrCreateInstall } from '../../orchestrator/src/config/install.js'
 import { orchestrationRouter } from '../../orchestrator/src/trpc/routers/orchestration.js'
 import { outboxRouter } from '../../orchestrator/src/trpc/routers/outbox.js'
 import { providersRouter } from '../../orchestrator/src/trpc/routers/providers.js'
@@ -146,6 +148,38 @@ export async function getLambdaAppRouter(): Promise<AnyRouter> {
     githubClient: github,
     scmClient,
   })
+
+  // Register the CostService global. The cost.summary tRPC procedure
+  // calls getCostService() which throws STARTUP_ERROR until registered.
+  // boot.ts registers it for the long-running orchestrator; the api-lambda
+  // had no equivalent registration — so every cost.summary call returned
+  // 500 in production. Mirror the boot.ts wiring here.
+  // [Engineer-Principal · Opus · run-final-100]
+  try {
+    const install = await loadOrCreateInstall()
+    const costService = createCostService(db, events, install.install_id)
+    registerCostService(costService)
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn('api-lambda boot: registerCostService failed (cost.summary will 500)', err)
+  }
+
+  // Bootstrap: ensure the install has at least one project row so the UI's
+  // ProjectSwitcher never renders an empty "No projects" state. Idempotent —
+  // ensureDefaultProject() looks up the 'default' slug first and short-circuits
+  // when present. Logged-and-swallowed: if it fails (e.g. transient DSQL
+  // unavailability), the rest of the router still constructs and the UI
+  // degrades gracefully rather than the cold-start failing entirely.
+  // [Engineer-Principal · Opus · run-final-100]
+  try {
+    await projectsService.ensureDefaultProject()
+  } catch (err) {
+    // Use console.warn — pino logger is constructed elsewhere and we're
+    // before its first use here. Avoid the import cycle.
+    // eslint-disable-next-line no-console
+    console.warn('api-lambda boot: ensureDefaultProject failed (non-fatal)', err)
+  }
+
   const projectsR = createProjectsRouter({
     projectsService,
     mondayClient: monday,

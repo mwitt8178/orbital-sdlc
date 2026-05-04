@@ -12,6 +12,18 @@ let cached = null;
 export async function loadOrCreateInstall() {
     if (cached)
         return cached;
+    // Stable install_id from env in cloud deploys — avoids the per-Lambda-
+    // instance /tmp ephemeral bug where each container minted its own UUID.
+    const fromEnv = process.env['ORBITAL_INSTALL_ID'];
+    if (fromEnv) {
+        const config = {
+            install_id: fromEnv,
+            created_at: process.env['ORBITAL_INSTALL_CREATED_AT'] ?? new Date(0).toISOString(),
+            schema_version: 1,
+        };
+        cached = installSchema.parse(config);
+        return cached;
+    }
     const configDir = path.join(getOrbitalHome(), 'config');
     const configPath = path.join(configDir, 'install.json');
     try {

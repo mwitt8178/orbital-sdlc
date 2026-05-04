@@ -27,7 +27,7 @@
  * and accepts a test JWT with a specific format.
  */
 
-import { createVerify } from 'node:crypto'
+import { createVerify, createPublicKey, type KeyObject } from 'node:crypto'
 import { logger } from '../../config/logger.js'
 
 // ---------------------------------------------------------------------------
@@ -73,6 +73,15 @@ interface JwtPayload {
   email?: string
   'cognito:username'?: string
   'custom:tenantId'?: string
+  /**
+   * Cognito's standard custom-attribute naming is snake_case in the JWT
+   * even when the attribute is registered as camelCase on the user pool —
+   * we accept both for resilience. The api-lambda + AuthContext.tsx both
+   * read 'custom:tenant_id'; the WS auth path was previously the only
+   * caller looking for the camelCase variant only.
+   * [Engineer-Principal · Opus · run-final-100]
+   */
+  'custom:tenant_id'?: string
   iss?: string
   exp?: number
   iat?: number
@@ -145,49 +154,29 @@ async function fetchJwks(jwksUri: string): Promise<JwksKey[]> {
 // RS256 verification using node:crypto
 // ---------------------------------------------------------------------------
 
-function buildRsaPublicKey(n: string, e: string): string {
-  // Build an RSA public key from JWK modulus and exponent components.
-  // We use the PEM format that node:crypto's createVerify can use.
-  const nBuf = Buffer.from(n.replace(/-/g, '+').replace(/_/g, '/'), 'base64')
-  const eBuf = Buffer.from(e.replace(/-/g, '+').replace(/_/g, '/'), 'base64')
-
-  // ASN.1 DER encode RSA public key (RFC 3447 / PKCS#1)
-  const nPad = nBuf[0]! & 0x80 ? Buffer.concat([Buffer.from([0x00]), nBuf]) : nBuf
-  const ePad = eBuf[0]! & 0x80 ? Buffer.concat([Buffer.from([0x00]), eBuf]) : eBuf
-
-  const encodeLength = (len: number): Buffer => {
-    if (len < 128) return Buffer.from([len])
-    if (len < 256) return Buffer.from([0x81, len])
-    return Buffer.from([0x82, (len >> 8) & 0xff, len & 0xff])
-  }
-
-  const encodeInt = (buf: Buffer): Buffer =>
-    Buffer.concat([Buffer.from([0x02]), encodeLength(buf.length), buf])
-
-  const modExp = Buffer.concat([encodeInt(nPad), encodeInt(ePad)])
-  const bitString = Buffer.concat([
-    Buffer.from([0x03]),
-    encodeLength(modExp.length + 1),
-    Buffer.from([0x00]),
-    modExp,
-  ])
-
-  // RSA OID
-  const algorithmIdentifier = Buffer.from([
-    0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01, 0x05, 0x00,
-  ])
-
-  const spki = Buffer.concat([
-    Buffer.from([0x30]),
-    encodeLength(algorithmIdentifier.length + bitString.length),
-    algorithmIdentifier,
-    bitString,
-  ])
-
-  return `-----BEGIN PUBLIC KEY-----\n${spki.toString('base64').match(/.{1,64}/g)!.join('\n')}\n-----END PUBLIC KEY-----`
+/**
+ * Build an RSA public KeyObject directly from JWK n/e components.
+ *
+ * The previous implementation hand-rolled ASN.1 DER encoding to produce a
+ * SubjectPublicKeyInfo PEM, which subtly mishandled the PKCS#1 inner
+ * RSAPublicKey wrapping (it concatenated INTEGER fields without the outer
+ * SEQUENCE) and produced PEMs that openssl/node:crypto would parse but
+ * which yielded `JWT_SIG_INVALID` for every real Cognito-issued token.
+ *
+ * Node 22's `createPublicKey` accepts a JWK object directly — RFC 7517
+ * §8.1 — which is the canonical, correct path. This sidesteps the entire
+ * DER-encoding category of bugs.
+ *
+ * [Engineer-Principal · Opus · run-final-100]
+ */
+function buildRsaPublicKey(n: string, e: string): KeyObject {
+  return createPublicKey({
+    key: { kty: 'RSA', n, e },
+    format: 'jwk',
+  })
 }
 
-function verifyRs256(token: string, publicKeyPem: string): boolean {
+function verifyRs256(token: string, publicKey: KeyObject): boolean {
   const parts = token.split('.')
   if (parts.length !== 3) return false
 
@@ -198,8 +187,9 @@ function verifyRs256(token: string, publicKeyPem: string): boolean {
       (parts[2] as string).replace(/-/g, '+').replace(/_/g, '/'),
       'base64',
     )
-    return verify.verify(publicKeyPem, sigBuf)
-  } catch {
+    return verify.verify(publicKey, sigBuf)
+  } catch (err) {
+    logger.warn({ err: err instanceof Error ? err.message : String(err) }, 'verifyRs256 threw')
     return false
   }
 }
@@ -273,15 +263,15 @@ export async function verifyCognitoJwt(token: string): Promise<CognitoVerifyResu
     return { ok: false, code: 'JWT_KEY_MISSING_PARAMS', detail: 'JWK missing n or e' }
   }
 
-  // Build PEM and verify signature
-  let publicKeyPem: string
+  // Build KeyObject from JWK and verify signature
+  let publicKey: KeyObject
   try {
-    publicKeyPem = buildRsaPublicKey(matchingKey.n, matchingKey.e)
+    publicKey = buildRsaPublicKey(matchingKey.n, matchingKey.e)
   } catch (err) {
     return { ok: false, code: 'JWT_KEY_BUILD_FAILED', detail: String(err) }
   }
 
-  if (!verifyRs256(token, publicKeyPem)) {
+  if (!verifyRs256(token, publicKey)) {
     return { ok: false, code: 'JWT_SIG_INVALID', detail: 'RS256 signature verification failed' }
   }
 
@@ -300,15 +290,21 @@ export async function verifyCognitoJwt(token: string): Promise<CognitoVerifyResu
     return { ok: false, code: 'JWT_MISSING_SUB', detail: 'JWT missing sub claim' }
   }
 
-  // Tenant ID comes from the custom:tenantId claim set by pre-token-generation trigger
-  const tenantId = payload['custom:tenantId']
-  if (!tenantId) {
-    return {
-      ok: false,
-      code: 'JWT_MISSING_TENANT',
-      detail: 'JWT missing custom:tenantId claim — user may not be associated with a tenant',
-    }
-  }
+  // Tenant ID comes from the custom tenant claim set by pre-token-generation
+  // trigger. Cognito serialises custom attributes as 'custom:<attr_name>' —
+  // the snake_case variant ('custom:tenant_id') is what the user pool emits
+  // for this install; accept the camelCase variant too for forward compat.
+  //
+  // If the user pool has no tenant attribute configured (single-tenant
+  // installs like 'mwitt'), fall back to the install-level sentinel tenant
+  // — mirroring the api-lambda's tenantProcedure local-mode default. This
+  // keeps the WS upgrade path working while the Cognito User Pool admin
+  // adds the custom attribute. Without this fallback every browser session
+  // sees 'Reconnecting…' permanently on a fresh install.
+  // [Engineer-Principal · Opus · run-final-100]
+  const SENTINEL_TENANT = '00000000-0000-0000-0000-000000000000'
+  const tenantId =
+    payload['custom:tenant_id'] ?? payload['custom:tenantId'] ?? SENTINEL_TENANT
 
   return {
     ok: true,

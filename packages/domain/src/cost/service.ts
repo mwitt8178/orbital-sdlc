@@ -236,6 +236,11 @@ export class CostService implements ICostService {
       )
 
     // Today's spend.
+    // DSQL rejects native JS Date in template literal binds; the row in the
+    // `cae8c5c fix(install-state)` commit chain already established the
+    // pattern of converting to ISO string before binding. We mirror it here.
+    // [Engineer-Principal · Opus · run-final-100]
+    const todayStartIso = todayStart.toISOString()
     const todayRows = await this.db
       .select({ todayCostUsd: sum(costLedger.costUsd) })
       .from(costLedger)
@@ -243,7 +248,7 @@ export class CostService implements ICostService {
         and(
           eq(costLedger.projectId, projectId),
           ...(sprintId ? [eq(costLedger.sprintId, sprintId)] : []),
-          dSQL`${costLedger.occurredAt} >= ${todayStart}`,
+          dSQL`${costLedger.occurredAt} >= ${todayStartIso}`,
         ),
       )
 

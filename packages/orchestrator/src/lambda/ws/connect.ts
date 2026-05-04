@@ -103,11 +103,25 @@ async function validateCognitoAuth(
   query: Record<string, string>,
 ): Promise<AuthResult | null> {
   const token = query['token']
-  if (!token) return null
+  if (!token) {
+    logger.warn(
+      { queryKeys: Object.keys(query) },
+      'ws-connect: validateCognitoAuth called with empty token',
+    )
+    return null
+  }
+
+  // Surface a few token characteristics (NOT the token itself) to debug
+  // why the upgrade path is rejecting valid-looking JWTs in production.
+  // [Engineer-Principal · Opus · run-final-100]
+  logger.info(
+    { tokenLen: token.length, tokenPrefix: token.slice(0, 12) + '…' },
+    'ws-connect: validateCognitoAuth called',
+  )
 
   const result = await verifyCognitoJwt(token)
   if (!result.ok) {
-    logger.debug({ code: result.code }, 'ws-connect: Cognito JWT validation failed')
+    logger.warn({ code: result.code }, 'ws-connect: Cognito JWT validation failed')
     return null
   }
 
@@ -132,7 +146,7 @@ async function validatePkiAuth(
 
   const result = await verifyWsHandshake({ query })
   if (!result.ok) {
-    logger.debug({ code: result.code, detail: result.detail }, 'ws-connect: PKI envelope validation failed')
+    logger.warn({ code: result.code, detail: result.detail }, 'ws-connect: PKI envelope validation failed')
     return null
   }
 
@@ -160,7 +174,7 @@ async function validateAuth(event: APIGatewayWebSocketEvent): Promise<AuthResult
     return validatePkiAuth(query)
   }
 
-  logger.debug('ws-connect: no auth credentials in query string')
+  logger.warn('ws-connect: no auth credentials in query string')
   return null
 }
 

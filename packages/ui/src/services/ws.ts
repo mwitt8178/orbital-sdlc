@@ -11,6 +11,7 @@
  */
 
 import { WSMessageSchema, type EventEnvelope } from '@orbital/types'
+import { getIdToken } from '../auth/AuthContext.js'
 import { useConnectionStore } from '../store/connection.js'
 import { useEventsStore } from '../store/events.js'
 import {
@@ -442,25 +443,36 @@ function buildWsUrl(cursor: string | null): string | null {
   }).env
 
   const fromEnv = env?.['VITE_WS_URL']
-  const cursorParam = cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''
+
+  // [Engineer-Principal · Opus · run-final-100] Attach Cognito id_token as
+  // ?token=<jwt> so the API Gateway WebSocket $connect Lambda's
+  // verifyCognitoJwt() can authenticate the upgrade. Browsers cannot set
+  // custom headers on WS upgrades, so the JWT must travel as a query string.
+  // Without this, every browser connect 401's and the UI shows "Reconnecting…"
+  // forever. The accessor is module-level on AuthContext (set on mount) so
+  // a static ESM import is safe — it returns null until AuthProvider hydrates,
+  // which is fine because doConnect() is only invoked after app mount.
+  const token = getIdToken()
+
+  const params = new URLSearchParams()
+  if (cursor) params.set('cursor', cursor)
+  if (token) params.set('token', token)
+  const qs = params.toString()
+  const querySuffix = qs ? `?${qs}` : ''
 
   if (fromEnv && fromEnv.length > 0) {
     const base = fromEnv.replace(/\/$/, '')
-    // AWS API Gateway WebSocket URLs end with the stage name (e.g. /$default)
-    // and DO NOT take a /ws suffix — appending one yields a 404 closure during
-    // upgrade. Detect those by host pattern; everything else (local Fastify,
-    // self-host) keeps the historical /ws-suffix behaviour.
     const isApiGwWs =
       base.includes('execute-api.') ||
       /\/\$default(?:$|\?)/.test(base) ||
       base.endsWith('/$default')
     const withPath = isApiGwWs || base.endsWith('/ws') ? base : `${base}/ws`
-    return `${withPath}${cursorParam}`
+    return `${withPath}${querySuffix}`
   }
 
   if (typeof window === 'undefined' || !window.location?.host) return null
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${proto}//${window.location.host}/ws${cursorParam}`
+  return `${proto}//${window.location.host}/ws${querySuffix}`
 }
 
 // ---------------------------------------------------------------------------
@@ -468,6 +480,21 @@ function buildWsUrl(cursor: string | null): string | null {
 // ---------------------------------------------------------------------------
 
 let globalClient: WebSocketClient | null = null
+
+/**
+ * Public helper for components that need to open their own WebSocket
+ * (e.g. Cost.tsx, TopBar.tsx live-cost stream). Returns the same URL the
+ * shared WebSocketClient uses, including the Cognito token query string.
+ * Returns null if no WS endpoint is configured for this build.
+ *
+ * Centralising URL construction here avoids drift between feature widgets and
+ * the main client. Previously TopBar/Cost recomputed their own URL and
+ * naively appended `/ws` to API Gateway URLs (producing `/$default/ws`,
+ * which 403s on upgrade).
+ */
+export function buildPublicWsUrl(cursor: string | null = null): string | null {
+  return buildWsUrl(cursor)
+}
 
 /** Call once on app mount. Returns a cleanup function. */
 export function initWebSocket(): () => void {
