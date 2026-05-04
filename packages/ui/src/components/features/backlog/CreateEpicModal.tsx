@@ -10,10 +10,14 @@
  */
 
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { trpc } from '../../../services/trpc.js'
 import { Modal } from '../../ui/Modal.js'
 import { Button } from '../../ui/Button.js'
 import { Input } from '../../ui/Input.js'
+import { FormField } from '../../ui/FormField.js'
 import { useVisionStore } from '../../../store/vision.js'
 import { useToast } from '../../../services/use-toast.js'
 import { buildAuditMetadata } from '../../../services/audit-metadata.js'
@@ -23,15 +27,23 @@ interface CreateEpicModalProps {
   onCreated?: (epicId: string) => void
 }
 
+const schema = z.object({
+  title: z.string().trim().min(1, 'Title is required').max(200, 'Title is too long'),
+  rationale: z
+    .string()
+    .trim()
+    .min(1, 'Rationale is required')
+    .max(2000, 'Rationale is too long'),
+  priority: z.coerce.number().int().min(0, 'Priority must be 0 or greater'),
+})
+
+type FormValues = z.infer<typeof schema>
+
 export function CreateEpicModal({ onClose, onCreated }: CreateEpicModalProps) {
   const documentId = useVisionStore((s) => s.currentDocumentId)
   const utils = trpc.useUtils()
   const toast = useToast()
-
-  const [title, setTitle] = useState('')
-  const [rationale, setRationale] = useState('')
-  const [priority, setPriority] = useState(100)
-  const [error, setError] = useState<string | null>(null)
+  const [serverError, setServerError] = useState<string | null>(null)
 
   const docQuery = trpc.vision.get.useQuery(
     documentId ? { vision_document_id: documentId } : (undefined as never),
@@ -39,95 +51,86 @@ export function CreateEpicModal({ onClose, onCreated }: CreateEpicModalProps) {
   )
   const visionVersionId = docQuery.data?.version?.vision_version_id ?? null
 
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    mode: 'onBlur',
+    defaultValues: { title: '', rationale: '', priority: 100 },
+  })
+
   const createMutation = trpc.backlog.epics.create.useMutation({
-    onSuccess: (epic) => {
-      toast.success('Epic created', { description: title })
+    onSuccess: (epic, vars) => {
+      toast.success('Epic created', { description: vars.title })
       void utils.backlog.epics.list.invalidate()
       void utils.backlog.stories.list.invalidate()
       onCreated?.(epic.epicId)
       onClose()
     },
     onError: (err) => {
-      setError(err.message)
+      setServerError(err.message)
       toast.error('Could not create epic', { description: err.message })
     },
   })
 
-  const submit = () => {
-    setError(null)
-    if (!title.trim()) {
-      setError('Title is required')
-      return
-    }
-    if (!rationale.trim()) {
-      setError('Rationale is required')
-      return
-    }
+  const onSubmit = async (values: FormValues) => {
+    setServerError(null)
     if (!visionVersionId) {
-      setError('No vision version available — lock or draft a vision first')
+      setServerError('No vision version available — lock or draft a vision first')
       return
     }
 
-    // The backlog.epics.create input doesn't take audit_metadata directly;
-    // the procedure is wrapped in idempotentProcedure which uses an
-    // Idempotency-Key header. We still build audit metadata for trace
-    // continuity in linked artifacts when invalidating downstream.
-    const auditMeta = buildAuditMetadata(`User created epic "${title.trim()}"`, {
+    const auditMeta = buildAuditMetadata(`User created epic "${values.title.trim()}"`, {
       linked_artifacts: [{ type: 'vision_version', id: visionVersionId }],
     })
-    void auditMeta // currently unused by this procedure but built for future
+    void auditMeta
 
-    createMutation.mutate({
+    await createMutation.mutateAsync({
       vision_version_id: visionVersionId,
-      title: title.trim(),
-      rationale: rationale.trim(),
-      priority,
+      title: values.title.trim(),
+      rationale: values.rationale.trim(),
+      priority: values.priority,
     })
   }
 
   return (
     <Modal open onClose={onClose} title="Create epic" width="max-w-lg">
-      <div className="space-y-4">
-        <div>
-          <label htmlFor="epic-title" className="mb-1 block text-xs font-medium text-slate-700">
-            Title
-          </label>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+        <FormField label="Title" error={errors.title?.message} required>
           <Input
-            id="epic-title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            {...register('title')}
             placeholder="e.g. Authentication"
             autoFocus
-            hasError={!!error && !title.trim()}
+            hasError={!!errors.title}
           />
-        </div>
+        </FormField>
 
-        <div>
-          <label htmlFor="epic-rationale" className="mb-1 block text-xs font-medium text-slate-700">
-            Rationale
-          </label>
+        <FormField label="Rationale" error={errors.rationale?.message} required>
           <textarea
-            id="epic-rationale"
-            value={rationale}
-            onChange={(e) => setRationale(e.target.value)}
+            {...register('rationale')}
             placeholder="Why is this epic worth building? Which outcome from the vision does it serve?"
             rows={4}
-            className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className={
+              'w-full rounded-md border bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 ' +
+              (errors.rationale ? 'border-rose-300 bg-rose-50' : 'border-slate-200')
+            }
           />
-        </div>
+        </FormField>
 
-        <div>
-          <label htmlFor="epic-priority" className="mb-1 block text-xs font-medium text-slate-700">
-            Priority (lower = higher priority)
-          </label>
+        <FormField
+          label="Priority (lower = higher priority)"
+          error={errors.priority?.message}
+          help="Stories inherit relative priority from their epic."
+        >
           <Input
-            id="epic-priority"
+            {...register('priority')}
             type="number"
             min={0}
-            value={priority}
-            onChange={(e) => setPriority(Number(e.target.value) || 0)}
+            hasError={!!errors.priority}
           />
-        </div>
+        </FormField>
 
         {!visionVersionId && (
           <p className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">
@@ -136,25 +139,32 @@ export function CreateEpicModal({ onClose, onCreated }: CreateEpicModalProps) {
           </p>
         )}
 
-        {error && <p className="text-xs text-rose-600">{error}</p>}
+        {serverError && (
+          <p
+            className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700"
+            role="alert"
+          >
+            {serverError}
+          </p>
+        )}
 
         <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
-          <Button variant="secondary" onClick={onClose} disabled={createMutation.isPending}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+            disabled={isSubmitting || createMutation.isPending}
+          >
             Cancel
           </Button>
           <Button
-            onClick={submit}
-            disabled={
-              createMutation.isPending ||
-              !title.trim() ||
-              !rationale.trim() ||
-              !visionVersionId
-            }
+            type="submit"
+            disabled={isSubmitting || createMutation.isPending || !visionVersionId}
           >
-            {createMutation.isPending ? 'Creating…' : 'Create epic'}
+            {isSubmitting || createMutation.isPending ? 'Creating…' : 'Create epic'}
           </Button>
         </div>
-      </div>
+      </form>
     </Modal>
   )
 }

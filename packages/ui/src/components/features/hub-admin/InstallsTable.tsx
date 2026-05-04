@@ -13,6 +13,7 @@ import { Button } from '../../ui/Button.js'
 import { Badge } from '../../ui/Badge.js'
 import { Skeleton } from '../../ui/Skeleton.js'
 import { ErrorMessage } from '../../ui/ErrorMessage.js'
+import { ConfirmDialog } from '../../ui/ConfirmDialog.js'
 
 interface KnownInstall {
   installId: string
@@ -61,6 +62,7 @@ export function InstallsTable({ ownerToken }: Props) {
   const [loading, setLoading] = useState(true)
   const [revoking, setRevoking] = useState<string | null>(null)
   const [revokeError, setRevokeError] = useState<string | null>(null)
+  const [pendingRevoke, setPendingRevoke] = useState<KnownInstall | null>(null)
 
   const headers: HeadersInit = ownerToken
     ? { 'x-orbital-owner-token': ownerToken }
@@ -84,16 +86,13 @@ export function InstallsTable({ ownerToken }: Props) {
     void fetchInstalls()
   }, [fetchInstalls])
 
-  const handleRevoke = useCallback(
-    async (installId: string, displayName: string | null) => {
-      const label = displayName ?? installId
-      if (!window.confirm(`Revoke install "${label}"? This cannot be undone.`)) return
-
-      setRevoking(installId)
+  const performRevoke = useCallback(
+    async (install: KnownInstall) => {
+      setRevoking(install.installId)
       setRevokeError(null)
 
       try {
-        const res = await fetch(`/admin/installs/${installId}/revoke`, {
+        const res = await fetch(`/admin/installs/${install.installId}/revoke`, {
           method: 'POST',
           headers,
         })
@@ -102,12 +101,13 @@ export function InstallsTable({ ownerToken }: Props) {
         setInstalls((prev) =>
           prev
             ? prev.map((i) =>
-                i.installId === installId
+                i.installId === install.installId
                   ? { ...i, revokedAt: new Date().toISOString() }
                   : i,
               )
             : prev,
         )
+        setPendingRevoke(null)
       } catch (err) {
         setRevokeError((err as Error).message ?? 'Revoke failed')
       } finally {
@@ -189,7 +189,7 @@ export function InstallsTable({ ownerToken }: Props) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => void handleRevoke(install.installId, install.displayName)}
+                        onClick={() => setPendingRevoke(install)}
                         disabled={revoking === install.installId}
                         className="text-rose-600 hover:bg-rose-50 hover:text-rose-700"
                       >
@@ -209,6 +209,30 @@ export function InstallsTable({ ownerToken }: Props) {
           Refresh
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={pendingRevoke !== null}
+        onCancel={() => setPendingRevoke(null)}
+        onConfirm={() => {
+          if (pendingRevoke) void performRevoke(pendingRevoke)
+        }}
+        title="Revoke install?"
+        confirmLabel="Revoke install"
+        pendingLabel="Revoking…"
+        variant="danger"
+        pending={revoking !== null}
+        error={revokeError}
+        confirmText={pendingRevoke?.displayName ?? pendingRevoke?.installId.slice(0, 8) ?? ''}
+        body={
+          <p>
+            This permanently revokes{' '}
+            <span className="font-medium text-slate-900">
+              {pendingRevoke?.displayName ?? 'this install'}
+            </span>
+            . Sessions on that laptop will stop working immediately. This cannot be undone.
+          </p>
+        }
+      />
     </div>
   )
 }

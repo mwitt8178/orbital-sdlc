@@ -6,128 +6,134 @@
  */
 
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { trpc } from '../../../services/trpc.js'
 import { Modal } from '../../ui/Modal.js'
 import { Button } from '../../ui/Button.js'
 import { Input } from '../../ui/Input.js'
+import { FormField } from '../../ui/FormField.js'
 import { useToast } from '../../../services/use-toast.js'
 
 interface CreateSprintModalProps {
   onClose: () => void
 }
 
+const schema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(120, 'Name is too long'),
+  capacity: z.coerce.number().int().positive('Capacity must be greater than 0'),
+  budgetUsd: z.coerce.number().positive('Budget must be greater than 0'),
+  wallClockDays: z.coerce.number().int().min(0, 'Days must be 0 or more'),
+})
+
+type FormValues = z.infer<typeof schema>
+
 export function CreateSprintModal({ onClose }: CreateSprintModalProps) {
   const utils = trpc.useUtils()
   const toast = useToast()
+  const [serverError, setServerError] = useState<string | null>(null)
 
-  const [name, setName] = useState('')
-  const [capacity, setCapacity] = useState(20)
-  const [budgetUsd, setBudgetUsd] = useState(50)
-  const [wallClockDays, setWallClockDays] = useState(5)
-  const [error, setError] = useState<string | null>(null)
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    mode: 'onBlur',
+    defaultValues: { name: '', capacity: 20, budgetUsd: 50, wallClockDays: 5 },
+  })
 
   const createMutation = trpc.sprint.create.useMutation({
-    onSuccess: () => {
-      toast.success('Sprint created', { description: name })
+    onSuccess: (_data, vars) => {
+      toast.success('Sprint created', { description: vars.name })
       void utils.sprint.list.invalidate()
       onClose()
     },
     onError: (err) => {
-      setError(err.message)
+      setServerError(err.message)
       toast.error('Could not create sprint', { description: err.message })
     },
   })
 
-  const submit = () => {
-    setError(null)
-    if (!name.trim()) {
-      setError('Name is required')
-      return
-    }
-    if (capacity <= 0) {
-      setError('Capacity must be positive')
-      return
-    }
-    if (budgetUsd <= 0) {
-      setError('Budget must be positive')
-      return
-    }
-
-    createMutation.mutate({
-      name: name.trim(),
-      story_point_capacity: capacity,
-      budget_usd_cents: Math.round(budgetUsd * 100),
-      wall_clock_target_ms: wallClockDays > 0 ? wallClockDays * 24 * 60 * 60 * 1000 : undefined,
+  const onSubmit = async (values: FormValues) => {
+    setServerError(null)
+    await createMutation.mutateAsync({
+      name: values.name.trim(),
+      story_point_capacity: values.capacity,
+      budget_usd_cents: Math.round(values.budgetUsd * 100),
+      wall_clock_target_ms:
+        values.wallClockDays > 0 ? values.wallClockDays * 24 * 60 * 60 * 1000 : undefined,
     })
   }
 
   return (
     <Modal open onClose={onClose} title="Create sprint" width="max-w-md">
-      <div className="space-y-4">
-        <div>
-          <label htmlFor="sprint-name" className="mb-1 block text-xs font-medium text-slate-700">
-            Name
-          </label>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+        <FormField label="Name" error={errors.name?.message} required>
           <Input
-            id="sprint-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            {...register('name')}
             placeholder="e.g. Sprint 14"
             autoFocus
+            hasError={!!errors.name}
           />
-        </div>
+        </FormField>
 
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="sprint-capacity" className="mb-1 block text-xs font-medium text-slate-700">
-              Capacity (story points)
-            </label>
+          <FormField label="Capacity (story points)" error={errors.capacity?.message} required>
             <Input
-              id="sprint-capacity"
+              {...register('capacity')}
               type="number"
               min={1}
-              value={capacity}
-              onChange={(e) => setCapacity(Number(e.target.value) || 0)}
+              hasError={!!errors.capacity}
             />
-          </div>
-          <div>
-            <label htmlFor="sprint-budget" className="mb-1 block text-xs font-medium text-slate-700">
-              Budget (USD)
-            </label>
+          </FormField>
+          <FormField label="Budget (USD)" error={errors.budgetUsd?.message} required>
             <Input
-              id="sprint-budget"
+              {...register('budgetUsd')}
               type="number"
               min={1}
-              value={budgetUsd}
-              onChange={(e) => setBudgetUsd(Number(e.target.value) || 0)}
+              hasError={!!errors.budgetUsd}
             />
-          </div>
+          </FormField>
         </div>
 
-        <div>
-          <label htmlFor="sprint-days" className="mb-1 block text-xs font-medium text-slate-700">
-            Target duration (days)
-          </label>
+        <FormField
+          label="Target duration (days)"
+          error={errors.wallClockDays?.message}
+          help="0 = no wall-clock target"
+        >
           <Input
-            id="sprint-days"
+            {...register('wallClockDays')}
             type="number"
             min={0}
-            value={wallClockDays}
-            onChange={(e) => setWallClockDays(Number(e.target.value) || 0)}
+            hasError={!!errors.wallClockDays}
           />
-        </div>
+        </FormField>
 
-        {error && <p className="text-xs text-rose-600">{error}</p>}
+        {serverError && (
+          <p
+            className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700"
+            role="alert"
+          >
+            {serverError}
+          </p>
+        )}
 
         <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
-          <Button variant="secondary" onClick={onClose} disabled={createMutation.isPending}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+            disabled={isSubmitting || createMutation.isPending}
+          >
             Cancel
           </Button>
-          <Button onClick={submit} disabled={createMutation.isPending || !name.trim()}>
-            {createMutation.isPending ? 'Creating…' : 'Create sprint'}
+          <Button type="submit" disabled={isSubmitting || createMutation.isPending}>
+            {isSubmitting || createMutation.isPending ? 'Creating…' : 'Create sprint'}
           </Button>
         </div>
-      </div>
+      </form>
     </Modal>
   )
 }
