@@ -87,6 +87,37 @@ export interface BriefMemoryContext {
   k?: number
 }
 
+/**
+ * A single QA-generated test artifact surfaced in the brief.
+ *
+ * [Engineer-Sr · Sonnet · run-ac-test-generation]
+ */
+export interface BriefTestArtifact {
+  /** Artifact row ID (UUID). */
+  id: string
+  /** Repo-relative path where the generated test file lives. */
+  testPath: string
+  /** Detected language (typescript, python, go). */
+  language: string
+  /** Detected framework (vitest, jest, pytest, go_test). */
+  framework: string
+  /** Branch on which the test file was committed. */
+  branch: string
+  /** Current status — pending means tests exist but haven't been approved yet. */
+  status: 'pending' | 'approved' | 'merged'
+}
+
+/**
+ * When provided, buildBrief/buildBriefSync renders a "QA-Generated Tests"
+ * section that instructs the sr-dev to merge the test branch and make those
+ * tests pass before writing any new tests.
+ *
+ * [Engineer-Sr · Sonnet · run-ac-test-generation]
+ */
+export interface BriefTestArtifactsContext {
+  artifacts: BriefTestArtifact[]
+}
+
 export interface BriefExtensions {
   /** Conversation history; rendered as a "Conversation so far" section. */
   conversationHistory?: BriefConversationHistory
@@ -98,6 +129,14 @@ export interface BriefExtensions {
    * When absent, no memory section is added (backwards compatible).
    */
   memoryContext?: BriefMemoryContext
+  /**
+   * QA-generated test artifact context.
+   * When provided, renders a "QA-Generated Tests" section instructing the
+   * sr-dev to merge the test branch and make those tests pass first.
+   *
+   * [Engineer-Sr · Sonnet · run-ac-test-generation]
+   */
+  testArtifactsContext?: BriefTestArtifactsContext
   /**
    * Round 6 #8 — when set, routeModel() is called to determine the
    * provider+model for this spawn and a model badge is added to the brief
@@ -308,7 +347,54 @@ explicitly with a NOTE: comment.`)
     sections.push(memoryInjection.markdown)
   }
 
+  // ---------------------------------------------------------------------------
+  // Section 8 (optional): QA-generated test artifacts
+  // [Engineer-Sr · Sonnet · run-ac-test-generation]
+  //
+  // When the QA persona has already generated failing tests for this story,
+  // surface them here so the sr-dev merges the test branch first and treats
+  // those tests as the primary RED baseline.
+  // ---------------------------------------------------------------------------
+  if (extensions.testArtifactsContext && extensions.testArtifactsContext.artifacts.length > 0) {
+    sections.push(buildTestArtifactsSection(extensions.testArtifactsContext.artifacts))
+  }
+
   return sections.join('\n\n---\n\n')
+}
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Render the "QA-Generated Tests" brief section.
+ *
+ * [Engineer-Sr · Sonnet · run-ac-test-generation]
+ */
+function buildTestArtifactsSection(artifacts: BriefTestArtifact[]): string {
+  const rows = artifacts
+    .map(
+      (a) =>
+        `- \`${a.testPath}\` (${a.language}/${a.framework}) — branch \`${a.branch}\` — status: **${a.status}**`,
+    )
+    .join('\n')
+
+  return `# QA-Generated Tests
+
+The QA persona has already generated failing tests for this story. These tests
+are committed to the branches listed below.
+
+**Your first action must be:**
+1. Merge each test branch into your feature branch (e.g. \`git merge origin/<branch>\`).
+2. Confirm the tests fail against the current codebase (they should — they were
+   generated to be RED).
+3. Implement the feature to make **all** tests pass.
+4. Only after these tests are green, write any additional tests you deem necessary.
+
+Do NOT re-generate or delete these test files. They are the source of truth for
+the acceptance criteria.
+
+${rows}`
 }
 
 /**
@@ -367,6 +453,12 @@ export function buildBriefSync(
   if (extensions.conversationHistory?.messages.length) {
     const lines = extensions.conversationHistory.messages.map((m) => `**${m.author}:** ${m.body}`)
     sections.push(`# Conversation So Far\n\n${lines.join('\n\n')}`)
+  }
+
+  // Section 8 (optional): QA-generated test artifacts
+  // [Engineer-Sr · Sonnet · run-ac-test-generation]
+  if (extensions.testArtifactsContext && extensions.testArtifactsContext.artifacts.length > 0) {
+    sections.push(buildTestArtifactsSection(extensions.testArtifactsContext.artifacts))
   }
 
   return sections.join('\n\n---\n\n')

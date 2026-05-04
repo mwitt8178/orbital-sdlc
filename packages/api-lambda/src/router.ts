@@ -31,6 +31,9 @@ import { visionRouter } from '../../orchestrator/src/trpc/routers/vision.js'
 // Orbital Review UI — reviewer-facing story ops
 // [Engineer-Principal · Opus · run-orbital-review-ui]
 import { storiesRouter } from '../../orchestrator/src/trpc/routers/stories.js'
+// QA test artifact generation + approval
+// [Engineer-Sr · Sonnet · run-ac-test-generation]
+import { testArtifactsRouter } from '../../orchestrator/src/trpc/routers/test-artifacts.js'
 
 // Factory router imports — we control when they construct
 import {
@@ -269,6 +272,9 @@ export async function getLambdaAppRouter(): Promise<AnyRouter> {
     // Orbital Review UI — reviewer queue + per-story actions
     // [Engineer-Principal · Opus · run-orbital-review-ui]
     stories: storiesRouter,
+    // QA-generated failing tests per story
+    // [Engineer-Sr · Sonnet · run-ac-test-generation]
+    testArtifacts: testArtifactsRouter,
     team: teamRouter,
     uat: uatR,
     vision: visionRouter,

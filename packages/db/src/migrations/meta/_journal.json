@@ -288,6 +288,13 @@
       "when": 1747700001000,
       "tag": "0044_tenant_credentials",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1746403200000,
+      "tag": "0050_story_test_artifacts",
+      "breakpoints": true
     }
   ]
 }
