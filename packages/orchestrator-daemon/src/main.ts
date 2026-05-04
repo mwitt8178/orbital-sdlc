@@ -35,6 +35,9 @@ import { createEventStore } from '../../orchestrator/dist/events/store.js'
 import { SqsConsumer, type EventHandler } from './sqs-consumer.js'
 import { counter } from './metrics-emf.js'
 import { handleStoryReady, isStoryReadyEvent } from './story-executor-bridge.js'
+// Sprint tick loop — wired at boot
+// [Engineer-Sr · Sonnet · run-sprint-loop]
+import { SprintTickWorker, SprintTickLoop, buildTickDeps } from './sprint-tick-worker.js'
 
 const logger = pino({
   level: process.env['LOG_LEVEL'] ?? 'info',
@@ -67,6 +70,8 @@ const logger = pino({
 
 let _shuttingDown = false
 let _consumer: SqsConsumer | null = null
+// Sprint tick loop — started in main(), stopped on SIGTERM
+let _sprintTickLoop: SprintTickLoop | null = null
 
 async function bootSecrets(): Promise<void> {
   logger.info({ tenant_id: 'system' }, 'daemon: resolving secrets from Secrets Manager')
@@ -135,6 +140,10 @@ async function shutdown(signal: string, exitCode = 0): Promise<void> {
   // consumer drains in-flight handlers before its start() resolves.
   if (_consumer) {
     _consumer.stop()
+  }
+  // Stop the sprint tick loop.
+  if (_sprintTickLoop) {
+    _sprintTickLoop.stop()
   }
   try {
     await closeDb()
@@ -289,6 +298,31 @@ async function main(): Promise<void> {
     // event-store reference is held for that wiring.
     void events
   }
+
+  // ----- Sprint tick loop — starts before the SQS consumer -----
+  // The tick loop runs every 30 seconds per-tenant, independent of SQS events.
+  // DAEMON_TENANT_ID controls which tenant this instance serves (defaults to
+  // the sentinel single-tenant value used by local installs).
+  const daemonTenantId =
+    process.env['DAEMON_TENANT_ID'] ?? '00000000-0000-0000-0000-000000000000'
+  const instanceId = `${process.env['HOSTNAME'] ?? hostname()}-${ulid()}`
+
+  const tickWorker = new SprintTickWorker(
+    buildTickDeps({ instanceId, tenantId: daemonTenantId, db }),
+  )
+  _sprintTickLoop = new SprintTickLoop(
+    tickWorker,
+    Number(process.env['SPRINT_TICK_INTERVAL_MS'] ?? '30000'),
+  )
+
+  logger.info(
+    { tenant_id: daemonTenantId, instance_id: instanceId, interval_ms: process.env['SPRINT_TICK_INTERVAL_MS'] ?? '30000' },
+    'daemon: sprint tick loop starting',
+  )
+  // Start the loop in background — it runs until stop() is called on shutdown.
+  void _sprintTickLoop.start().catch((err) => {
+    logger.error({ tenant_id: 'system', err }, 'daemon: sprint tick loop terminated unexpectedly')
+  })
 
   logger.info(
     { tenant_id: 'system', queueUrl },

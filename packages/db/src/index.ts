@@ -53,3 +53,7 @@ export * from './schema/team.js'
 export * from './schema/vision-decomposition-runs.js'
 export * from './schema/story-test-artifacts.js'
 export * from './schema/obsidian-vault-links.js'
+// Sprint tick infrastructure — sprint_tick_log, project_sprint_policy,
+// sprint_tick_leases, story_pr_runs.
+// [Engineer-Sr · Sonnet · run-sprint-loop]
+export * from './schema/sprint-tick.js'

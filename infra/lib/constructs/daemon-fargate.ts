@@ -56,6 +56,13 @@ export interface DaemonFargateProps {
    * execution role is automatically granted GetSecretValue on each ARN.
    */
   readonly secretsFromManager?: Record<string, string>
+  /**
+   * ARN of the story-pr-pipeline Lambda. When set, the sprint-tick worker will
+   * invoke it (async) for each ready story it picks up. When not set, the worker
+   * logs a clear NOT_MERGED error and skips spawning — no fake success.
+   * [Engineer-Sr · Sonnet · run-sprint-loop]
+   */
+  readonly storyPrPipelineLambdaArn?: string
 }
 
 export class DaemonFargateConstruct extends Construct {
@@ -213,6 +220,16 @@ export class DaemonFargateConstruct extends Construct {
     this.logGroup.grantWrite(this.taskRole)
     // EFS mount
     this.fileSystem.grant(this.taskRole, 'elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite')
+    // story-pr-pipeline Lambda invoke (when ARN is wired)
+    // [Engineer-Sr · Sonnet · run-sprint-loop]
+    if (props.storyPrPipelineLambdaArn) {
+      this.taskRole.addToPolicy(
+        new iam.PolicyStatement({
+          actions: ['lambda:InvokeFunction'],
+          resources: [props.storyPrPipelineLambdaArn],
+        }),
+      )
+    }
 
     // ----- Task definition + container — only created when imageDigest is set.
     // ECS rejects a TaskDefinition without containers, so on the first pass
@@ -276,6 +293,14 @@ export class DaemonFargateConstruct extends Construct {
           AWS_ACCOUNT_ID: cdk.Stack.of(this).account,
           NODE_ENV: 'production',
           LOG_LEVEL: isProd ? 'info' : 'debug',
+          // Sprint tick loop — interval (ms). Default 30s in production.
+          // [Engineer-Sr · Sonnet · run-sprint-loop]
+          SPRINT_TICK_INTERVAL_MS: isProd ? '30000' : '15000',
+          // story-pr-pipeline Lambda ARN (optional). When absent the tick worker
+          // surfaces a clear NOT_MERGED error instead of faking success.
+          ...(props.storyPrPipelineLambdaArn
+            ? { STORY_PR_PIPELINE_LAMBDA_ARN: props.storyPrPipelineLambdaArn }
+            : {}),
           ...(props.secretEnvVars ?? {}),
         },
         logging: ecs.LogDrivers.awsLogs({

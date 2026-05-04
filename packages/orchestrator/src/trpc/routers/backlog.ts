@@ -355,6 +355,58 @@ export function createSprintRouter(deps: SprintRouterDeps) {
       .mutation(async ({ input, ctx }) => {
         return await sprintService.complete(input.sprint_id, undefined, ctx.tenantId)
       }),
+
+    /**
+     * Read the sprint_tick_log activity feed for a sprint.
+     * Used by the SprintBoard sidebar to show live tick activity.
+     * [Engineer-Sr · Sonnet · run-sprint-loop]
+     */
+    tickLog: tenantProcedure
+      .input(
+        z.object({
+          sprint_id: z.string().uuid(),
+          limit: z.number().int().min(1).max(200).optional().default(50),
+        }),
+      )
+      .query(async ({ input, ctx }) => {
+        const { db } = await import('../../db/client.js')
+        const { sprintTickLog } = await import('@orbital/db')
+        const { and, eq, desc } = await import('drizzle-orm')
+        return await db
+          .select()
+          .from(sprintTickLog)
+          .where(
+            and(
+              eq(sprintTickLog.tenantId, ctx.tenantId),
+              eq(sprintTickLog.sprintId, input.sprint_id),
+            ),
+          )
+          .orderBy(desc(sprintTickLog.loggedAt))
+          .limit(input.limit)
+      }),
+
+    /**
+     * Read story_pr_runs for a sprint.
+     * [Engineer-Sr · Sonnet · run-sprint-loop]
+     */
+    storyPrRuns: tenantProcedure
+      .input(z.object({ sprint_id: z.string().uuid() }))
+      .query(async ({ input, ctx }) => {
+        const { db } = await import('../../db/client.js')
+        const { storyPrRuns } = await import('@orbital/db')
+        const { and, eq, desc } = await import('drizzle-orm')
+        return await db
+          .select()
+          .from(storyPrRuns)
+          .where(
+            and(
+              eq(storyPrRuns.tenantId, ctx.tenantId),
+              eq(storyPrRuns.sprintId, input.sprint_id),
+            ),
+          )
+          .orderBy(desc(storyPrRuns.startedAt))
+          .limit(100)
+      }),
   })
 }
 
