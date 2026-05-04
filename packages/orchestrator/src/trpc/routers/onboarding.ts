@@ -572,6 +572,32 @@ export function createOnboardingRouter() {
       .mutation(async ({ input }) => {
         try {
           const row = await getFlowService().complete(input.sessionId, input.projectId ?? null)
+          // B2: also mark install-level setup complete server-side so the
+          // SetupGate stops bouncing every protected route to /welcome.
+          // Without this, the user can finish the wizard and still be locked.
+          try {
+            const state = await markSetupCompleted()
+            await getEventStore().append({
+              aggregate_id: state.installId,
+              aggregate_type: 'install',
+              event_type: 'OnboardingCompleted',
+              payload: {
+                install_id: state.installId,
+                mode: state.mode,
+                completed_at: state.setupCompletedAt,
+                source: 'completeSession',
+              },
+              actor: SYSTEM_ACTOR,
+              trace_id: `onboarding-complete-${state.installId}`,
+              occurred_at: state.setupCompletedAt ?? new Date().toISOString(),
+              schema_version: 1,
+            })
+          } catch (markErr) {
+            logger.warn(
+              { err: markErr instanceof Error ? markErr.message : String(markErr) },
+              'completeSession: markSetupCompleted failed (non-fatal)',
+            )
+          }
           return rowToSessionDto(row)
         } catch (err) {
           throw new TRPCError({
