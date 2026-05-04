@@ -41,6 +41,9 @@ import { sprintPolicyRouter } from '../../orchestrator/src/trpc/routers/sprint-p
 // Vision decomposition planning router — generatePlan / approvePlan / discardPlan
 // [Engineer-Sr · Sonnet · run-vision-decompose]
 import { planningRouter } from '../../orchestrator/src/trpc/routers/planning.js'
+// QA test artifact generation + approval
+// [Engineer-Sr · Sonnet · run-ac-test-generation]
+import { testArtifactsRouter } from '../../orchestrator/src/trpc/routers/test-artifacts.js'
 
 // Factory router imports — we control when they construct
 import {
@@ -289,6 +292,9 @@ export async function getLambdaAppRouter(): Promise<AnyRouter> {
     // Settings → Agents — per-project persona configuration
     // [Engineer-Principal · Opus · run-settings-agents]
     projectPersonas: projectPersonasRouter,
+    // QA-generated failing tests per story
+    // [Engineer-Sr · Sonnet · run-ac-test-generation]
+    testArtifacts: testArtifactsRouter,
     team: teamRouter,
     uat: uatR,
     vision: visionRouter,

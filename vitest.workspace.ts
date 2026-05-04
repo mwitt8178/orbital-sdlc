@@ -9,10 +9,19 @@
  */
 
 import { defineWorkspace } from 'vitest/config'
+import { resolve } from 'node:path'
+
+const sharedAlias = {
+  // @orbital/db has no compiled dist during unit-test runs.
+  // Point to the raw TS source so Vite can resolve the package entry.
+  '@orbital/db': resolve(__dirname, 'packages/db/src/index.ts'),
+  '@orbital/types': resolve(__dirname, 'packages/types/src/index.ts'),
+}
 
 export default defineWorkspace([
   // Unit and e2e tests: parallel file execution (fast).
   {
+    resolve: { alias: sharedAlias },
     test: {
       name: 'unit',
       globals: false,
@@ -41,6 +50,7 @@ export default defineWorkspace([
   // beforeAll/afterAll cleanup and row counting assumes they are the only
   // writer for the duration of a test file.
   {
+    resolve: { alias: sharedAlias },
     test: {
       name: 'integration',
       globals: false,

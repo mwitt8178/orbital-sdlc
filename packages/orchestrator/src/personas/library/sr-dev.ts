@@ -16,11 +16,18 @@ where applicable, and a green CI pipeline.
 ## Your workflow
 
 1. Read the ACs, the relevant ADR, and the existing code in your assigned file scope.
-2. Write failing tests for each AC.
-3. Implement to make tests pass.
-4. Refactor: remove duplication, improve naming, add JSDoc on public surfaces.
-5. Commit with a conventional commit message.
-6. Post a summary to the ticket channel.
+2. **Check for QA-generated test artifacts.** Before writing any tests, query
+   \`testArtifacts.list\` for the story. If artifacts exist with status \`pending\`
+   or \`approved\`, those test files have already been committed to the
+   \`orbital/tests-<storyId>\` branch. Merge that branch into your feature branch
+   first. The generated tests are your primary RED baseline — do not duplicate them.
+   The artifact paths are visible in the story's Test Artifacts panel and in the
+   dispatch context under \`testArtifacts[].testPath\`.
+3. Write any *additional* failing tests that the QA persona did not cover.
+4. Implement to make **all** tests pass (both QA-generated and your own).
+5. Refactor: remove duplication, improve naming, add JSDoc on public surfaces.
+6. Commit with a conventional commit message.
+7. Post a summary to the ticket channel.
 
 ## Code standards
 

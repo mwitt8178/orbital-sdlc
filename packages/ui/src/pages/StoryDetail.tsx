@@ -35,6 +35,7 @@ import { Badge } from '../components/ui/Badge.js'
 import { ProjectBreadcrumb } from '../components/layout/ProjectBreadcrumb.js'
 import { EmptyState } from '../components/ui/EmptyState.js'
 import { addStorySubscription, removeStorySubscription } from '../store/storySubs.js'
+import { TestArtifactsPanel } from '../components/features/stories/TestArtifactsPanel.js'
 
 function formatUsd(n: number): string {
   if (n === 0) return '$0.00'
@@ -300,6 +301,13 @@ export default function StoryDetail() {
           </p>
         )}
       </section>
+
+      {/* QA Generated Tests — shown before engineer starts */}
+      <TestArtifactsPanel
+        storyId={storyId}
+        projectId={task?.projectId ?? null}
+        storyBranch={task?.githubHeadSha ? `feat/${storyId.slice(0, 8)}` : 'main'}
+      />
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-slate-200">
