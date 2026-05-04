@@ -178,15 +178,11 @@ export class ApiGwHttpConstruct extends Construct {
           apigatewayv2.CorsHttpMethod.HEAD,
           apigatewayv2.CorsHttpMethod.OPTIONS,
         ],
-        allowHeaders: [
-          'Content-Type',
-          'Authorization',
-          // PKI envelope headers
-          'X-Orbital-Install-Id',
-          'X-Orbital-Sig',
-          'X-Orbital-Sig-Body',
-          'X-Orbital-Tenant-ID',
-        ],
+        // Wildcard so tRPC client custom headers (x-trpc-source) and any
+        // future SDK-injected headers don't trip preflight. AllowOrigins is
+        // also '*' and AllowCredentials is false (in non-prod), which makes
+        // the wildcard safe per the CORS spec.
+        allowHeaders: ['*'],
         // allowCredentials cannot be true when allowOrigins includes '*'.
         // Auth uses Authorization header (Cognito JWT / PKI envelope), not
         // credentialed cookies, so disabling credentials is safe.
