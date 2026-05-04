@@ -1,0 +1,19 @@
+{
+  "name": "@orbital/story-executor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Story-executor verification daemon. Picks up story.ready events, spawns Claude workers under a budget, opens real PRs, writes worker_runs.",
+  "main": "src/main.js",
+  "bin": {
+    "orbital-story-executor": "src/main.js"
+  },
+  "scripts": {
+    "start": "node src/main.js",
+    "verify": "node scripts/verify-loop.js"
+  },
+  "dependencies": {
+    "pg": "^8.20.0",
+    "ulid": "^2.4.0"
+  }
+}
