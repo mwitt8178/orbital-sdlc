@@ -33,6 +33,7 @@ import { ModelsTab } from '../components/features/settings/ModelsTab.js'
 import { GitHubTab } from '../components/features/settings/GitHubTab.js'
 import { BudgetTab } from '../components/features/settings/BudgetTab.js'
 import { HubTab } from '../components/features/settings/HubTab.js'
+import { ObsidianTab } from '../components/features/settings/ObsidianTab.js'
 import { IntegrationsDashboard } from '../components/features/settings/IntegrationsDashboard.js'
 import { ComingSoonState } from '../components/features/settings/ComingSoonState.js'
 import { DURATION, EASE } from '../components/onboarding/motion.js'
@@ -240,6 +241,7 @@ function IntegrationsPage() {
       <Route path="monday" element={<IntegrationDetail title="Monday"><MondayPlaceholder /></IntegrationDetail>} />
       <Route path="anthropic" element={<IntegrationDetail title="Anthropic"><AnthropicPlaceholder /></IntegrationDetail>} />
       <Route path="hub" element={<IntegrationDetail title="Hub"><HubTab /></IntegrationDetail>} />
+      <Route path="obsidian" element={<IntegrationDetail title="Obsidian"><ObsidianTab /></IntegrationDetail>} />
       <Route path="*" element={<Navigate to="" replace />} />
     </Routes>
   )

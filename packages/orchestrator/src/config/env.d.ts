@@ -134,6 +134,21 @@ declare const envSchema: z.ZodObject<{
      */
     EVENTS_TOPIC_ARN: z.ZodOptional<z.ZodString>;
     /**
+     * Obsidian vault sync — feature flag.
+     * When 'off' (default), the vault.* tRPC procedures return a feature-disabled
+     * error instead of touching S3 / DB. Lets the code ship dark until ops opt in.
+     * [Engineer-Principal · Opus · run-obsidian-vault-sync]
+     */
+    ORBITAL_VAULT_ENABLED: z.ZodDefault<z.ZodEnum<["on", "off"]>>;
+    /**
+     * Obsidian vault sync — S3 bucket name.
+     * Required when ORBITAL_VAULT_ENABLED=on AND ORBITAL_DEPLOY_TARGET=aws.
+     * Set from CDK stack output OrbitalHub-<env>-VaultBucketName.
+     * Example: orbital-vault-mwitt-111111111111
+     * [Engineer-Principal · Opus · run-obsidian-vault-sync]
+     */
+    ORBITAL_VAULT_BUCKET: z.ZodOptional<z.ZodString>;
+    /**
      * Round 6 #1 — GitHub PR loop feature flag.
      * When 'on', post-task hook pushes branch and opens PR after verifier passes.
      * Default 'off' — safe to ship without a GitHub remote configured.
@@ -201,6 +216,7 @@ declare const envSchema: z.ZodObject<{
     ORBITAL_MODE: "local" | "hub";
     ORBITAL_HUB_TENANT_ID: string;
     ORBITAL_DEPLOY_TARGET: "local" | "aws";
+    ORBITAL_VAULT_ENABLED: "on" | "off";
     ORBITAL_PR_LOOP: "on" | "off";
     RDS_PROXY_PORT: number;
     AURORA_DB_NAME: string;
@@ -222,6 +238,7 @@ declare const envSchema: z.ZodObject<{
     ORBITAL_REPLAY_BUCKET?: string | undefined;
     ORBITAL_REPLAY_KMS_KEY_ARN?: string | undefined;
     EVENTS_TOPIC_ARN?: string | undefined;
+    ORBITAL_VAULT_BUCKET?: string | undefined;
     RDS_PROXY_HOSTNAME?: string | undefined;
     WS_SESSION_TOKEN?: string | undefined;
 }, {
@@ -253,6 +270,8 @@ declare const envSchema: z.ZodObject<{
     ORBITAL_REPLAY_BUCKET?: string | undefined;
     ORBITAL_REPLAY_KMS_KEY_ARN?: string | undefined;
     EVENTS_TOPIC_ARN?: string | undefined;
+    ORBITAL_VAULT_ENABLED?: "on" | "off" | undefined;
+    ORBITAL_VAULT_BUCKET?: string | undefined;
     ORBITAL_PR_LOOP?: "on" | "off" | undefined;
     RDS_PROXY_HOSTNAME?: string | undefined;
     RDS_PROXY_PORT?: number | undefined;
@@ -279,6 +298,7 @@ export declare const env: {
     ORBITAL_MODE: "local" | "hub";
     ORBITAL_HUB_TENANT_ID: string;
     ORBITAL_DEPLOY_TARGET: "local" | "aws";
+    ORBITAL_VAULT_ENABLED: "on" | "off";
     ORBITAL_PR_LOOP: "on" | "off";
     RDS_PROXY_PORT: number;
     AURORA_DB_NAME: string;
@@ -300,6 +320,7 @@ export declare const env: {
     ORBITAL_REPLAY_BUCKET?: string | undefined;
     ORBITAL_REPLAY_KMS_KEY_ARN?: string | undefined;
     EVENTS_TOPIC_ARN?: string | undefined;
+    ORBITAL_VAULT_BUCKET?: string | undefined;
     RDS_PROXY_HOSTNAME?: string | undefined;
     WS_SESSION_TOKEN?: string | undefined;
 };

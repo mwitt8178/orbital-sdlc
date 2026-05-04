@@ -288,6 +288,13 @@
       "when": 1747700001000,
       "tag": "0044_tenant_credentials",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1762214400000,
+      "tag": "0053_obsidian_vault_links",
+      "breakpoints": true
     }
   ]
 }

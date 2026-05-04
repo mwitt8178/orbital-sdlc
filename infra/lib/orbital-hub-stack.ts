@@ -88,6 +88,7 @@ export class OrbitalHubStack extends cdk.Stack {
   readonly rdsProxy: RdsProxyConstruct
   readonly staticUi: StaticUiConstruct
   readonly replayBucket: ReplayBucketConstruct
+  readonly vaultBucket: import('./constructs/vault-bucket').VaultBucketConstruct
   readonly lambdas: Map<RouterGroup, LambdaTrpcConstruct>
   readonly apiLambda: ApiLambdaConstruct
   readonly authorizersConstruct: AuthorizersConstruct
@@ -139,6 +140,7 @@ export class OrbitalHubStack extends cdk.Stack {
     this.rdsProxy = data.rdsProxy
     this.staticUi = data.staticUi
     this.replayBucket = data.replayBucket
+    this.vaultBucket = data.vaultBucket
 
     // ------------------------------------------------------------------
     // 4.3 Auth — Cognito + Secrets + KMS + key rotation
@@ -178,6 +180,13 @@ export class OrbitalHubStack extends cdk.Stack {
 
     // Replay bucket grant — api-lambda serves audit procedures that read blobs.
     this.replayBucket.bucket.grantRead(this.apiLambda.role)
+
+    // Obsidian vault bucket grant — api-lambda reads + writes when
+    // ORBITAL_VAULT_ENABLED=on. Always granted at the IAM level so flipping the
+    // feature flag is a runtime config change, not a CDK deploy.
+    // [Engineer-Principal · Opus · run-obsidian-vault-sync]
+    this.vaultBucket.bucket.grantReadWrite(this.apiLambda.role)
+    this.apiLambda.fn.addEnvironment('ORBITAL_VAULT_BUCKET', this.vaultBucket.bucket.bucketName)
 
     // Secrets + KMS grants for api-lambda
     const apiLambdaSecretRefs: SecretRef[] = ['dbMasterCreds', 'hubMasterKey', 'githubWebhookSecret']

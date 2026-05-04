@@ -19,6 +19,7 @@ import { AuroraConstruct } from '../constructs/aurora'
 import { RdsProxyConstruct } from '../constructs/rds-proxy'
 import { StaticUiConstruct } from '../constructs/static-ui'
 import { ReplayBucketConstruct } from '../constructs/replay-bucket'
+import { VaultBucketConstruct } from '../constructs/vault-bucket'
 import { RunMigrationsTrigger } from '../triggers/run-migrations'
 import { EnvConfig } from '../orbital-hub-stack'
 
@@ -27,6 +28,7 @@ export interface DataOutputs {
   readonly rdsProxy: RdsProxyConstruct
   readonly staticUi: StaticUiConstruct
   readonly replayBucket: ReplayBucketConstruct
+  readonly vaultBucket: VaultBucketConstruct
   /** The standalone proxy SG created before Aurora to break the circular SG reference. */
   readonly proxySgForAurora: ec2.SecurityGroup
 }
@@ -97,5 +99,12 @@ export function buildDataResources(
     retentionYears: 7,
   })
 
-  return { aurora, rdsProxy, staticUi, replayBucket, proxySgForAurora }
+  // Obsidian vault bucket — feature-flagged behind ORBITAL_VAULT_ENABLED at
+  // runtime; the bucket itself is provisioned unconditionally so flipping the
+  // flag doesn't require a CDK deploy. [run-obsidian-vault-sync]
+  const vaultBucket = new VaultBucketConstruct(scope, 'VaultBucket', {
+    envName,
+  })
+
+  return { aurora, rdsProxy, staticUi, replayBucket, vaultBucket, proxySgForAurora }
 }

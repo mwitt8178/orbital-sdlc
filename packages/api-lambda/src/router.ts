@@ -43,6 +43,14 @@ import { createProjectsRouter } from '../../orchestrator/src/trpc/routers/projec
 import { createBoardsRouter } from '../../orchestrator/src/trpc/routers/boards.js'
 import { createMemoryRouter } from '../../orchestrator/src/trpc/routers/memory.js'
 import { createRetrosRouter } from '../../orchestrator/src/trpc/routers/retros.js'
+// Obsidian vault sync — feature-flagged behind ORBITAL_VAULT_ENABLED.
+// [Engineer-Principal · Opus · run-obsidian-vault-sync]
+import { createVaultRouter } from '../../orchestrator/src/trpc/routers/vault.js'
+import { createVaultSyncService } from '../../orchestrator/src/vault-sync/service.js'
+import { createS3VaultStore, createInMemoryVaultStore } from '../../orchestrator/src/vault-sync/store.js'
+import { createVaultLinkRepo } from '../../orchestrator/src/vault-sync/repo.js'
+import { createProjectEntitySource } from '../../orchestrator/src/vault-sync/entity-source.js'
+import { S3Client } from '@aws-sdk/client-s3'
 import { adminRouter as constructAdminRouter } from '../../orchestrator/src/trpc/routers/admin.js'
 
 // Retro is a special case — read paths work in Lambda, write paths spawn
@@ -241,6 +249,27 @@ export async function getLambdaAppRouter(): Promise<AnyRouter> {
   }
   const sprintR = createSprintRouter({ sprintService: lazySprintService })
 
+  // Obsidian vault sync — wires real S3 when ORBITAL_VAULT_BUCKET set, else
+  // falls back to an in-memory store (procedures are still gated by the
+  // ORBITAL_VAULT_ENABLED feature flag inside the router).
+  // [Engineer-Principal · Opus · run-obsidian-vault-sync]
+  const vaultBucket = process.env['ORBITAL_VAULT_BUCKET']
+  const vaultStore = vaultBucket
+    ? createS3VaultStore({
+        client: new S3Client({ region: process.env['AWS_REGION'] ?? 'us-east-1' }),
+        bucket: vaultBucket,
+      })
+    : createInMemoryVaultStore()
+  const vaultRepo = createVaultLinkRepo(db)
+  const vaultEntitySource = createProjectEntitySource(db)
+  const vaultSyncService = createVaultSyncService({ store: vaultStore, repo: vaultRepo })
+  const vaultR = createVaultRouter({
+    vaultSyncService,
+    store: vaultStore,
+    entitySource: vaultEntitySource,
+    repo: vaultRepo,
+  })
+
   // UAT
   const personaOfRecord = createPersonaOfRecord(db, events)
   const defectService = createDefectService(db, events, backlogService)
@@ -271,6 +300,7 @@ export async function getLambdaAppRouter(): Promise<AnyRouter> {
     stories: storiesRouter,
     team: teamRouter,
     uat: uatR,
+    vault: vaultR,
     vision: visionRouter,
   }) as AnyRouter
 
