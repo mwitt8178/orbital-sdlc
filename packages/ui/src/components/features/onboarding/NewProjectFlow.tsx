@@ -19,7 +19,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { trpc } from '../../../services/trpc.js'
 import { OnboardingShell } from './OnboardingShell.js'
-import { ConnectToolsStep, type ConnectToolsResult } from './ConnectToolsStep.js'
+import { ToolingStep, type ToolingChoice } from './ToolingStep.js'
 import { ProjectBasicsStep, type ProjectBasics } from './ProjectBasicsStep.js'
 import { VisionIntakeStep, type VisionIntakeData } from './VisionIntakeStep.js'
 import { ModeStep } from './ModeStep.js'
@@ -33,7 +33,7 @@ import { DURATION, EASE } from '../../onboarding/motion.js'
 
 export type NewProjectStepId =
   | 'project_basics'
-  | 'connect_tools'
+  | 'tooling'
   | 'vision_intake'
   | 'monday_provision'
   | 'github_provision'
@@ -48,7 +48,12 @@ interface Props {
   initialState: Record<string, unknown>
   hasAnthropic: boolean
   hasMonday: boolean
-  onComplete: () => void
+  /** [Engineer-Principal · Opus · run-admin-integrations-split] */
+  hasGithub?: boolean
+  /** Round 11 — handoff fix: caller may receive the canonical projectId so
+   *  it can pre-select the new project and skip the empty-dashboard flash.
+   *  [Engineer-Principal · Opus · run-handoff-audit-001] */
+  onComplete: (projectId?: string | null) => void
   onAbandon?: () => void
 }
 
@@ -63,8 +68,9 @@ export function NewProjectFlow({
   sessionId,
   initialStep,
   initialState,
-  hasAnthropic,
+  hasAnthropic: _hasAnthropic,
   hasMonday,
+  hasGithub = false,
   onComplete,
   onAbandon,
 }: Props) {
@@ -87,13 +93,18 @@ export function NewProjectFlow({
   })
   const [basicsValid, setBasicsValid] = useState(false)
 
-  const [tools, setTools] = useState<ConnectToolsResult>({
-    anthropicConnected: hasAnthropic,
-    mondaySkipped: false,
-    mondayConnected: hasMonday,
-    githubSkipped: false,
-    githubConnected: false,
+  // [Engineer-Principal · Opus · run-admin-integrations-split]
+  // Per-project provider choice. The wizard no longer captures credentials —
+  // those live at /admin/integrations. We default to internal/internal and
+  // light up the GitHub/Monday options when admin has configured them.
+  const [tooling, setTooling] = useState<ToolingChoice>({
+    scmProvider:
+      ((initialState['scm_provider'] as ToolingChoice['scmProvider'] | undefined) ?? 'internal'),
+    ticketProvider:
+      ((initialState['ticket_provider'] as ToolingChoice['ticketProvider'] | undefined) ??
+        'internal'),
   })
+  const [toolingValid, setToolingValid] = useState(true)
   const [vision, setVision] = useState<VisionIntakeData>({
     intent: (initialState['intent'] as string) ?? '',
     stack: (initialState['stack'] as string[]) ?? ['nodejs', 'typescript', 'react', 'tailwind'],
@@ -143,14 +154,14 @@ export function NewProjectFlow({
 
   // ---- Step actions ----
   const goFromBasics = () => {
-    // Generate the project_id at the first step that has enough to identify
+    // Mint the project_id at the first step that has enough to identify
     // the project. Downstream steps (system_teach, vision-bound work) need
     // a stable id; previously this was minted by the now-removed Monday
-    // provisioning step, so on the basics→connect→vision→teach path the id
-    // never existed and system_teach failed with "Project id missing".
+    // provisioning step, so on basics→tooling→vision→teach the id never
+    // existed and system_teach failed with "Project id missing".
     const pid = projectId ?? crypto.randomUUID()
     if (!projectId) setProjectId(pid)
-    void advance('connect_tools', {
+    void advance('tooling', {
       project_id: pid,
       name: basics.name,
       slug: basics.slug,
@@ -158,11 +169,11 @@ export function NewProjectFlow({
     })
   }
 
-  const goFromConnect = () => {
+  // [Engineer-Principal · Opus · run-admin-integrations-split]
+  const goFromTooling = () => {
     void advance('vision_intake', {
-      tools_anthropic_connected: tools.anthropicConnected,
-      tools_monday_connected: tools.mondayConnected || tools.mondaySkipped,
-      tools_github_connected: tools.githubConnected || tools.githubSkipped,
+      scm_provider: tooling.scmProvider,
+      ticket_provider: tooling.ticketProvider,
     })
   }
 
@@ -292,22 +303,25 @@ export function NewProjectFlow({
 
   // ---- Auto-trigger provisioning when entering the step, but ONLY if the
   // outcome isn't already known. This is the key idempotency guard. ----
+  // [Engineer-Principal · Opus · run-admin-integrations-split]
+  // Provisioning now keys off the per-project tooling pickers + the install-
+  // level admin connection flags (hasMonday/hasGithub).
   useEffect(() => {
     if (busy) return
     if (step === 'monday_provision') {
+      const wantsMonday = tooling.ticketProvider === 'monday'
       if (mondayBoardId) {
         void advance('github_provision')
-      } else if (!tools.mondayConnected && !tools.mondaySkipped) {
+      } else if (!wantsMonday || !hasMonday) {
         void advance('github_provision')
-      } else if (tools.mondayConnected && !mondayBoardId) {
+      } else {
         void runMondayProvision()
-      } else if (tools.mondaySkipped) {
-        void advance('github_provision')
       }
     } else if (step === 'github_provision') {
+      const wantsGithub = tooling.scmProvider === 'github'
       if (github) {
         void advance('system_teach')
-      } else if (!tools.githubConnected) {
+      } else if (!wantsGithub || !hasGithub) {
         void advance('system_teach')
       } else {
         void runGithubProvision()
@@ -327,12 +341,23 @@ export function NewProjectFlow({
     void advance('first_sprint', { mode })
   }
 
+  // Round 11 handoff fix — capture the canonical projectId from
+  // completeSession so the Done step's "Launch" button can hand it to the
+  // parent (Welcome.finalize) which preselects it as the active project.
+  // [Engineer-Principal · Opus · run-handoff-audit-001]
+  const [canonicalProjectId, setCanonicalProjectId] = useState<string | null>(null)
+
   const handleSprintChoice = async (choice: 'launch' | 'edit' | 'skip') => {
     void advance('done', { sprint_choice: choice })
     try {
-      await completeSession.mutateAsync({ sessionId, projectId: projectId ?? null })
+      const result = await completeSession.mutateAsync({
+        sessionId,
+        projectId: projectId ?? null,
+      })
+      setCanonicalProjectId(result.projectId ?? projectId ?? null)
     } catch {
-      // already completed — fine
+      // already completed — fine; fall back to whatever id we minted client-side
+      setCanonicalProjectId(projectId ?? null)
     }
   }
 
@@ -369,8 +394,15 @@ export function NewProjectFlow({
           ],
         },
         {
+          // Round 11 handoff fix — onboarding does not actually write a
+          // budget today, so we no longer claim it does. Adjust budget under
+          // Settings → Sprints once you start a sprint.
+          // [Engineer-Principal · Opus · run-handoff-audit-001]
           title: 'Policies',
-          items: [`Mode: ${mode ?? 'semi-autonomous'}`, 'Budget: $20/sprint, $100/week'],
+          items: [
+            `Mode: ${mode ?? 'semi-autonomous'}`,
+            'Budget: configurable in Settings → Sprints',
+          ],
         },
       ],
     }
@@ -382,8 +414,8 @@ export function NewProjectFlow({
   const continueAction =
     step === 'project_basics'
       ? goFromBasics
-      : step === 'connect_tools'
-        ? goFromConnect
+      : step === 'tooling'
+        ? goFromTooling
         : step === 'vision_intake'
           ? goFromVision
           : step === 'mode'
@@ -392,8 +424,8 @@ export function NewProjectFlow({
   const canContinue =
     step === 'project_basics'
       ? basicsValid
-      : step === 'connect_tools'
-        ? tools.anthropicConnected
+      : step === 'tooling'
+        ? toolingValid
         : step === 'vision_intake'
           ? visionValid
           : step === 'mode'
@@ -423,12 +455,15 @@ export function NewProjectFlow({
             }}
           />
         )}
-        {step === 'connect_tools' && (
-          <ConnectToolsStep
-            hasAnthropic={tools.anthropicConnected}
-            hasMonday={tools.mondayConnected}
-            hasGithub={tools.githubConnected}
-            onChange={setTools}
+        {step === 'tooling' && (
+          <ToolingStep
+            initial={tooling}
+            hasGithubAdmin={hasGithub}
+            hasMondayAdmin={hasMonday}
+            onChange={(t, valid) => {
+              setTooling(t)
+              setToolingValid(valid)
+            }}
           />
         )}
         {step === 'vision_intake' && (
@@ -474,9 +509,9 @@ export function NewProjectFlow({
         {step === 'done' && (
           <DoneStep
             data={summary}
-            onLaunch={onComplete}
-            onTour={() => onComplete()}
-            onWatchInspector={() => onComplete()}
+            onLaunch={() => onComplete(canonicalProjectId)}
+            onTour={() => onComplete(canonicalProjectId)}
+            onWatchInspector={() => onComplete(canonicalProjectId)}
           />
         )}
       </div>

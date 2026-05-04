@@ -7,9 +7,14 @@
 
 import type { ShellStep } from './OnboardingShell.js'
 
+// [Engineer-Principal · Opus · run-admin-integrations-split]
+// Tool credentials (Anthropic / Monday / GitHub) are no longer captured during
+// onboarding — they are admin-level concerns configured at /admin/integrations.
+// Onboarding only collects project-specific input (basics, tooling pickers,
+// vision, sprint plan).
 export const NEW_PROJECT_STEPS: ShellStep[] = [
   { id: 'project_basics', label: 'Basics' },
-  { id: 'connect_tools', label: 'Tools' },
+  { id: 'tooling', label: 'Tooling' },
   { id: 'vision_intake', label: 'Vision' },
   { id: 'monday_provision', label: 'Board' },
   { id: 'github_provision', label: 'Repo' },
