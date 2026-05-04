@@ -30,6 +30,9 @@ import { ModelsTab } from '../components/features/settings/ModelsTab.js'
 // Round 6 #1 — GitHub PR loop settings
 // [Engineer-Sr · Sonnet · run-round6-01-pr-loop]
 import { GitHubTab } from '../components/features/settings/GitHubTab.js'
+// SCM (CodeCommit / GitHub) — provider-agnostic repo info per project.
+// [Engineer-Principal · Opus · run-scm-codecommit]
+import { ScmTab } from '../components/features/settings/ScmTab.js'
 // Round 6 #5 — Cost Governance: Budget tab
 // [Engineer-Sr · Sonnet · run-round6-05-cost-governance]
 import { BudgetTab } from '../components/features/settings/BudgetTab.js'
@@ -49,6 +52,7 @@ const TABS = [
   { id: 'vision', label: 'Vision' },
   { id: 'board', label: 'Board' },
   { id: 'github', label: 'GitHub' },
+  { id: 'scm', label: 'SCM' },
   // Round 6 #5 — Cost Governance
   // [Engineer-Sr · Sonnet · run-round6-05-cost-governance]
   { id: 'budget', label: 'Budget' },
@@ -137,6 +141,7 @@ export default function Settings() {
         {activeTab === 'vision' ? <VisionTab /> : null}
         {activeTab === 'board' ? <BoardTab /> : null}
         {activeTab === 'github' ? <GitHubTab /> : null}
+        {activeTab === 'scm' ? <ScmTab /> : null}
         {/* Round 6 #5 — Cost Governance */}
         {/* [Engineer-Sr · Sonnet · run-round6-05-cost-governance] */}
         {activeTab === 'budget' ? <BudgetTab /> : null}

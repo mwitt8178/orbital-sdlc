@@ -46,6 +46,14 @@ export const CreateProjectInputSchema = z.object({
       github: z.boolean().default(false),
     })
     .optional(),
+  /**
+   * SCM provider for the project. 'internal' (Orbital-managed CodeCommit) is
+   * the default; 'codecommit' is an explicit alias; 'github' delegates to the
+   * caller's GitHub-connect flow and skips repo provisioning here.
+   * [Engineer-Principal · Opus · run-scm-codecommit]
+   */
+  scmProvider: z.enum(['internal', 'codecommit', 'github']).optional(),
+  ticketProvider: z.enum(['internal', 'monday']).optional(),
 })
 
 export type CreateProjectInput = z.infer<typeof CreateProjectInputSchema>
@@ -116,6 +124,8 @@ export const PROJECTS_ERROR_CODES = {
   MONDAY_CONNECT_FAILED: 'MONDAY_CONNECT_FAILED',
   /** Github repo connect failed (repo not found / wrong permissions). */
   GITHUB_CONNECT_FAILED: 'GITHUB_CONNECT_FAILED',
+  /** SCM repo provisioning failed during project create. */
+  SCM_PROVISION_FAILED: 'SCM_PROVISION_FAILED',
 } as const
 
 export type ProjectsErrorCode = (typeof PROJECTS_ERROR_CODES)[keyof typeof PROJECTS_ERROR_CODES]

@@ -260,6 +260,13 @@
       "when": 1747200000000,
       "tag": "0037_onboarding_state",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1747300000000,
+      "tag": "0042_projects_scm_columns",
+      "breakpoints": true
     }
   ]
 }

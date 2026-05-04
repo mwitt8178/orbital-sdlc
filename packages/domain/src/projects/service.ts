@@ -38,6 +38,7 @@ import {
 } from './types.js'
 import type { MondayClient } from '../backlog/monday-client.js'
 import type { GithubClient } from '../../../orchestrator/src/github/client.js'
+import type { ScmClient } from '../../../orchestrator/src/scm/client.js'
 
 const SYSTEM_ACTOR: Actor = { type: 'system', component: 'orchestrator' }
 
@@ -75,6 +76,18 @@ export class DefaultProjectsService implements ProjectsService {
     private readonly eventStore: EventStore,
     private readonly mondayClient: MondayClient | null = null,
     private readonly githubClient: GithubClient | null = null,
+    /**
+     * Optional SCM client used to provision a per-project repository when
+     * `scmProvider` is 'internal' or 'codecommit'. When null, project rows
+     * are still created but repo_id/repo_url remain NULL until backfilled.
+     * [Engineer-Principal · Opus · run-scm-codecommit]
+     */
+    private readonly scmClient: ScmClient | null = null,
+    /**
+     * Optional tenant slug used to namespace provisioned repos
+     * (orbital-{tenantSlug}-{projectSlug}). Defaults to 'install'.
+     */
+    private readonly tenantSlug: string = 'install',
   ) {}
 
   // -------------------------------------------------------------------------
@@ -104,6 +117,8 @@ export class DefaultProjectsService implements ProjectsService {
     const projectId = uuidv7()
     const traceId = uuidv7()
     const now = new Date()
+    const scmProvider = parsed.scmProvider ?? 'internal'
+    const ticketProvider = parsed.ticketProvider ?? 'internal'
 
     let row: ProjectRow | undefined
     try {
@@ -120,6 +135,11 @@ export class DefaultProjectsService implements ProjectsService {
           githubOwner: parsed.githubOwner ?? null,
           githubRepo: parsed.githubRepo ?? null,
           githubDefaultBranch: parsed.githubDefaultBranch ?? DEFAULT_BRANCH,
+          scmProvider,
+          ticketProvider,
+          repoId: null,
+          repoUrl: null,
+          repoCloneUrl: null,
           archivedAt: null,
           createdByEventId: null,
           createdAt: now,
@@ -151,6 +171,75 @@ export class DefaultProjectsService implements ProjectsService {
       )
     }
 
+    // ---------------------------------------------------------------------
+    // Provision a per-project SCM repo when the provider is Orbital-managed.
+    // [Engineer-Principal · Opus · run-scm-codecommit]
+    //
+    // 'github' is delegated to the explicit connectGithub flow; we only
+    // auto-provision for 'internal' (default) and 'codecommit'.
+    // ---------------------------------------------------------------------
+    let provisionedRepoId: string | null = null
+    let provisionedRepoUrl: string | null = null
+    let provisionedCloneUrl: string | null = null
+    if (this.scmClient !== null && (scmProvider === 'internal' || scmProvider === 'codecommit')) {
+      const repoName = buildRepoName(this.tenantSlug, parsed.slug)
+      try {
+        const handle = await this.scmClient.createRepo(
+          repoName,
+          parsed.description ?? `Orbital project ${parsed.name}`,
+        )
+        provisionedRepoId = handle.repoId
+        provisionedRepoUrl = handle.repoUrl
+        provisionedCloneUrl = handle.cloneUrlHttp
+
+        // Land an initial README on the default branch so PRs are possible
+        // and the repo is browseable. Tolerate failures here (the repo
+        // exists; users can seed it manually) but log loudly.
+        try {
+          await this.scmClient.commitFiles(
+            handle.repoId,
+            DEFAULT_BRANCH,
+            [
+              {
+                path: 'README.md',
+                content_utf8:
+                  `# ${parsed.name}\n\n` +
+                  `${parsed.description ?? 'Orbital-managed project repository.'}\n\n` +
+                  `- project_id: \`${projectId}\`\n` +
+                  `- install_id: \`${installId}\`\n` +
+                  `- created: ${now.toISOString()}\n`,
+              },
+            ],
+            'chore: initial commit (Orbital-managed)',
+          )
+        } catch (seedErr) {
+          logger.warn(
+            { err: seedErr, repoId: handle.repoId },
+            'ProjectsService.create: initial README seed failed; repo created but empty',
+          )
+        }
+
+        await this.db
+          .update(projects)
+          .set({
+            repoId: provisionedRepoId,
+            repoUrl: provisionedRepoUrl,
+            repoCloneUrl: provisionedCloneUrl,
+          })
+          .where(eq(projects.projectId, projectId))
+      } catch (err) {
+        logger.error(
+          { err, projectId, repoName },
+          'ProjectsService.create: SCM repo provisioning failed',
+        )
+        throw new OrbitalError(
+          PROJECTS_ERROR_CODES.SCM_PROVISION_FAILED,
+          `SCM repo provisioning failed: ${(err as Error).message}`,
+          { repo_name: repoName, scm_provider: scmProvider },
+        )
+      }
+    }
+
     const ev: EventInput = {
       aggregate_id: projectId,
       aggregate_type: 'install',
@@ -165,6 +254,11 @@ export class DefaultProjectsService implements ProjectsService {
         github_owner: parsed.githubOwner ?? null,
         github_repo: parsed.githubRepo ?? null,
         github_default_branch: parsed.githubDefaultBranch ?? DEFAULT_BRANCH,
+        scm_provider: scmProvider,
+        ticket_provider: ticketProvider,
+        repo_id: provisionedRepoId,
+        repo_url: provisionedRepoUrl,
+        repo_clone_url: provisionedCloneUrl,
         // Round 9 — record onboarding provisioning intent for audit.
         provisioning: parsed.provisioning ?? null,
       },
@@ -181,7 +275,13 @@ export class DefaultProjectsService implements ProjectsService {
       .set({ createdByEventId: envelope.event_id })
       .where(eq(projects.projectId, projectId))
 
-    return { ...row, createdByEventId: envelope.event_id }
+    return {
+      ...row,
+      createdByEventId: envelope.event_id,
+      repoId: provisionedRepoId ?? row.repoId,
+      repoUrl: provisionedRepoUrl ?? row.repoUrl,
+      repoCloneUrl: provisionedCloneUrl ?? row.repoCloneUrl,
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -615,12 +715,41 @@ export class DefaultProjectsService implements ProjectsService {
 export function createProjectsService(
   db: DB,
   eventStore: EventStore,
-  options: { mondayClient?: MondayClient | null; githubClient?: GithubClient | null } = {},
+  options: {
+    mondayClient?: MondayClient | null
+    githubClient?: GithubClient | null
+    scmClient?: ScmClient | null
+    tenantSlug?: string
+  } = {},
 ): ProjectsService {
   return new DefaultProjectsService(
     db,
     eventStore,
     options.mondayClient ?? null,
     options.githubClient ?? null,
+    options.scmClient ?? null,
+    options.tenantSlug ?? 'install',
   )
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a CodeCommit-friendly repo name: orbital-{tenant}-{project}.
+ * CodeCommit repo names are 1..100 chars, [A-Za-z0-9._-]. We lowercase and
+ * strip anything else to be safe.
+ * [Engineer-Principal · Opus · run-scm-codecommit]
+ */
+function buildRepoName(tenantSlug: string, projectSlug: string): string {
+  const sanitise = (s: string): string =>
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+  const t = sanitise(tenantSlug || 'install')
+  const p = sanitise(projectSlug)
+  const raw = `orbital-${t}-${p}`
+  return raw.slice(0, 100)
 }

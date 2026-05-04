@@ -25,7 +25,7 @@ export declare const DriftDetectedPayloadV1: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     expected: Record<string, unknown> | null;
     severity: "info" | "critical" | "warning";
-    source: "monday" | "git" | "worktree" | "internal";
+    source: "monday" | "internal" | "git" | "worktree";
     drift_id: string;
     run_id: string;
     drift_kind: "commit_without_event" | "event_without_commit" | "file_change_without_event" | "event_without_file_change" | "monday_status_without_event" | "event_without_monday_status" | "capability_grant_without_use";
@@ -33,7 +33,7 @@ export declare const DriftDetectedPayloadV1: z.ZodObject<{
 }, {
     expected: Record<string, unknown> | null;
     severity: "info" | "critical" | "warning";
-    source: "monday" | "git" | "worktree" | "internal";
+    source: "monday" | "internal" | "git" | "worktree";
     drift_id: string;
     run_id: string;
     drift_kind: "commit_without_event" | "event_without_commit" | "file_change_without_event" | "event_without_file_change" | "monday_status_without_event" | "event_without_monday_status" | "capability_grant_without_use";
