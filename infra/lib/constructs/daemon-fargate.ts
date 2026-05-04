@@ -30,6 +30,7 @@ import * as rds from 'aws-cdk-lib/aws-rds'
 import * as sns from 'aws-cdk-lib/aws-sns'
 import * as snsSubs from 'aws-cdk-lib/aws-sns-subscriptions'
 import * as sqs from 'aws-cdk-lib/aws-sqs'
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager'
 import { Construct } from 'constructs'
 
 export interface DaemonFargateProps {
@@ -48,6 +49,13 @@ export interface DaemonFargateProps {
   /** Secret ARN env vars injected on the daemon container. Caller wires
    * the matching IAM grants on the task role via `taskRole`. */
   readonly secretEnvVars?: Record<string, string>
+  /**
+   * Secrets Manager–backed env vars. Each entry maps an env-var name to a
+   * Secrets Manager secret ARN; the value is injected via ECS `secrets:` so
+   * it never appears in the task definition body or CloudTrail. The task's
+   * execution role is automatically granted GetSecretValue on each ARN.
+   */
+  readonly secretsFromManager?: Record<string, string>
 }
 
 export class DaemonFargateConstruct extends Construct {
@@ -236,10 +244,25 @@ export class DaemonFargateConstruct extends Construct {
         ],
       })
 
+      // Resolve secrets-manager ARNs into ecs.Secret objects and grant the
+      // execution role read access on each.
+      const ecsSecrets: Record<string, ecs.Secret> = {}
+      for (const [envName, secretArn] of Object.entries(props.secretsFromManager ?? {})) {
+        const sm = secretsmanager.Secret.fromSecretCompleteArn(
+          this,
+          `Secret-${envName}`,
+          secretArn,
+        )
+        ecsSecrets[envName] = ecs.Secret.fromSecretsManager(sm)
+        sm.grantRead(this.executionRole)
+        sm.grantRead(this.taskRole)
+      }
+
       const container = this.taskDefinition.addContainer('daemon', {
         image: ecs.ContainerImage.fromEcrRepository(this.repository, props.imageDigest),
         containerName: 'orbital-daemon',
         essential: true,
+        secrets: Object.keys(ecsSecrets).length > 0 ? ecsSecrets : undefined,
         environment: {
           ORBITAL_DEPLOY_TARGET: 'aws',
           ORBITAL_ENV: props.envName,

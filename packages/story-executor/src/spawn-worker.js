@@ -1,23 +1,30 @@
 /**
- * spawn-worker.js — spawn a Claude Code child process under hard caps.
+ * spawn-worker.js — drive a Claude worker under hard caps.
  *
  * Caps enforced:
  *   - $25 USD (delegated to BudgetTracker; SIGTERM on cap)
  *   - Wall-clock timeout (default 15 min) — SIGTERM, then SIGKILL after 10s
  *   - 3-strike test failure -> caller cancels the story
  *
- * Two modes:
- *   - real: invokes /opt/homebrew/bin/claude with --output-format stream-json
- *   - fake: invokes ./fake-claude.js, used for failure-mode walks and
- *           verification when ANTHROPIC_API_KEY is unset.
+ * Three modes:
+ *   - real-sdk: in-process Anthropic SDK loop via claude-client.js. Persona-tiered
+ *               model. This is the production path inside the daemon.
+ *   - fake:     invokes ./fake-claude.js, used for unit tests that exercise the
+ *               child-process plumbing, budget kill, and timeout walks.
+ *   - real:     legacy CLI shell-out (kept as fallback only when CLAUDE_BIN is set
+ *               and ANTHROPIC_USE_CLI=1; otherwise rejected).
  *
  * Stream-json contract — each line is JSON with optional `usage` / `cost_usd`.
- * The fake worker emits the same shape so this code is identical for both.
+ * The SDK loop and the fake worker both emit this shape so the cost/token
+ * aggregation is identical for both.
  */
 
 import { spawn } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+import { runClaudeLoop } from './claude-client.js'
+import { getAnthropicApiKey } from './secrets.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -52,20 +59,44 @@ export async function spawnWorker(opts) {
     prompt,
     cwd,
     budget,
-    mode = process.env.ANTHROPIC_API_KEY ? 'real' : 'fake',
+    mode = defaultMode(),
     wallClockMs = DEFAULT_WALL_CLOCK_MS,
     fakeBehaviour = {},
     onEvent = () => {},
+    persona = 'engineer-sr',
+    systemPrompt = DEFAULT_SYSTEM_PROMPT,
+    onTurnUsage,
+    apiKey,
   } = opts
+
+  if (mode === 'real-sdk') {
+    return runRealSdk({
+      prompt,
+      cwd,
+      budget,
+      wallClockMs,
+      onEvent,
+      persona,
+      systemPrompt,
+      onTurnUsage,
+      apiKey,
+    })
+  }
 
   let child
   if (mode === 'real') {
-    // Real Claude Code CLI — strip CLAUDECODE marker so the child can boot.
+    if (process.env.ANTHROPIC_USE_CLI !== '1') {
+      throw new Error(
+        "spawn-worker mode='real' (CLI shell-out) is disabled. Use mode='real-sdk' or set ANTHROPIC_USE_CLI=1.",
+      )
+    }
+    // Legacy Claude Code CLI path — strip CLAUDECODE marker so the child can boot.
     const env = { ...process.env }
     delete env.CLAUDECODE
     delete env.CLAUDE_CODE_ENTRYPOINT
+    const bin = process.env.CLAUDE_BIN ?? '/opt/homebrew/bin/claude'
     child = spawn(
-      '/opt/homebrew/bin/claude',
+      bin,
       ['-p', prompt, '--output-format', 'stream-json', '--verbose'],
       { cwd, env, stdio: ['ignore', 'pipe', 'pipe'] },
     )
@@ -159,5 +190,91 @@ export async function spawnWorker(opts) {
     outputTokens,
     stdout,
     stderr,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// real-sdk — in-process Anthropic SDK loop
+// ---------------------------------------------------------------------------
+
+export const DEFAULT_SYSTEM_PROMPT =
+  'You are an Orbital story-executor worker. You operate inside a sandboxed git ' +
+  'worktree. Use the file_read, file_write, and bash tools to implement the user ' +
+  "request end-to-end. Run the project's tests with bash before declaring done. " +
+  'Reply with end_turn only when the implementation and tests are complete.'
+
+export function defaultMode() {
+  if (process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY_SECRET_ID) {
+    return 'real-sdk'
+  }
+  return 'fake'
+}
+
+async function runRealSdk({
+  prompt,
+  cwd,
+  budget,
+  wallClockMs,
+  onEvent,
+  persona,
+  systemPrompt,
+  onTurnUsage,
+  apiKey,
+}) {
+  const resolvedKey = apiKey ?? (await getAnthropicApiKey())
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), wallClockMs)
+  let killedReason = null
+  let stdout = ''
+
+  const emit = (line) => {
+    const s = JSON.stringify(line)
+    stdout += s + '\n'
+    // Mirror to the daemon stdout so awslogs picks it up.
+    process.stdout.write(s + '\n')
+    try {
+      onEvent(line)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  try {
+    const result = await runClaudeLoop({
+      apiKey: resolvedKey,
+      persona,
+      systemPrompt,
+      userPrompt: prompt,
+      worktreeRoot: cwd,
+      budget,
+      signal: controller.signal,
+      emit,
+      onTurnUsage,
+    })
+    killedReason = result.killedReason
+    if (controller.signal.aborted && !killedReason) killedReason = 'timeout'
+    return {
+      exitCode: killedReason ? (killedReason === 'budget' ? 137 : 124) : 0,
+      killedReason,
+      pid: process.pid,
+      totalCostCents: result.totalCostCents,
+      promptTokens: result.promptTokens,
+      outputTokens: result.outputTokens,
+      stdout,
+      stderr: '',
+    }
+  } catch (err) {
+    return {
+      exitCode: 1,
+      killedReason,
+      pid: process.pid,
+      totalCostCents: 0,
+      promptTokens: 0,
+      outputTokens: 0,
+      stdout,
+      stderr: String(err?.stack ?? err?.message ?? err),
+    }
+  } finally {
+    clearTimeout(timer)
   }
 }

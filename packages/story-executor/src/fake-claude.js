@@ -1,5 +1,11 @@
 #!/usr/bin/env node
 /**
+ * fake-claude.js — DEPRECATED. Retained ONLY for the local dev verify-loop
+ * harness in scripts/verify-loop.js (failure-mode walks: budget kill, hang,
+ * tests_fail). The production path uses claude-client.js with the real
+ * Anthropic SDK; spawn-worker default mode is 'real-sdk'. This file MUST
+ * NOT be invoked by production code paths.
+ *
  * fake-claude.js — deterministic test surrogate for the Claude CLI.
  *
  * Emits Claude-stream-json-shaped lines on stdout. Behaviour controlled by
