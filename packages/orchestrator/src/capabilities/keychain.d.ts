@@ -40,6 +40,41 @@ declare class FileShimKeychain implements Keychain {
     get filePath(): string;
 }
 /**
+ * KeychainStore — narrow persistence seam for AuroraKeychain.
+ *
+ * Lets the test path stub out drizzle entirely. Production wires this up via
+ * `DrizzleKeychainStore`; tests use an in-memory map.
+ */
+export interface CredentialRow {
+    ciphertext: Buffer;
+    iv: Buffer;
+    authTag: Buffer;
+}
+export interface KeychainStore {
+    upsert(tenantId: string, account: string, row: CredentialRow): Promise<void>;
+    get(tenantId: string, account: string): Promise<CredentialRow | null>;
+    delete(tenantId: string, account: string): Promise<boolean>;
+    listAccounts(tenantId: string): Promise<string[]>;
+}
+interface AuroraKeychainOptions {
+    tenantId: string;
+    /** Override the default DrizzleKeychainStore (test seam). */
+    store?: KeychainStore;
+    /** Override the master-key resolver (test seam). */
+    loadMasterKeyOverride?: () => Promise<Buffer>;
+}
+declare class AuroraKeychain implements Keychain {
+    private readonly tenantId;
+    private readonly store;
+    private readonly loadKey;
+    constructor(opts: AuroraKeychainOptions);
+    setPassword(account: string, password: string): Promise<void>;
+    getPassword(account: string): Promise<string | null>;
+    deletePassword(account: string): Promise<boolean>;
+    listAccounts(): Promise<string[]>;
+}
+export { AuroraKeychain };
+/**
  * Get the active keychain. Returns the file shim when ORBITAL_TEST_KEYCHAIN=1,
  * a noop in AWS deploy mode (no OS keychain in Lambda), otherwise the real
  * keytar-backed keychain.

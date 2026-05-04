@@ -18,6 +18,10 @@
 import { promises as fs, constants as fsConstants } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { createCipheriv, createDecipheriv, randomBytes, } from 'node:crypto';
+import { and, eq, sql as drizzleSql } from 'drizzle-orm';
+import { tenantCredentials, getDb } from '@orbital/db';
+import { SecretsManagerClient, GetSecretValueCommand, } from '@aws-sdk/client-secrets-manager';
 import { loadEnv } from '../config/env.js';
 import { logger } from '../config/logger.js';
 const SERVICE_NAME = 'orbital';
@@ -176,6 +180,179 @@ class TmpFileKeychain {
     }
 }
 // ---------------------------------------------------------------------------
+// AuroraKeychain — tenant-scoped, encrypted-at-rest credential store.
+// [Engineer-Principal · Opus · run-keychain-aurora]
+//
+// Replaces the per-Lambda /tmp shim. AES-256-GCM with a single per-install
+// master key from Secrets Manager. Data at rest in the tenant_credentials
+// table; row keyed by (tenant_id, account).
+// ---------------------------------------------------------------------------
+const ENV_MASTER_KEY_SECRET_ID = 'ORBITAL_KEYCHAIN_MASTER_KEY_SECRET_ID';
+const DEFAULT_MASTER_KEY_SECRET_ID = 'orbital-mwitt/keychain-master-key';
+let cachedMasterKey = null;
+let masterKeyInflight = null;
+/**
+ * Load the AES-256 master key from Secrets Manager.
+ *
+ * The secret is stored as binary (32 raw bytes). Cached at module scope so a
+ * warm Lambda container only fetches it once. Reset via resetKeychainCache()
+ * for tests.
+ *
+ * Test injection: ORBITAL_KEYCHAIN_MASTER_KEY_HEX (64 hex chars) skips the
+ * Secrets Manager call entirely. Used by unit tests only.
+ */
+async function loadMasterKey() {
+    if (cachedMasterKey !== null)
+        return cachedMasterKey;
+    if (masterKeyInflight !== null)
+        return masterKeyInflight;
+    const hex = process.env['ORBITAL_KEYCHAIN_MASTER_KEY_HEX'];
+    if (hex !== undefined && hex !== '') {
+        if (hex.length !== 64) {
+            throw new Error(`keychain: ORBITAL_KEYCHAIN_MASTER_KEY_HEX must be 64 hex chars (32 bytes), got ${hex.length}`);
+        }
+        cachedMasterKey = Buffer.from(hex, 'hex');
+        return cachedMasterKey;
+    }
+    const secretId = process.env[ENV_MASTER_KEY_SECRET_ID] ?? DEFAULT_MASTER_KEY_SECRET_ID;
+    const region = process.env['AWS_REGION'] ?? 'us-east-1';
+    masterKeyInflight = (async () => {
+        const client = new SecretsManagerClient({ region });
+        const out = await client.send(new GetSecretValueCommand({ SecretId: secretId }));
+        let key;
+        if (out.SecretBinary !== undefined) {
+            // SDK v3 surfaces SecretBinary as Uint8Array.
+            key = Buffer.from(out.SecretBinary);
+        }
+        else if (typeof out.SecretString === 'string') {
+            // Fallback: hex- or base64-encoded string.
+            const s = out.SecretString;
+            if (/^[0-9a-fA-F]+$/.test(s) && s.length === 64) {
+                key = Buffer.from(s, 'hex');
+            }
+            else {
+                key = Buffer.from(s, 'base64');
+            }
+        }
+        else {
+            throw new Error(`keychain: secret ${secretId} has no binary or string value`);
+        }
+        if (key.length !== 32) {
+            throw new Error(`keychain: master key must be 32 bytes (AES-256), got ${key.length} bytes from ${secretId}`);
+        }
+        cachedMasterKey = key;
+        return key;
+    })().finally(() => {
+        masterKeyInflight = null;
+    });
+    return masterKeyInflight;
+}
+class DrizzleKeychainStore {
+    getDbFn;
+    constructor(getDbFn) {
+        this.getDbFn = getDbFn;
+    }
+    async upsert(tenantId, account, row) {
+        const { db } = await this.getDbFn();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await db
+            .insert(tenantCredentials)
+            .values({
+            tenantId,
+            account,
+            ciphertext: row.ciphertext,
+            iv: row.iv,
+            authTag: row.authTag,
+        })
+            .onConflictDoUpdate({
+            target: [tenantCredentials.tenantId, tenantCredentials.account],
+            set: {
+                ciphertext: row.ciphertext,
+                iv: row.iv,
+                authTag: row.authTag,
+                updatedAt: drizzleSql `now()`,
+            },
+        });
+    }
+    async get(tenantId, account) {
+        const { db } = await this.getDbFn();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rows = await db
+            .select({
+            ciphertext: tenantCredentials.ciphertext,
+            iv: tenantCredentials.iv,
+            authTag: tenantCredentials.authTag,
+        })
+            .from(tenantCredentials)
+            .where(and(eq(tenantCredentials.tenantId, tenantId), eq(tenantCredentials.account, account)))
+            .limit(1);
+        if (!Array.isArray(rows) || rows.length === 0)
+            return null;
+        const r = rows[0];
+        return {
+            ciphertext: Buffer.from(r.ciphertext),
+            iv: Buffer.from(r.iv),
+            authTag: Buffer.from(r.authTag),
+        };
+    }
+    async delete(tenantId, account) {
+        const { db } = await this.getDbFn();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result = await db
+            .delete(tenantCredentials)
+            .where(and(eq(tenantCredentials.tenantId, tenantId), eq(tenantCredentials.account, account)))
+            .returning({ account: tenantCredentials.account });
+        return Array.isArray(result) && result.length > 0;
+    }
+    async listAccounts(tenantId) {
+        const { db } = await this.getDbFn();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rows = await db
+            .select({ account: tenantCredentials.account })
+            .from(tenantCredentials)
+            .where(eq(tenantCredentials.tenantId, tenantId));
+        return rows.map((r) => r.account);
+    }
+}
+class AuroraKeychain {
+    tenantId;
+    store;
+    loadKey;
+    constructor(opts) {
+        this.tenantId = opts.tenantId;
+        this.store =
+            opts.store ??
+                new DrizzleKeychainStore(getDb);
+        this.loadKey = opts.loadMasterKeyOverride ?? loadMasterKey;
+    }
+    async setPassword(account, password) {
+        const key = await this.loadKey();
+        const iv = randomBytes(12);
+        const cipher = createCipheriv('aes-256-gcm', key, iv);
+        const ciphertext = Buffer.concat([cipher.update(password, 'utf8'), cipher.final()]);
+        const authTag = cipher.getAuthTag();
+        await this.store.upsert(this.tenantId, account, { ciphertext, iv, authTag });
+    }
+    async getPassword(account) {
+        const row = await this.store.get(this.tenantId, account);
+        if (row === null)
+            return null;
+        const key = await this.loadKey();
+        const decipher = createDecipheriv('aes-256-gcm', key, row.iv);
+        decipher.setAuthTag(row.authTag);
+        const plaintext = Buffer.concat([decipher.update(row.ciphertext), decipher.final()]);
+        return plaintext.toString('utf8');
+    }
+    async deletePassword(account) {
+        return this.store.delete(this.tenantId, account);
+    }
+    async listAccounts() {
+        return this.store.listAccounts(this.tenantId);
+    }
+}
+// Exported for tests.
+export { AuroraKeychain };
+// ---------------------------------------------------------------------------
 // Factory
 // ---------------------------------------------------------------------------
 let cached = null;
@@ -202,8 +379,8 @@ export async function getKeychain() {
         return cached;
     }
     if (env.ORBITAL_DEPLOY_TARGET === 'aws') {
-        logger.warn('keychain: AWS deploy mode — using /tmp file shim (warm-container only; cold start re-prompts)');
-        cached = new TmpFileKeychain();
+        logger.info('keychain: AWS deploy mode — using AuroraKeychain (encrypted tenant_credentials)');
+        cached = new AuroraKeychain({ tenantId: env.ORBITAL_HUB_TENANT_ID });
         return cached;
     }
     // Lazy-load keytar so test environments without the native build still work.
@@ -216,6 +393,8 @@ export async function getKeychain() {
 /** Reset the cached keychain. Test helper. */
 export function resetKeychainCache() {
     cached = null;
+    cachedMasterKey = null;
+    masterKeyInflight = null;
 }
 /** Test-only access to the file shim's helpers (assertSecure, purge). */
 export async function getTestShimKeychain() {

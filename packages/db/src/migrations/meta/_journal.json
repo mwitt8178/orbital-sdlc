@@ -274,6 +274,13 @@
       "when": 1747600000000,
       "tag": "0042_projects_scm_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1747700000000,
+      "tag": "0043_tenant_credentials",
+      "breakpoints": true
     }
   ]
 }
