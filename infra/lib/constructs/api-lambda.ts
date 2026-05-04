@@ -96,6 +96,62 @@ export class ApiLambdaConstruct extends Construct {
       }),
     )
 
+    // -----------------------------------------------------------------------
+    // CodeCommit — per-project repo provisioning + PR/branch operations.
+    // [Engineer-Principal · Opus · run-scm-codecommit]
+    //
+    // Resource scope: orbital-* repos within this account+region. Listing /
+    // CreateRepository require '*' on the action (CodeCommit list/create
+    // actions are not resource-scopable per AWS IAM).
+    // -----------------------------------------------------------------------
+    const codeCommitRepoArn = `arn:aws:codecommit:${props.region}:${cdk.Stack.of(this).account}:orbital-*`
+
+    this.role.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['codecommit:CreateRepository', 'codecommit:ListRepositories'],
+        resources: ['*'],
+      }),
+    )
+
+    this.role.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: [
+          'codecommit:GetRepository',
+          'codecommit:ListBranches',
+          'codecommit:GetBranch',
+          'codecommit:CreateBranch',
+          'codecommit:DeleteBranch',
+          'codecommit:CreateCommit',
+          'codecommit:PutFile',
+          'codecommit:DeleteFile',
+          'codecommit:GetFile',
+          'codecommit:GetFolder',
+          'codecommit:GetCommit',
+          'codecommit:GetBlob',
+          'codecommit:BatchGetCommits',
+          'codecommit:GetReferences',
+          'codecommit:CreatePullRequest',
+          'codecommit:GetPullRequest',
+          'codecommit:UpdatePullRequestStatus',
+          'codecommit:UpdatePullRequestTitle',
+          'codecommit:UpdatePullRequestDescription',
+          'codecommit:MergePullRequestByThreeWay',
+          'codecommit:MergePullRequestBySquash',
+          'codecommit:MergePullRequestByFastForward',
+          'codecommit:GetMergeConflicts',
+          'codecommit:GetMergeOptions',
+          'codecommit:GetDifferences',
+          'codecommit:PostCommentForPullRequest',
+          'codecommit:GetCommentsForPullRequest',
+          'codecommit:GitPush',
+          'codecommit:GitPull',
+        ],
+        resources: [codeCommitRepoArn],
+      }),
+    )
+
     // Code path: the api-lambda dist directory.
     // From infra/lib/constructs/ go up 3 levels (constructs → lib → infra → repo root)
     // then into packages/api-lambda/dist.
