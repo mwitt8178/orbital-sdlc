@@ -362,7 +362,7 @@ export function createSprintRouter(deps: SprintRouterDeps) {
      * Used by the SprintBoard sidebar to show live tick activity.
      * [Engineer-Sr · Sonnet · run-sprint-loop]
      */
-    tickLog: tenantProcedure
+    tickLog: projectProcedure
       .input(
         z.object({
           sprint_id: z.string().uuid(),
@@ -378,7 +378,7 @@ export function createSprintRouter(deps: SprintRouterDeps) {
           .from(sprintTickLog)
           .where(
             and(
-              eq(sprintTickLog.tenantId, ctx.tenantId),
+              eq(sprintTickLog.tenantId, ctx.tenantId!),
               eq(sprintTickLog.sprintId, input.sprint_id),
             ),
           )
@@ -390,7 +390,7 @@ export function createSprintRouter(deps: SprintRouterDeps) {
      * Read story_pr_runs for a sprint.
      * [Engineer-Sr · Sonnet · run-sprint-loop]
      */
-    storyPrRuns: tenantProcedure
+    storyPrRuns: projectProcedure
       .input(z.object({ sprint_id: z.string().uuid() }))
       .query(async ({ input, ctx }) => {
         const { db } = await import('../../db/client.js')
@@ -409,7 +409,7 @@ export function createSprintRouter(deps: SprintRouterDeps) {
           .from(storyPrRuns)
           .where(
             and(
-              eq(storyPrRuns.tenantId, ctx.tenantId),
+              eq(storyPrRuns.tenantId, ctx.tenantId!),
               inArray(storyPrRuns.storyId, storyIds),
             ),
           )
