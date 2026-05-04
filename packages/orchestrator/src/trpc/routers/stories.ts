@@ -49,11 +49,18 @@ import { tasks } from '../../db/schema/orchestration.js'
 import { projects } from '../../db/schema/projects.js'
 import { channels, channelPosts } from '../../db/schema/channels.js'
 import { costLedger } from '../../db/schema/cost.js'
+import { storyPrRuns } from '../../db/schema/story-pr-runs.js'
 import { createGithubClient } from '../../github/client.js'
 import { loadEnv } from '../../config/env.js'
 import { logger } from '../../config/logger.js'
 import { getScmClient, type ScmProvider } from '../../scm/factory.js'
 import type { ScmUnifiedDiffFile } from '../../scm/client.js'
+import { buildBranchName } from '../../story-runs/commit-message.js'
+import { SNSClient, PublishCommand } from '@aws-sdk/client-sns'
+import {
+  SQSClient,
+  SendMessageCommand,
+} from '@aws-sdk/client-sqs'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -903,6 +910,139 @@ export const storiesRouter = router({
     )
     return { ok: true as const }
   }),
+
+  // -------------------------------------------------------------------------
+  // Story → PR pipeline (run agent / poll status)
+  //
+  // [Engineer-Principal · Opus · run-story-pr-pipeline]
+  // -------------------------------------------------------------------------
+
+  /**
+   * Trigger a fresh agent run for a story. Inserts a row in story_pr_runs
+   * (status=queued), enqueues an SQS message of kind 'story.run_requested',
+   * returns the run_id. The daemon picks it up off the SNS→SQS chain.
+   */
+  run: tenantProcedure
+    .input(z.object({ story_id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = defaultDb
+      const story = await loadStoryScoped(db, ctx.tenantId!, input.story_id)
+      if (!story) throw new TRPCError({ code: 'NOT_FOUND', message: 'Story not found' })
+      const project = await loadProjectScmForStory(db, ctx.tenantId!, input.story_id)
+      const projectId = project?.projectId ?? null
+
+      const { uuidv7 } = await import('uuidv7')
+      const runId = uuidv7()
+      const branch = buildBranchName(input.story_id)
+
+      // INSERT story_pr_runs (queued).
+      await db.insert(storyPrRuns).values({
+        id: runId,
+        tenantId: ctx.tenantId!,
+        projectId,
+        storyId: input.story_id,
+        branch,
+        status: 'queued',
+      })
+
+      // Publish to the work topic. Two paths:
+      //   1. SNS_TOPIC_ARN set (production) → publish to SNS; the daemon's SQS
+      //      subscription receives the event.
+      //   2. DAEMON_WORK_QUEUE_URL set (lower envs / dev) → SendMessage directly.
+      const event = {
+        kind: 'story.run_requested',
+        tenant_id: ctx.tenantId!,
+        run_id: runId,
+        story_id: input.story_id,
+        project_id: projectId,
+      }
+      const region = process.env['AWS_REGION'] ?? 'us-east-1'
+      const snsArn = process.env['SNS_TOPIC_ARN']
+      const sqsUrl = process.env['DAEMON_WORK_QUEUE_URL']
+      try {
+        if (snsArn) {
+          const sns = new SNSClient({ region })
+          await sns.send(
+            new PublishCommand({
+              TopicArn: snsArn,
+              Message: JSON.stringify(event),
+              MessageAttributes: {
+                tenant_id: { DataType: 'String', StringValue: ctx.tenantId! },
+                event_type: { DataType: 'String', StringValue: 'story.run_requested' },
+                consumer: { DataType: 'String', StringValue: 'daemon' },
+              },
+            }),
+          )
+        } else if (sqsUrl) {
+          const sqs = new SQSClient({ region })
+          await sqs.send(
+            new SendMessageCommand({ QueueUrl: sqsUrl, MessageBody: JSON.stringify(event) }),
+          )
+        } else {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Neither SNS_TOPIC_ARN nor DAEMON_WORK_QUEUE_URL is set',
+          })
+        }
+      } catch (err) {
+        logger.error({ err, runId }, 'stories.run: enqueue failed; marking run failed')
+        await db
+          .update(storyPrRuns)
+          .set({
+            status: 'failed',
+            diffStats: { error: `enqueue failed: ${(err as Error).message}` },
+            finishedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(
+            and(eq(storyPrRuns.tenantId, ctx.tenantId!), eq(storyPrRuns.id, runId)),
+          )
+        throw err
+      }
+
+      await postReviewerEvent(
+        db,
+        ctx.tenantId!,
+        `Reviewer started a fresh agent run for "${story.title}".`,
+        { story_id: input.story_id, action: 'run', run_id: runId },
+      )
+      return { run_id: runId, status: 'queued' as const }
+    }),
+
+  /**
+   * Poll the status of the latest run (or a specific run_id). UI polls this
+   * @ 3s while the run is non-terminal.
+   */
+  runStatus: tenantProcedure
+    .input(z.object({ story_id: z.string().uuid(), run_id: z.string().uuid().optional() }))
+    .query(async ({ ctx, input }) => {
+      const db = defaultDb
+      const filters = [
+        eq(storyPrRuns.tenantId, ctx.tenantId!),
+        eq(storyPrRuns.storyId, input.story_id),
+      ]
+      if (input.run_id) filters.push(eq(storyPrRuns.id, input.run_id))
+      const rows = await db
+        .select()
+        .from(storyPrRuns)
+        .where(and(...filters))
+        .orderBy(desc(storyPrRuns.startedAt))
+        .limit(1)
+      const r = rows[0]
+      if (!r) return { run: null }
+      return {
+        run: {
+          run_id: r.id,
+          status: r.status,
+          branch: r.branch,
+          pr_url: r.prUrl,
+          commit_sha: r.commitSha,
+          diff_stats: r.diffStats,
+          started_at: r.startedAt,
+          finished_at: r.finishedAt,
+        },
+      }
+    }),
 
   redirect: tenantProcedure.input(redirectInput).mutation(async ({ ctx, input }) => {
     const db = defaultDb

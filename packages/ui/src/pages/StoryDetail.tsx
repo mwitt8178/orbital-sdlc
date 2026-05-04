@@ -122,6 +122,26 @@ export default function StoryDetail() {
     }
   }, [events, storyId, utils])
 
+  // Story → PR pipeline: poll runStatus while a run is non-terminal.
+  // [Engineer-Principal · Opus · run-story-pr-pipeline]
+  const runStatusQuery = trpc.stories.runStatus.useQuery(
+    { story_id: storyId },
+    {
+      enabled: !!storyId,
+      refetchInterval: (q) => {
+        const data = q.state.data as { run?: { status?: string } | null } | undefined
+        const status = data?.run?.status
+        const terminal = status === 'succeeded' || status === 'failed' || status === 'cancelled' || !status
+        return terminal ? false : 3000
+      },
+    },
+  )
+  const runMut = trpc.stories.run.useMutation({
+    onSuccess: () => {
+      utils.stories.runStatus.invalidate({ story_id: storyId })
+    },
+  })
+
   const acceptMut = trpc.stories.accept.useMutation({
     onSuccess: () => {
       utils.stories.byId.invalidate({ story_id: storyId })
@@ -236,6 +256,14 @@ export default function StoryDetail() {
           </div>
         </div>
       </header>
+
+      {/* Story → PR pipeline status block */}
+      <StoryPrRunBlock
+        run={runStatusQuery.data?.run ?? null}
+        running={runMut.isPending}
+        error={runMut.error?.message ?? null}
+        onRun={() => runMut.mutate({ story_id: storyId })}
+      />
 
       {/* Action bar */}
       <section
@@ -907,5 +935,121 @@ function RedirectForm({
         </Button>
       </div>
     </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Story → PR run block
+// [Engineer-Principal · Opus · run-story-pr-pipeline]
+// ---------------------------------------------------------------------------
+
+interface RunStatusRow {
+  run_id: string
+  status: string
+  branch: string
+  pr_url: string | null
+  commit_sha: string | null
+  diff_stats: { files?: number; additions?: number; deletions?: number; error?: string } | null
+  started_at: string | Date
+  finished_at: string | Date | null
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  queued: 'Queued',
+  cloning: 'Cloning repository',
+  branching: 'Creating branch',
+  running_agent: 'Agent working',
+  committing: 'Committing changes',
+  pushing: 'Pushing branch',
+  opening_pr: 'Opening pull request',
+  succeeded: 'Succeeded',
+  failed: 'Failed',
+  cancelled: 'Cancelled',
+}
+
+function StoryPrRunBlock({
+  run,
+  running,
+  error,
+  onRun,
+}: {
+  run: RunStatusRow | null
+  running: boolean
+  error: string | null
+  onRun: () => void
+}) {
+  const status = run?.status ?? null
+  const terminal = !status || status === 'succeeded' || status === 'failed' || status === 'cancelled'
+  const inFlight = !!status && !terminal
+
+  return (
+    <section
+      className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3"
+      aria-label="Story PR run"
+      data-testid="story-pr-run-block"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="text-sm font-semibold text-slate-900">Agent run</p>
+          <p className="text-xs text-slate-500">
+            Run the engineer agent in a fresh worktree, commit, and open a pull request.
+          </p>
+        </div>
+        <Button
+          variant="primary"
+          onClick={onRun}
+          disabled={running || inFlight}
+          data-testid="action-run-agent"
+        >
+          {running ? 'Starting…' : inFlight ? 'Running…' : 'Run agent'}
+        </Button>
+      </div>
+
+      {error && <ErrorMessage message={error} />}
+
+      {run && (
+        <div className="rounded-md border border-slate-100 bg-slate-50 p-3 text-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge color={status === 'succeeded' ? 'emerald' : status === 'failed' ? 'rose' : 'amber'}>
+              {STATUS_LABEL[status ?? ''] ?? status}
+            </Badge>
+            <span className="font-mono text-xs text-slate-500">{run.branch}</span>
+          </div>
+
+          {status === 'succeeded' && run.pr_url && (
+            <div className="mt-2 space-y-1">
+              <a
+                href={run.pr_url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-brand-600 hover:underline"
+                data-testid="run-pr-link"
+              >
+                Open pull request →
+              </a>
+              {run.diff_stats && (
+                <p className="font-mono text-xs text-slate-500">
+                  {run.diff_stats.files ?? 0} files,{' '}
+                  <span className="text-emerald-600">+{run.diff_stats.additions ?? 0}</span>{' '}
+                  <span className="text-rose-600">-{run.diff_stats.deletions ?? 0}</span>
+                </p>
+              )}
+            </div>
+          )}
+
+          {status === 'failed' && (
+            <p className="mt-2 text-xs text-rose-700" data-testid="run-failure-msg">
+              {run.diff_stats?.error ?? 'Run failed.'}
+            </p>
+          )}
+
+          {inFlight && (
+            <p className="mt-2 text-xs text-slate-500">
+              Live updates poll every 3 seconds.
+            </p>
+          )}
+        </div>
+      )}
+    </section>
   )
 }

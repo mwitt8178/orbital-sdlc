@@ -365,7 +365,19 @@ import { sanitizeForHub, LocalDataLeakError } from './sanitize.js'
 // ---------------------------------------------------------------------------
 
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns'
-import { env } from '../../../orchestrator/src/config/env.js'
+// [Engineer-Principal · Opus · run-story-pr-pipeline]
+// Use process.env directly — the previous src-relative import to
+// @orbital/orchestrator's env.ts created a cross-package dist coupling that
+// broke the daemon runtime image. Domain package must not reach into a
+// sibling's src/ tree.
+const env = {
+  get ORBITAL_DEPLOY_TARGET(): string | undefined {
+    return process.env['ORBITAL_DEPLOY_TARGET']
+  },
+  get EVENTS_TOPIC_ARN(): string | undefined {
+    return process.env['EVENTS_TOPIC_ARN']
+  },
+}
 
 let _snsClient: SNSClient | null = null
 
