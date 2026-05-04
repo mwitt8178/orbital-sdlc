@@ -461,7 +461,7 @@ describe('rejectArtifact', () => {
 
     await rejectArtifact('artifact-1', TENANT_A, db)
 
-    expect(db._store.storyTestArtifacts).toHaveLength(0)
+    expect((db as unknown as { _store: { storyTestArtifacts: unknown[] } })._store.storyTestArtifacts).toHaveLength(0)
   })
 
   it('throws NOT FOUND for cross-tenant access (tenant isolation)', async () => {

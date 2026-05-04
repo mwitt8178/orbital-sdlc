@@ -312,7 +312,7 @@ export async function generateTests(
   try {
     // Claude sometimes wraps JSON in ```json ``` blocks
     const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
-    const jsonStr = jsonMatch ? jsonMatch[1] : rawText.trim()
+    const jsonStr = jsonMatch && jsonMatch[1] ? jsonMatch[1] : rawText.trim()
     const parsed = JSON.parse(jsonStr) as {
       test_file: string
       test_path: string

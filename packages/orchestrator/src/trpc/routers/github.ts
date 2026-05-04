@@ -172,12 +172,16 @@ async function getTokenForInstallation(installationId: number): Promise<string> 
         'with the private key and webhook secret in Secrets Manager.',
     })
   }
-  // Lambda path — use the cached client from init.ts.
+  // Lambda path — dynamic import via runtime path string so this package's
+  // tsc rootDir doesn't trace cross-package into api-lambda.
   try {
-    const { getStoryExecutorGitHubClient } = await import(
-      '../../../../api-lambda/src/init.js'
-    )
-    const client = await getStoryExecutorGitHubClient()
+    const apiLambdaInitPath = '../../../../api-lambda/src/init.js'
+    const mod = (await import(apiLambdaInitPath)) as {
+      getStoryExecutorGitHubClient: () => Promise<{
+        getTokenForInstallation: (id: number) => Promise<string>
+      }>
+    }
+    const client = await mod.getStoryExecutorGitHubClient()
     return client.getTokenForInstallation(installationId)
   } catch (err) {
     // In non-Lambda environments (tests, local orchestrator), fail with a clear message.

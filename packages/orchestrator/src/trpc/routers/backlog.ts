@@ -393,15 +393,23 @@ export function createSprintRouter(deps: SprintRouterDeps) {
       .input(z.object({ sprint_id: z.string().uuid() }))
       .query(async ({ input, ctx }) => {
         const { db } = await import('../../db/client.js')
-        const { storyPrRuns } = await import('@orbital/db')
-        const { and, eq, desc } = await import('drizzle-orm')
+        const { storyPrRuns, sprintCommitments } = await import('@orbital/db')
+        const { and, eq, desc, inArray } = await import('drizzle-orm')
+        // Sprint commitments hold the chosen story_ids as a jsonb array.
+        const commit = await db
+          .select({ ids: sprintCommitments.selectedStoryIds })
+          .from(sprintCommitments)
+          .where(eq(sprintCommitments.sprintId, input.sprint_id))
+          .limit(1)
+        const storyIds = (commit[0]?.ids ?? []) as string[]
+        if (storyIds.length === 0) return []
         return await db
           .select()
           .from(storyPrRuns)
           .where(
             and(
               eq(storyPrRuns.tenantId, ctx.tenantId),
-              eq(storyPrRuns.sprintId, input.sprint_id),
+              inArray(storyPrRuns.storyId, storyIds),
             ),
           )
           .orderBy(desc(storyPrRuns.startedAt))

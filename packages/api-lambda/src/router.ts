@@ -26,7 +26,6 @@ import { codeReviewsRouter } from '../../orchestrator/src/trpc/routers/code-revi
 import { costRouter, billingRouter } from '../../orchestrator/src/trpc/routers/cost.js'
 // Automated PR review router — [Engineer-Sr · Sonnet · run-pr-review-agent-001]
 import { prReviewsRouter } from '../../orchestrator/src/trpc/routers/pr-reviews.js'
-import { costRouter } from '../../orchestrator/src/trpc/routers/cost.js'
 import { orchestrationRouter } from '../../orchestrator/src/trpc/routers/orchestration.js'
 import { outboxRouter } from '../../orchestrator/src/trpc/routers/outbox.js'
 import { providersRouter } from '../../orchestrator/src/trpc/routers/providers.js'
