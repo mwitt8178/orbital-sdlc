@@ -30,17 +30,41 @@ import {
   UpdateProjectInputSchema,
   ConnectMondayInputSchema,
   ConnectGithubInputSchema,
+  ResetProjectInputSchema,
+  DeleteProjectInputSchema,
+  ArchiveProjectInputSchema,
+  RESERVED_PROJECT_SLUGS,
   PROJECTS_ERROR_CODES,
   type CreateProjectInput,
   type UpdateProjectInput,
   type ConnectMondayInput,
   type ConnectGithubInput,
+  type ResetProjectInput,
+  type DeleteProjectInput,
+  type ArchiveProjectInput,
 } from './types.js'
 import type { MondayClient } from '../backlog/monday-client.js'
 import type { GithubClient } from '../../../orchestrator/src/github/client.js'
 import type { ScmClient } from '../../../orchestrator/src/scm/client.js'
 
 const SYSTEM_ACTOR: Actor = { type: 'system', component: 'orchestrator' }
+
+// ---------------------------------------------------------------------------
+// Read-side metadata for /settings/general
+// [Engineer-Principal · Opus · run-settings-general]
+// ---------------------------------------------------------------------------
+
+export interface ProjectMetadata {
+  projectId: string
+  tenantId: string
+  createdAt: string
+  /** Email of the actor who created the project, if recoverable from event log. */
+  createdByEmail: string | null
+  /** ISO timestamp of the most recent event touching this project. */
+  lastActivityAt: string | null
+  /** Total event count for this project (capped read). */
+  eventCount: number
+}
 
 // ---------------------------------------------------------------------------
 // Service interface
@@ -52,7 +76,10 @@ export interface ProjectsService {
   get(projectId: string, tenantId?: string): Promise<ProjectRow | null>
   getBySlug(slug: string, installId: string): Promise<ProjectRow | null>
   update(input: UpdateProjectInput, actor?: Actor, tenantId?: string): Promise<ProjectRow>
-  archive(projectId: string, actor?: Actor, tenantId?: string): Promise<void>
+  archive(input: ArchiveProjectInput | string, actor?: Actor, tenantId?: string): Promise<void>
+  reset(input: ResetProjectInput, actor?: Actor, tenantId?: string): Promise<{ cleared: Record<string, number> }>
+  delete(input: DeleteProjectInput, actor?: Actor, tenantId?: string, opts?: { isAdmin: boolean }): Promise<void>
+  metadata(projectId: string, tenantId?: string): Promise<ProjectMetadata>
   connectMonday(input: ConnectMondayInput, actor?: Actor, tenantId?: string): Promise<ProjectRow>
   connectGithub(input: ConnectGithubInput, actor?: Actor, tenantId?: string): Promise<ProjectRow>
   /**
@@ -353,9 +380,61 @@ export class DefaultProjectsService implements ProjectsService {
       )
     }
 
+    // Slug change validation: reserved-list + tenant-scoped uniqueness.
+    // [Engineer-Principal · Opus · run-settings-general]
+    if (parsed.slug !== undefined && parsed.slug !== existing.slug) {
+      if (RESERVED_PROJECT_SLUGS.includes(parsed.slug as (typeof RESERVED_PROJECT_SLUGS)[number])) {
+        throw new OrbitalError(
+          PROJECTS_ERROR_CODES.RESERVED_SLUG,
+          `slug '${parsed.slug}' is reserved`,
+        )
+      }
+      const collision = await this.db
+        .select()
+        .from(projects)
+        .where(
+          and(
+            eq(projects.installId, existing.installId),
+            eq(projects.slug, parsed.slug),
+            eq(projects.tenantId, tenantId),
+          ),
+        )
+        .limit(1)
+      if (collision[0] && collision[0].projectId !== parsed.projectId) {
+        throw new OrbitalError(
+          PROJECTS_ERROR_CODES.CONFLICT_SLUG,
+          `slug '${parsed.slug}' already in use within this install`,
+        )
+      }
+    }
+
+    // Tenant-scoped duplicate-name check (case-insensitive).
+    if (parsed.name !== undefined && parsed.name.trim() !== existing.name.trim()) {
+      const sameName = await this.db
+        .select()
+        .from(projects)
+        .where(
+          and(
+            eq(projects.installId, existing.installId),
+            eq(projects.tenantId, tenantId),
+            drizzleSql`lower(${projects.name}) = lower(${parsed.name})`,
+            drizzleSql`${projects.archivedAt} IS NULL`,
+          ),
+        )
+        .limit(1)
+      if (sameName[0] && sameName[0].projectId !== parsed.projectId) {
+        throw new OrbitalError(
+          PROJECTS_ERROR_CODES.CONFLICT_SLUG,
+          `another active project already uses the name '${parsed.name}'`,
+        )
+      }
+    }
+
     const updates: Partial<typeof projects.$inferInsert> = { updatedAt: new Date() }
     if (parsed.name !== undefined) updates.name = parsed.name
+    if (parsed.slug !== undefined) updates.slug = parsed.slug
     if (parsed.description !== undefined) updates.description = parsed.description ?? null
+    if (parsed.color !== undefined) updates.color = parsed.color ?? null
 
     const [row] = await this.db
       .update(projects)
@@ -377,6 +456,8 @@ export class DefaultProjectsService implements ProjectsService {
       payload: {
         project_id: parsed.projectId,
         ...(parsed.name !== undefined ? { name: parsed.name } : {}),
+        ...(parsed.slug !== undefined ? { slug: parsed.slug } : {}),
+        ...(parsed.color !== undefined ? { color: parsed.color ?? null } : {}),
         ...(parsed.description !== undefined
           ? { description: parsed.description ?? null }
           : {}),
@@ -395,12 +476,28 @@ export class DefaultProjectsService implements ProjectsService {
   // archive
   // -------------------------------------------------------------------------
 
-  async archive(projectId: string, actor: Actor = SYSTEM_ACTOR, tenantId: string = SENTINEL_TENANT): Promise<void> {
+  async archive(
+    input: ArchiveProjectInput | string,
+    actor: Actor = SYSTEM_ACTOR,
+    tenantId: string = SENTINEL_TENANT,
+  ): Promise<void> {
+    // Backwards-compatible: legacy callers pass the projectId string directly.
+    // [Engineer-Principal · Opus · run-settings-general]
+    const projectId = typeof input === 'string' ? input : input.projectId
+    const confirmName = typeof input === 'string' ? null : input.confirmName
+
     const existing = await this.get(projectId, tenantId)
     if (!existing) {
       throw new OrbitalError(
         PROJECTS_ERROR_CODES.NOT_FOUND_PROJECT,
         `project ${projectId} not found`,
+      )
+    }
+
+    if (confirmName !== null && confirmName.trim() !== existing.name.trim()) {
+      throw new OrbitalError(
+        PROJECTS_ERROR_CODES.CONFIRM_MISMATCH,
+        `typed name '${confirmName}' did not match project name`,
       )
     }
 
@@ -426,6 +523,250 @@ export class DefaultProjectsService implements ProjectsService {
       schema_version: 1,
     }
     await this.eventStore.append(ev)
+  }
+
+  // -------------------------------------------------------------------------
+  // reset — clears child aggregate rows, leaves the project row in place.
+  // [Engineer-Principal · Opus · run-settings-general]
+  // -------------------------------------------------------------------------
+
+  async reset(
+    input: ResetProjectInput,
+    actor: Actor = SYSTEM_ACTOR,
+    tenantId: string = SENTINEL_TENANT,
+  ): Promise<{ cleared: Record<string, number> }> {
+    const parsed = ResetProjectInputSchema.parse(input)
+    const existing = await this.get(parsed.projectId, tenantId)
+    if (!existing) {
+      throw new OrbitalError(
+        PROJECTS_ERROR_CODES.NOT_FOUND_PROJECT,
+        `project ${parsed.projectId} not found`,
+      )
+    }
+    if (parsed.confirmName.trim() !== existing.name.trim()) {
+      throw new OrbitalError(
+        PROJECTS_ERROR_CODES.CONFIRM_MISMATCH,
+        `typed name did not match project name`,
+      )
+    }
+
+    const childTables = [
+      'epics',
+      'stories',
+      'sprints',
+      'channels',
+      'ceremonies',
+      'retro_reports',
+      'uat_sessions',
+      'tasks',
+    ]
+
+    const cleared: Record<string, number> = {}
+    for (const table of childTables) {
+      try {
+        const result = await this.db.execute(
+          drizzleSql`DELETE FROM ${drizzleSql.raw(table)} WHERE project_id = ${parsed.projectId}`,
+        )
+        // drizzle-orm pg execute returns { rowCount } on the underlying QueryResult.
+        const rc = (result as unknown as { rowCount?: number }).rowCount ?? 0
+        cleared[table] = rc
+      } catch (err) {
+        logger.warn(
+          { table, err: (err as Error).message },
+          `ProjectsService.reset: skipped clearing ${table}`,
+        )
+        cleared[table] = 0
+      }
+    }
+
+    const now = new Date()
+    await this.db
+      .update(projects)
+      .set({ updatedAt: now })
+      .where(and(eq(projects.projectId, parsed.projectId), eq(projects.tenantId, tenantId)))
+
+    const ev: EventInput = {
+      aggregate_id: parsed.projectId,
+      aggregate_type: 'install',
+      event_type: 'ProjectReset',
+      payload: { project_id: parsed.projectId, cleared, reset_at: now.toISOString() },
+      actor,
+      trace_id: uuidv7(),
+      occurred_at: now.toISOString(),
+      schema_version: 1,
+    }
+    await this.eventStore.append(ev)
+
+    return { cleared }
+  }
+
+  // -------------------------------------------------------------------------
+  // delete — admin-only hard delete.
+  // [Engineer-Principal · Opus · run-settings-general]
+  // -------------------------------------------------------------------------
+
+  async delete(
+    input: DeleteProjectInput,
+    actor: Actor = SYSTEM_ACTOR,
+    tenantId: string = SENTINEL_TENANT,
+    opts: { isAdmin: boolean } = { isAdmin: false },
+  ): Promise<void> {
+    if (!opts.isAdmin) {
+      throw new OrbitalError(
+        PROJECTS_ERROR_CODES.FORBIDDEN,
+        `projects.delete requires admin role`,
+      )
+    }
+    const parsed = DeleteProjectInputSchema.parse(input)
+    const existing = await this.get(parsed.projectId, tenantId)
+    if (!existing) {
+      throw new OrbitalError(
+        PROJECTS_ERROR_CODES.NOT_FOUND_PROJECT,
+        `project ${parsed.projectId} not found`,
+      )
+    }
+    if (parsed.confirmName.trim() !== existing.name.trim()) {
+      throw new OrbitalError(
+        PROJECTS_ERROR_CODES.CONFIRM_MISMATCH,
+        `typed name did not match project name`,
+      )
+    }
+
+    const now = new Date()
+
+    // Hard-delete: also clears children (reuse reset logic) then sets
+    // deleted_at on the project row to act as a tombstone before final DELETE.
+    // We do NOT physically DELETE the project row in this MVP — keeping the
+    // tombstone allows cross-aggregate audit references to remain resolvable.
+    // A separate sweeper (out of scope) can purge after a retention window.
+    const childTables = [
+      'epics',
+      'stories',
+      'sprints',
+      'channels',
+      'ceremonies',
+      'retro_reports',
+      'uat_sessions',
+      'tasks',
+      'vision_versions',
+      'vision_documents',
+    ]
+    for (const table of childTables) {
+      try {
+        await this.db.execute(
+          drizzleSql`DELETE FROM ${drizzleSql.raw(table)} WHERE project_id = ${parsed.projectId}`,
+        )
+      } catch (err) {
+        logger.warn(
+          { table, err: (err as Error).message },
+          `ProjectsService.delete: skipped clearing ${table}`,
+        )
+      }
+    }
+
+    const ev: EventInput = {
+      aggregate_id: parsed.projectId,
+      aggregate_type: 'install',
+      event_type: 'ProjectDeleted',
+      payload: {
+        project_id: parsed.projectId,
+        recovery_email: parsed.recoveryEmail,
+        deleted_at: now.toISOString(),
+      },
+      actor,
+      trace_id: uuidv7(),
+      occurred_at: now.toISOString(),
+      schema_version: 1,
+    }
+    const envelope = await this.eventStore.append(ev)
+
+    await this.db
+      .update(projects)
+      .set({
+        deletedAt: now,
+        archivedAt: existing.archivedAt ?? now,
+        deletedByEventId: envelope.event_id,
+        updatedAt: now,
+      })
+      .where(and(eq(projects.projectId, parsed.projectId), eq(projects.tenantId, tenantId)))
+  }
+
+  // -------------------------------------------------------------------------
+  // metadata — read-only join over audit.events for /settings/general.
+  // [Engineer-Principal · Opus · run-settings-general]
+  // -------------------------------------------------------------------------
+
+  async metadata(
+    projectId: string,
+    tenantId: string = SENTINEL_TENANT,
+  ): Promise<ProjectMetadata> {
+    const existing = await this.get(projectId, tenantId)
+    if (!existing) {
+      throw new OrbitalError(
+        PROJECTS_ERROR_CODES.NOT_FOUND_PROJECT,
+        `project ${projectId} not found`,
+      )
+    }
+
+    // Latest activity + creator email + count via a single targeted query.
+    // Events for this project can land in two shapes:
+    //   1. aggregate_id = projectId (project lifecycle events)
+    //   2. payload->>'project_id' = projectId  (child aggregate events)
+    let lastActivityAt: string | null = null
+    let createdByEmail: string | null = null
+    let eventCount = 0
+    try {
+      const activityRows = await this.db.execute<{ max_occurred: string | null; cnt: string }>(
+        drizzleSql`
+          SELECT max(occurred_at)::text AS max_occurred,
+                 count(*)::text          AS cnt
+          FROM audit.events
+          WHERE aggregate_id = ${projectId}
+             OR payload->>'project_id' = ${projectId}
+        `,
+      )
+      const r = (activityRows as unknown as { rows?: Array<{ max_occurred: string | null; cnt: string }> }).rows
+        ?? (activityRows as unknown as Array<{ max_occurred: string | null; cnt: string }>)
+      const first = Array.isArray(r) ? r[0] : undefined
+      if (first) {
+        lastActivityAt = first.max_occurred ?? null
+        eventCount = Number.parseInt(first.cnt ?? '0', 10) || 0
+      }
+
+      // Try to recover the creating actor's email from the ProjectCreated
+      // event for this project.
+      const creatorRows = await this.db.execute<{ actor: { email?: string } | null }>(
+        drizzleSql`
+          SELECT actor
+          FROM audit.events
+          WHERE aggregate_id = ${projectId}
+            AND event_type = 'ProjectCreated'
+          ORDER BY occurred_at ASC
+          LIMIT 1
+        `,
+      )
+      const c = (creatorRows as unknown as { rows?: Array<{ actor: { email?: string } | null }> }).rows
+        ?? (creatorRows as unknown as Array<{ actor: { email?: string } | null }>)
+      const cf = Array.isArray(c) ? c[0] : undefined
+      if (cf && cf.actor && typeof cf.actor === 'object' && 'email' in cf.actor) {
+        const email = (cf.actor as { email?: unknown }).email
+        if (typeof email === 'string') createdByEmail = email
+      }
+    } catch (err) {
+      logger.warn(
+        { projectId, err: (err as Error).message },
+        'ProjectsService.metadata: event lookup failed; returning partial',
+      )
+    }
+
+    return {
+      projectId,
+      tenantId: existing.tenantId,
+      createdAt: existing.createdAt.toISOString(),
+      createdByEmail,
+      lastActivityAt,
+      eventCount,
+    }
   }
 
   // -------------------------------------------------------------------------
