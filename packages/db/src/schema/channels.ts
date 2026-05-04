@@ -126,6 +126,11 @@ export const channels = pgTable(
      * [Engineer-Sr · Sonnet · run-round7-01-extract-hub]
      */
     tenantId: uuid('tenant_id').notNull().default('00000000-0000-0000-0000-000000000000'),
+    /**
+     * fix/multi-project-isolation — multi-project scoping (mirrors migration 0015).
+     * [Engineer-Principal · Opus · run-multi-project-isolation]
+     */
+    projectId: uuid('project_id'),
     name: text('name').notNull(),
     kind: text('kind', { enum: CHANNEL_KIND }).notNull(),
     /** Object: { ticket_id?, epic_id?, sprint_id?, ceremony_id?, topic? } */
@@ -142,6 +147,7 @@ export const channels = pgTable(
   (t) => ({
     nameUnique: uniqueIndex('channels_name_unique').on(t.name),
     kindIdx: index('channels_kind_idx').on(t.kind),
+    byProject: index('channels_project_idx').on(t.projectId),
   }),
 )
 

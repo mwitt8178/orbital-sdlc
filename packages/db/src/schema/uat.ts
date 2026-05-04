@@ -101,6 +101,8 @@ export const uatSessions = pgTable(
      * [Engineer-Sr · Sonnet · run-round7-01-extract-hub]
      */
     tenantId: uuid('tenant_id').notNull().default('00000000-0000-0000-0000-000000000000'),
+    /** fix/multi-project-isolation — multi-project scoping (mirrors migration 0015). */
+    projectId: uuid('project_id'),
     ticketId: uuid('ticket_id').notNull(),
     storyVersion: integer('story_version').notNull(),
     sessionVersion: integer('session_version').notNull(),
@@ -126,6 +128,7 @@ export const uatSessions = pgTable(
     byTicket: index('uat_sessions_ticket_idx').on(t.ticketId, t.sessionVersion),
     uniqPerVersion: unique('uat_sessions_ticket_version_uniq').on(t.ticketId, t.sessionVersion),
     byState: index('uat_sessions_state_idx').on(t.state),
+    byProject: index('uat_sessions_project_idx').on(t.projectId),
   }),
 )
 
