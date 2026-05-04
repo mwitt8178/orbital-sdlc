@@ -34,6 +34,7 @@ import { getSecrets } from '../../orchestrator/dist/lambda/secrets-cache.js'
 import { createEventStore } from '../../orchestrator/dist/events/store.js'
 import { SqsConsumer, type EventHandler } from './sqs-consumer.js'
 import { counter } from './metrics-emf.js'
+import { handleStoryReady, isStoryReadyEvent } from './story-executor-bridge.js'
 
 const logger = pino({
   level: process.env['LOG_LEVEL'] ?? 'info',
@@ -212,6 +213,36 @@ async function main(): Promise<void> {
     // SNS → SQS → daemon chain end-to-end in production. Logs a
     // structured line containing `correlationId` so the script can
     // grep CloudWatch Logs for it within the 60-second window.
+    // ---- story.ready handler ----
+    // Drives the real Anthropic-SDK loop in @orbital/story-executor per the
+    // run's persona. Cost / token usage is recorded into worker_runs as
+    // each turn completes.
+    if (kind === 'story.ready') {
+      if (!isStoryReadyEvent(event)) {
+        logger.warn(
+          { tenant_id, kind, messageId: raw.MessageId },
+          'daemon: story.ready missing required fields, skipping',
+        )
+        return
+      }
+      try {
+        const out = await handleStoryReady(event, logger)
+        counter('story.completed', { kind: out.storyStatus, tenant_id }, 'Orbital/Daemon')
+        logger.info(
+          { tenant_id, kind, messageId: raw.MessageId, runId: out.runId, storyStatus: out.storyStatus, pr_url: out.pr_url, event: 'story_ready_handled' },
+          'daemon: story_ready_handled',
+        )
+      } catch (err) {
+        counter('story.failed', { tenant_id }, 'Orbital/Daemon')
+        logger.error(
+          { tenant_id, kind, messageId: raw.MessageId, err: err instanceof Error ? err.message : String(err) },
+          'daemon: story.ready handler threw',
+        )
+        throw err
+      }
+      return
+    }
+
     if (kind === 'system.smoke_test') {
       const correlationId =
         typeof event === 'object' && event !== null && 'correlationId' in event
