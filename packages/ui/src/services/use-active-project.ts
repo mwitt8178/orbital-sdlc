@@ -34,14 +34,23 @@ export function useActiveProject(options: UseActiveProjectOptions = {}) {
   )
 
   // Auto-select the first project when nothing is selected and a list is
-  // available. Runs only once per "fresh empty" state.
+  // available. Also reconcile a stale persisted id that no longer exists in
+  // the list — without this, the switcher renders "No projects" while the
+  // store holds a phantom id from a previous install.
+  // [Engineer-Principal · Opus · run-post-onboarding]
   useEffect(() => {
-    if (activeProjectId !== null) return
     const projects = list.data
-    if (!projects || projects.length === 0) return
-    // Prefer active (non-archived) over archived if mixed.
-    const firstActive = projects.find((p) => p.archivedAt === null) ?? projects[0]
-    if (firstActive) setActiveProject(firstActive.projectId)
+    if (!projects) return
+    if (projects.length === 0) {
+      if (activeProjectId !== null) setActiveProject(null)
+      return
+    }
+    const exists =
+      activeProjectId !== null && projects.some((p) => p.projectId === activeProjectId)
+    if (!exists) {
+      const firstActive = projects.find((p) => p.archivedAt === null) ?? projects[0]
+      if (firstActive) setActiveProject(firstActive.projectId)
+    }
   }, [activeProjectId, list.data, setActiveProject])
 
   const activeProject =

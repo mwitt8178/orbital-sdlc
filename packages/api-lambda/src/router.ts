@@ -68,6 +68,11 @@ import { createBoardDiscoveryService } from '../../orchestrator/src/backlog/boar
 import { createBoardMappingService } from '../../orchestrator/src/backlog/board-mapping.js'
 import { createBoardMappingResolver } from '../../orchestrator/src/backlog/board-mapping-resolver.js'
 import { createMemoryService } from '../../orchestrator/src/memory/service.js'
+// Cost service registry — must be wired at lambda boot, otherwise every
+// cost.* tRPC procedure 500s with "CostService not registered".
+// [Engineer-Principal · Opus · run-post-onboarding]
+import { createCostService, registerCostService } from '../../orchestrator/src/cost/service.js'
+import { loadOrCreateInstall } from '../../orchestrator/src/config/install.js'
 
 // Lazy SprintService proxy — sprint procedures throw a clear error if the
 // daemon hasn't registered a SprintService yet. The api-lambda is read-mostly
@@ -161,6 +166,18 @@ export async function getLambdaAppRouter(): Promise<AnyRouter> {
   // Hydrate the synchronous db Proxy so downstream construction doesn't throw.
   const { db, sql } = await getDb()
   const events = createEventStore(db, sql)
+
+  // Register the cost service singleton so cost.* procedures resolve.
+  // Without this, every cost.summary/cost.scope call 500s in Lambda.
+  // [Engineer-Principal · Opus · run-post-onboarding]
+  try {
+    const install = await loadOrCreateInstall()
+    registerCostService(createCostService(db, events, install.install_id))
+  } catch (err) {
+    // Non-fatal: cost.* will continue to 500 with a clear message until the
+    // install bootstrap recovers, but everything else stays up.
+    console.error('[api-lambda] cost service registration failed:', err)
+  }
 
   // Project services
   const monday = createMondayClient()

@@ -629,15 +629,28 @@ export function createOnboardingRouter() {
 
               if (name.length > 0 && slug.length > 0) {
                 const projectsService = getProjectsService()
+                // Use the tenant the onboarding session was opened under so the
+                // project row is visible to projects.list calls from the same
+                // user — otherwise the row lands under SENTINEL_TENANT and the
+                // user sees an empty switcher despite a successful wizard.
+                const sessionTenantId = sessionRow.tenantId ?? undefined
                 try {
-                  const created = await projectsService.create({
-                    name,
-                    slug,
-                    description,
-                    scmProvider: (scmProviderRaw as 'internal' | 'github' | 'codecommit'),
-                    ticketProvider: (ticketProviderRaw as 'internal' | 'monday'),
-                  })
+                  const created = await projectsService.create(
+                    {
+                      name,
+                      slug,
+                      description: description ?? undefined,
+                      scmProvider: (scmProviderRaw as 'internal' | 'github' | 'codecommit'),
+                      ticketProvider: (ticketProviderRaw as 'internal' | 'monday'),
+                    },
+                    undefined,
+                    sessionTenantId,
+                  )
                   canonicalProjectId = created.projectId
+                  logger.info(
+                    { projectId: created.projectId, slug, tenantId: sessionTenantId },
+                    'completeSession: project materialised from session state',
+                  )
                 } catch (createErr) {
                   // Idempotent recovery: slug already exists → look it up.
                   const isConflict =
