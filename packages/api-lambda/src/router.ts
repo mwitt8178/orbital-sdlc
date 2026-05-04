@@ -31,6 +31,9 @@ import { visionRouter } from '../../orchestrator/src/trpc/routers/vision.js'
 // Orbital Review UI — reviewer-facing story ops
 // [Engineer-Principal · Opus · run-orbital-review-ui]
 import { storiesRouter } from '../../orchestrator/src/trpc/routers/stories.js'
+// Settings → Sprints — per-project sprint policy
+// [Engineer-Principal · Opus · run-settings-sprints]
+import { sprintPolicyRouter } from '../../orchestrator/src/trpc/routers/sprint-policy.js'
 
 // Factory router imports — we control when they construct
 import {
@@ -266,6 +269,9 @@ export async function getLambdaAppRouter(): Promise<AnyRouter> {
     replay: replayRouter,
     retro: retrosR,
     sprint: sprintR,
+    // Settings → Sprints — per-project sprint policy
+    // [Engineer-Principal · Opus · run-settings-sprints]
+    sprintPolicy: sprintPolicyRouter,
     // Orbital Review UI — reviewer queue + per-story actions
     // [Engineer-Principal · Opus · run-orbital-review-ui]
     stories: storiesRouter,

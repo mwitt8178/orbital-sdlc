@@ -71,6 +71,9 @@ import { outboxRouter } from './outbox.js'
 // Orbital Review UI — reviewer-facing story operations
 // [Engineer-Principal · Opus · run-orbital-review-ui]
 import { storiesRouter } from './stories.js'
+// Settings → Sprints — per-project sprint policy (cadence, capacity, budget, ceremony rules)
+// [Engineer-Principal · Opus · run-settings-sprints]
+import { sprintPolicyRouter } from './sprint-policy.js'
 
 // ---------------------------------------------------------------------------
 // Lazy singletons / DI registry
@@ -369,6 +372,9 @@ export const appRouter = router({
   // Orbital Review UI — reviewer-facing story ops (list/byId/timeline/attempts/cost + accept/reject/redirect)
   // [Engineer-Principal · Opus · run-orbital-review-ui]
   stories: storiesRouter,
+  // Settings → Sprints — per-project sprint policy (cadence, capacity, budget, ceremony rules)
+  // [Engineer-Principal · Opus · run-settings-sprints]
+  sprintPolicy: sprintPolicyRouter,
 })
 
 export type AppRouter = typeof appRouter
