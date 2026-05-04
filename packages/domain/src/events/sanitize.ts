@@ -37,7 +37,7 @@
  * No mocks: no third-party regex libs, no remote calls. Pure Node built-ins.
  */
 
-import { logger } from '../config/logger.js'
+import { logger } from '../logger.js'
 
 // ---------------------------------------------------------------------------
 // Configuration
