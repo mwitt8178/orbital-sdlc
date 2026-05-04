@@ -24,6 +24,10 @@ import Cost from './pages/Cost.js'
 // Round 7-07 — Hub Deployment + Operations
 // [Engineer-Sr · Sonnet · run-round7-07-hub-deploy-ops]
 import HubAdmin from './pages/HubAdmin.js'
+// Orbital Review UI — reviewer queue + per-story detail
+// [Engineer-Principal · Opus · run-orbital-review-ui]
+import Stories from './pages/Stories.js'
+import StoryDetail from './pages/StoryDetail.js'
 import { ToastProvider } from './components/ui/ToastProvider.js'
 import { CommandPalette } from './components/ui/CommandPalette.js'
 // Round 7-06 — Offline Cache + Reconciliation
@@ -88,6 +92,10 @@ export default function App() {
                       {/* Round 6 #5 — Cost Governance */}
                       {/* [Engineer-Sr · Sonnet · run-round6-05-cost-governance] */}
                       <Route path="/cost" element={<Cost />} />
+                      {/* Orbital Review UI */}
+                      {/* [Engineer-Principal · Opus · run-orbital-review-ui] */}
+                      <Route path="/stories" element={<Stories />} />
+                      <Route path="/stories/:storyId" element={<StoryDetail />} />
                       <Route path="/settings" element={<Settings />} />
                     </Routes>
                   </AppShell>

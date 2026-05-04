@@ -22,6 +22,7 @@ import { useChannelsStore, type ChannelPost } from '../store/channels.js'
 import { useSprintsStore } from '../store/sprints.js'
 import { useCeremoniesStore } from '../store/ceremonies.js'
 import { useVisionStore, type VisionMessage } from '../store/vision.js'
+import { registerStorySubSender } from '../store/storySubs.js'
 
 const MIN_BACKOFF_MS = 1_000
 const MAX_BACKOFF_MS = 30_000
@@ -75,6 +76,10 @@ class WebSocketClient {
         channel_ids: [],
         cursor: conn.cursor ?? undefined,
       })
+
+      // Wire the per-story subscription helper. StoryDetail mounts/unmounts
+      // story:<id> patterns via this sender.
+      registerStorySubSender((frame) => this.send(frame))
     })
 
     this.ws.addEventListener('message', (ev: MessageEvent) => {

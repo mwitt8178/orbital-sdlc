@@ -68,6 +68,9 @@ import { teamRouter } from './team.js'
 // Round 7-06 — Offline Cache + Reconciliation: local outbox management
 // [Engineer-Sr · Sonnet · run-round7-06-offline-reconcile]
 import { outboxRouter } from './outbox.js'
+// Orbital Review UI — reviewer-facing story operations
+// [Engineer-Principal · Opus · run-orbital-review-ui]
+import { storiesRouter } from './stories.js'
 
 // ---------------------------------------------------------------------------
 // Lazy singletons / DI registry
@@ -363,6 +366,9 @@ export const appRouter = router({
   // Round 7-06 — Offline Cache + Reconciliation: local outbox management
   // [Engineer-Sr · Sonnet · run-round7-08-operator-attribution]
   outbox: outboxRouter,
+  // Orbital Review UI — reviewer-facing story ops (list/byId/timeline/attempts/cost + accept/reject/redirect)
+  // [Engineer-Principal · Opus · run-orbital-review-ui]
+  stories: storiesRouter,
 })
 
 export type AppRouter = typeof appRouter

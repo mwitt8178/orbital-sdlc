@@ -188,6 +188,13 @@ export const stories = pgTable(
         version: number
       } | null>()
       .default(null),
+    /**
+     * Migration 0040: reviewer feedback when a story is sent back from review.
+     * Set by stories.redirect, cleared when StoryExecutor next picks the story up.
+     * NULL means no pending redirect.
+     * [Engineer-Principal · Opus · run-orbital-review-ui]
+     */
+    redirectNote: text('redirect_note'),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
       .notNull()
       .defaultNow(),

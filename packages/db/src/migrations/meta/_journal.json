@@ -262,9 +262,16 @@
       "breakpoints": true
     },
     {
+      "idx": 40,
+      "version": "7",
+      "when": 1747500000000,
+      "tag": "0041_redirect_note",
+      "breakpoints": true
+    },
+    {
       "idx": 41,
       "version": "7",
-      "when": 1747300000000,
+      "when": 1747600000000,
       "tag": "0042_projects_scm_columns",
       "breakpoints": true
     }

@@ -28,6 +28,9 @@ import { prsRouter } from '../../orchestrator/src/trpc/routers/prs.js'
 import { replayRouter } from '../../orchestrator/src/trpc/routers/replay.js'
 import { teamRouter } from '../../orchestrator/src/trpc/routers/team.js'
 import { visionRouter } from '../../orchestrator/src/trpc/routers/vision.js'
+// Orbital Review UI — reviewer-facing story ops
+// [Engineer-Principal · Opus · run-orbital-review-ui]
+import { storiesRouter } from '../../orchestrator/src/trpc/routers/stories.js'
 
 // Factory router imports — we control when they construct
 import {
@@ -211,6 +214,9 @@ export async function getLambdaAppRouter(): Promise<AnyRouter> {
     replay: replayRouter,
     retro: retrosR,
     sprint: sprintR,
+    // Orbital Review UI — reviewer queue + per-story actions
+    // [Engineer-Principal · Opus · run-orbital-review-ui]
+    stories: storiesRouter,
     team: teamRouter,
     uat: uatR,
     vision: visionRouter,

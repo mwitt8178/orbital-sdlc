@@ -1,0 +1,16 @@
+-- 0041_redirect_note.sql
+-- Orbital Review UI — feedback for redirected stories.
+-- [Engineer-Principal · Opus · run-orbital-review-ui]
+--
+-- Adds a single nullable `redirect_note` column to the stories table. The UI
+-- writes to it when a reviewer clicks "Send back" so the StoryExecutor can
+-- pick the redirect feedback up on its next tick.
+--
+-- Multi-tenant-migrations discipline (additive, phase 1):
+--   - ADD COLUMN IF NOT EXISTS — idempotent.
+--   - No backfill — column is intentionally NULL for stories that have not
+--     been redirected.
+--   - No FK / trigger / sequence / extension.
+--   - Backwards compatible: existing readers ignore the column.
+--
+ALTER TABLE stories ADD COLUMN IF NOT EXISTS redirect_note text;
