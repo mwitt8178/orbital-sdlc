@@ -26,6 +26,7 @@ import { router, publicProcedure } from '../init.js'
 // Round 7-01 — tenant-scoped project procedures
 // [Engineer-Sr · Sonnet · run-round7-01-extract-hub]
 import { tenantProcedure } from '../middleware/tenant.js'
+import { installProcedure } from '../middleware/auth.js'
 // Round 7-02 — hub client for proxy mode
 // [Engineer-Sr · Sonnet · run-round7-02-local-hub-split]
 import { getHubClient } from '../../hub-client/index.js'
@@ -35,6 +36,10 @@ import {
   UpdateProjectInputSchema,
   ConnectMondayInputSchema,
   ConnectGithubInputSchema,
+  ResetProjectInputSchema,
+  DeleteProjectInputSchema,
+  ArchiveProjectInputSchema,
+  ProjectMetadataInputSchema,
   PROJECTS_ERROR_CODES,
 } from '../../projects/types.js'
 import { optionalActiveProject } from '../../projects/active-project-context.js'
@@ -77,14 +82,20 @@ const testGithubInputSchema = z.object({
 export interface ProjectClientShape {
   projectId: string
   installId: string
+  tenantId: string
   name: string
   slug: string
   description: string | null
+  color: string | null
   mondayBoardId: string | null
   githubOwner: string | null
   githubRepo: string | null
   githubDefaultBranch: string
+  repoUrl: string | null
+  scmProvider: string
+  ticketProvider: string
   archivedAt: string | null
+  deletedAt: string | null
   createdByEventId: string | null
   createdAt: string
   updatedAt: string
@@ -94,14 +105,20 @@ export interface ProjectClientShape {
 interface ProjectRowLike {
   projectId: string
   installId: string
+  tenantId?: string
   name: string
   slug: string
   description: string | null
+  color?: string | null
   mondayBoardId: string | null
   githubOwner: string | null
   githubRepo: string | null
   githubDefaultBranch: string
+  repoUrl?: string | null
+  scmProvider?: string
+  ticketProvider?: string
   archivedAt: Date | null
+  deletedAt?: Date | null
   createdByEventId: string | null
   createdAt: Date
   updatedAt: Date
@@ -112,14 +129,20 @@ function toClient(row: ProjectRowLike): ProjectClientShape {
   return {
     projectId: row.projectId,
     installId: row.installId,
+    tenantId: row.tenantId ?? '00000000-0000-0000-0000-000000000000',
     name: row.name,
     slug: row.slug,
     description: row.description,
+    color: row.color ?? null,
     mondayBoardId: row.mondayBoardId,
     githubOwner: row.githubOwner,
     githubRepo: row.githubRepo,
     githubDefaultBranch: row.githubDefaultBranch,
+    repoUrl: row.repoUrl ?? null,
+    scmProvider: row.scmProvider ?? 'internal',
+    ticketProvider: row.ticketProvider ?? 'internal',
     archivedAt: row.archivedAt ? row.archivedAt.toISOString() : null,
+    deletedAt: row.deletedAt ? row.deletedAt.toISOString() : null,
     createdByEventId: row.createdByEventId,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -137,8 +160,17 @@ function mapToTRPCError(err: unknown): never {
     if (err.code === PROJECTS_ERROR_CODES.NOT_FOUND_PROJECT) {
       throw new TRPCError({ code: 'NOT_FOUND', message: err.message, cause: err })
     }
-    if (err.code === PROJECTS_ERROR_CODES.CONFLICT_SLUG) {
+    if (
+      err.code === PROJECTS_ERROR_CODES.CONFLICT_SLUG ||
+      err.code === PROJECTS_ERROR_CODES.RESERVED_SLUG
+    ) {
       throw new TRPCError({ code: 'CONFLICT', message: err.message, cause: err })
+    }
+    if (err.code === PROJECTS_ERROR_CODES.FORBIDDEN) {
+      throw new TRPCError({ code: 'FORBIDDEN', message: err.message, cause: err })
+    }
+    if (err.code === PROJECTS_ERROR_CODES.CONFIRM_MISMATCH) {
+      throw new TRPCError({ code: 'BAD_REQUEST', message: err.message, cause: err })
     }
     if (err.code === PROJECTS_ERROR_CODES.ACTIVE_PROJECT_REQUIRED) {
       throw new TRPCError({ code: 'BAD_REQUEST', message: err.message, cause: err })
@@ -301,11 +333,62 @@ export function createProjectsRouter(deps: ProjectsRouterDeps) {
       }),
 
     archive: tenantProcedure
-      .input(archiveInputSchema)
+      .input(
+        z.union([
+          archiveInputSchema, // legacy { projectId } shape
+          ArchiveProjectInputSchema, // new { projectId, confirmName }
+        ]),
+      )
       .mutation(async ({ input, ctx }) => {
         try {
-          await projectsService.archive(input.projectId, undefined, ctx.tenantId)
+          // Normalise legacy { projectId } shape into ArchiveProjectInput by
+          // using the projectId directly (legacy callers don't supply
+          // confirmName). The service's union signature accepts a bare string
+          // for backwards compatibility.
+          if (!('confirmName' in input)) {
+            await projectsService.archive(input.projectId, undefined, ctx.tenantId)
+          } else {
+            await projectsService.archive(input, undefined, ctx.tenantId)
+          }
           return { ok: true as const }
+        } catch (err) {
+          mapToTRPCError(err)
+        }
+      }),
+
+    // -----------------------------------------------------------------------
+    // /settings/general — General-tab procedures
+    // [Engineer-Principal · Opus · run-settings-general]
+    // -----------------------------------------------------------------------
+
+    reset: tenantProcedure
+      .input(ResetProjectInputSchema)
+      .mutation(async ({ input, ctx }) => {
+        try {
+          const result = await projectsService.reset(input, undefined, ctx.tenantId)
+          return { ok: true as const, cleared: result.cleared }
+        } catch (err) {
+          mapToTRPCError(err)
+        }
+      }),
+
+    delete: installProcedure
+      .input(DeleteProjectInputSchema)
+      .mutation(async ({ input, ctx }) => {
+        try {
+          const isAdmin = ctx.role === 'owner'
+          await projectsService.delete(input, undefined, ctx.tenantId, { isAdmin })
+          return { ok: true as const }
+        } catch (err) {
+          mapToTRPCError(err)
+        }
+      }),
+
+    metadata: tenantProcedure
+      .input(ProjectMetadataInputSchema)
+      .query(async ({ input, ctx }) => {
+        try {
+          return await projectsService.metadata(input.projectId, ctx.tenantId)
         } catch (err) {
           mapToTRPCError(err)
         }

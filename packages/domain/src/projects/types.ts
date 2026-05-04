@@ -58,13 +58,80 @@ export const CreateProjectInputSchema = z.object({
 
 export type CreateProjectInput = z.infer<typeof CreateProjectInputSchema>
 
+// [Engineer-Principal · Opus · run-settings-general]
+//
+// /settings/general supports editing name + slug + description + color from the
+// General page (save-on-blur). Slug is regex-validated (existing
+// projectSlugSchema), color is a free-form theme token capped at 32 chars to
+// avoid storing arbitrary CSS strings. All fields optional — patch semantics.
+export const RESERVED_PROJECT_SLUGS = [
+  'admin',
+  'api',
+  'app',
+  'settings',
+  'login',
+  'signup',
+  'logout',
+  'oauth',
+  'health',
+  'new',
+  'create',
+  'default',
+  'system',
+  'orbital',
+] as const
+
 export const UpdateProjectInputSchema = z.object({
   projectId: z.string().uuid(),
   name: z.string().min(1).max(120).optional(),
+  slug: projectSlugSchema.optional(),
   description: z.string().max(2000).nullable().optional(),
+  color: z.string().min(1).max(32).nullable().optional(),
 })
 
 export type UpdateProjectInput = z.infer<typeof UpdateProjectInputSchema>
+
+/**
+ * Reset clears child aggregate rows for the project (epics, stories, sprints,
+ * channels, ceremonies, retros, uat, tasks). The project row itself stays.
+ * Requires `confirmName` to match the project's current name to prevent
+ * accidental wipes.
+ * [Engineer-Principal · Opus · run-settings-general]
+ */
+export const ResetProjectInputSchema = z.object({
+  projectId: z.string().uuid(),
+  confirmName: z.string().min(1).max(120),
+})
+
+export type ResetProjectInput = z.infer<typeof ResetProjectInputSchema>
+
+/**
+ * Hard delete. Admin-role only. Requires confirmName + recoveryEmail captured
+ * in the audit event so a follow-up restore is at least correlatable to a
+ * human contact.
+ * [Engineer-Principal · Opus · run-settings-general]
+ */
+export const DeleteProjectInputSchema = z.object({
+  projectId: z.string().uuid(),
+  confirmName: z.string().min(1).max(120),
+  recoveryEmail: z.string().email(),
+})
+
+export type DeleteProjectInput = z.infer<typeof DeleteProjectInputSchema>
+
+export const ArchiveProjectInputSchema = z.object({
+  projectId: z.string().uuid(),
+  /** Must equal current project name. */
+  confirmName: z.string().min(1).max(120),
+})
+
+export type ArchiveProjectInput = z.infer<typeof ArchiveProjectInputSchema>
+
+export const ProjectMetadataInputSchema = z.object({
+  projectId: z.string().uuid(),
+})
+
+export type ProjectMetadataInput = z.infer<typeof ProjectMetadataInputSchema>
 
 export const ConnectMondayInputSchema = z.object({
   projectId: z.string().uuid(),
@@ -126,6 +193,12 @@ export const PROJECTS_ERROR_CODES = {
   GITHUB_CONNECT_FAILED: 'GITHUB_CONNECT_FAILED',
   /** SCM repo provisioning failed during project create. */
   SCM_PROVISION_FAILED: 'SCM_PROVISION_FAILED',
+  /** Slug is on the reserved list. */
+  RESERVED_SLUG: 'RESERVED_SLUG',
+  /** Confirm-name typed by the user did not match the project's name. */
+  CONFIRM_MISMATCH: 'CONFIRM_MISMATCH',
+  /** Caller does not have the required role for this action. */
+  FORBIDDEN: 'FORBIDDEN',
 } as const
 
 export type ProjectsErrorCode = (typeof PROJECTS_ERROR_CODES)[keyof typeof PROJECTS_ERROR_CODES]
