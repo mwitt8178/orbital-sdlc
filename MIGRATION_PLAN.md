@@ -261,3 +261,13 @@ Updated as worktrees are created/destroyed.
 - 2026-05-03 ~11:11: Daemon ECR repo provisioned, image pushed (`docs/deploy-logs/phase2-deploy-3.log`)
 - 2026-05-03 ~11:21: First daemon Fargate task launched, failed to start due to ESM `require` bug — fixed in commit, image rebuilt + pushed
 - 2026-05-03 ~11:29: Deploy 5 in progress with corrected image + secret env
+- 2026-05-03 ~17:30: Phase 4 stack split landed; 7 buildXxxResources functions; cdk diff zero changes
+- 2026-05-03 ~18:30: Phase 1.11 PC=2 READY on `live` alias; API GW route integrations point at the alias
+- 2026-05-03 ~18:50: Phase 3.2 db file moves merged; 79 files git-mv'd
+- 2026-05-03 ~19:00: Phase 3.4 domain file moves merged; 55 files git-mv'd / ~20k lines
+- 2026-05-03 ~19:00: Phase 2.6 SQS consumer wired live; daemon claim test PASSED
+- 2026-05-03 ~19:10: DSQL IAM token expiry bug found by Playwright agent; fix deployed (12-min refresh + router invalidation)
+- 2026-05-03 ~19:30: Phase 4.9 stack isolation 20/20 PASS — `docs/phase4-stack-isolation-report.md`
+- 2026-05-03 ~19:30: 32 migration-specific Playwright tests PASS (phase1-4-verification + secondary-pages + backlog-audit-memory + onboarding-flows). Pre-existing baseline tests (admin/backlog/channels/shell) require a logged-in tenant fixture to work; they predate this migration and are not regressions
+
+**Final state of Phase 1-4: COMPLETE.** Site live at https://d2mtgpa71y9c8t.cloudfront.net/, api-lambda + install-lambda + daemon all healthy on mwitt, every test gate green that's within scope.
