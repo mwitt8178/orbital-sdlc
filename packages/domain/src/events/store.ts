@@ -350,7 +350,7 @@ export function createEventStore(db: DB, sql: postgres.Sql): EventStore {
 // fanout hook can pick them up without merge conflicts.
 // ---------------------------------------------------------------------------
 
-import { sanitizeForHub, LocalDataLeakError } from '../../../orchestrator/src/hub-client/sanitize.js'
+import { sanitizeForHub, LocalDataLeakError } from './sanitize.js'
 
 // ---------------------------------------------------------------------------
 // Round 8-05 — AWS SNS publish path

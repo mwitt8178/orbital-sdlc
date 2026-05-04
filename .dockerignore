@@ -1,0 +1,18 @@
+# Keep build context lean and avoid bringing host-built dist/ into the
+# container (which then collides with the in-container tsc -b output:
+# TS5055 "Cannot write file because it would overwrite input file").
+**/dist
+**/.tsbuildinfo
+**/node_modules
+.git
+.claude
+**/coverage
+**/cdk.out
+**/cdk.out.*
+**/.next
+**/playwright-report
+**/test-results
+**/tests-out
+**/storybook-static
+.DS_Store
+*.log

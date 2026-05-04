@@ -170,20 +170,51 @@ class KeytarKeychain implements Keychain {
 // AWS / cloud noop keychain
 // ---------------------------------------------------------------------------
 
-class NoopKeychain implements Keychain {
-  async setPassword(): Promise<void> {
-    throw new Error(
-      'keychain: setPassword is unavailable in AWS deploy mode (no OS keychain in Lambda); use Secrets Manager',
-    )
+// In Lambda there is no OS keychain. Persist to /tmp so credentials survive
+// the warm-container lifetime (PC=2 keeps containers warm; cold start = user
+// re-enters, which is acceptable for staging). Real storage should be the
+// per-tenant DSQL/Aurora row; this is the bridge that unblocks onboarding.
+class TmpFileKeychain implements Keychain {
+  private readonly file = '/tmp/orbital-keychain.json'
+
+  private async load(): Promise<Record<string, string>> {
+    try {
+      const raw = await fs.readFile(this.file, 'utf-8')
+      return JSON.parse(raw) as Record<string, string>
+    } catch (err) {
+      if ((err as { code?: string }).code === 'ENOENT') return {}
+      throw err
+    }
   }
-  async getPassword(): Promise<string | null> {
-    return null
+
+  private async save(state: Record<string, string>): Promise<void> {
+    const tmp = `${this.file}.tmp.${process.pid}`
+    await fs.writeFile(tmp, JSON.stringify(state), { mode: 0o600 })
+    await fs.rename(tmp, this.file)
   }
-  async deletePassword(): Promise<boolean> {
-    return false
+
+  async setPassword(account: string, password: string): Promise<void> {
+    const state = await this.load()
+    state[account] = password
+    await this.save(state)
   }
+
+  async getPassword(account: string): Promise<string | null> {
+    const state = await this.load()
+    return state[account] ?? null
+  }
+
+  async deletePassword(account: string): Promise<boolean> {
+    const state = await this.load()
+    if (!(account in state)) return false
+    delete state[account]
+    await this.save(state)
+    return true
+  }
+
   async listAccounts(): Promise<string[]> {
-    return []
+    const state = await this.load()
+    return Object.keys(state)
   }
 }
 
@@ -215,8 +246,8 @@ export async function getKeychain(): Promise<Keychain> {
     return cached
   }
   if (env.ORBITAL_DEPLOY_TARGET === 'aws') {
-    logger.warn('keychain: AWS deploy mode — using noop keychain (no OS credential service in Lambda)')
-    cached = new NoopKeychain()
+    logger.warn('keychain: AWS deploy mode — using /tmp file shim (warm-container only; cold start re-prompts)')
+    cached = new TmpFileKeychain()
     return cached
   }
   // Lazy-load keytar so test environments without the native build still work.

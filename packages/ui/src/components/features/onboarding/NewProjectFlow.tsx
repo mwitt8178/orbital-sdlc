@@ -120,7 +120,15 @@ export function NewProjectFlow({
   // Step actions ---------------------------------------------------------
 
   const goFromBasics = () => {
+    // Generate the project_id at the first step that has enough to identify
+    // the project. Downstream steps (system_teach, vision-bound work) need
+    // a stable id; previously this was minted by the now-removed Monday
+    // provisioning step, so on the basics→connect→vision→teach path the id
+    // never existed and system_teach failed with "Project id missing".
+    const pid = projectId ?? crypto.randomUUID()
+    if (!projectId) setProjectId(pid)
     void advance('connect_tools', {
+      project_id: pid,
       name: basics.name,
       slug: basics.slug,
       description: basics.description,

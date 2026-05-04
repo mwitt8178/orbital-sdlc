@@ -38,6 +38,10 @@ FROM base AS deps
 WORKDIR /workspace
 COPY package.json package-lock.json tsconfig.base.json ./
 COPY packages/types/package.json packages/types/
+COPY packages/db/package.json packages/db/
+COPY packages/domain/package.json packages/domain/
+COPY packages/auth/package.json packages/auth/
+COPY packages/event-workers/package.json packages/event-workers/
 COPY packages/orchestrator/package.json packages/orchestrator/
 COPY packages/orchestrator-daemon/package.json packages/orchestrator-daemon/
 COPY packages/api-lambda/package.json packages/api-lambda/
@@ -52,10 +56,14 @@ FROM deps AS build
 WORKDIR /workspace
 COPY tsconfig.base.json tsconfig.json ./
 COPY packages/types packages/types
+COPY packages/db packages/db
+COPY packages/domain packages/domain
 COPY packages/orchestrator packages/orchestrator
 COPY packages/orchestrator-daemon packages/orchestrator-daemon
 COPY scripts scripts
 RUN npm run build -w @orbital/types
+RUN npm run build -w @orbital/db
+RUN npm run build -w @orbital/domain
 RUN npm run build -w @orbital/orchestrator
 RUN npm run build -w @orbital/orchestrator-daemon
 
@@ -76,6 +84,10 @@ WORKDIR /app
 COPY --from=build --chown=orbital:orbital /workspace/package.json /workspace/package-lock.json ./
 COPY --from=build --chown=orbital:orbital /workspace/packages/types/package.json packages/types/
 COPY --from=build --chown=orbital:orbital /workspace/packages/types/dist packages/types/dist
+COPY --from=build --chown=orbital:orbital /workspace/packages/db/package.json packages/db/
+COPY --from=build --chown=orbital:orbital /workspace/packages/db/dist packages/db/dist
+COPY --from=build --chown=orbital:orbital /workspace/packages/domain/package.json packages/domain/
+COPY --from=build --chown=orbital:orbital /workspace/packages/domain/dist packages/domain/dist
 COPY --from=build --chown=orbital:orbital /workspace/packages/orchestrator/package.json packages/orchestrator/
 COPY --from=build --chown=orbital:orbital /workspace/packages/orchestrator/dist packages/orchestrator/dist
 COPY --from=build --chown=orbital:orbital /workspace/packages/orchestrator-daemon/package.json packages/orchestrator-daemon/

@@ -60,6 +60,7 @@ import { createPersonaOfRecord } from '../../orchestrator/src/uat/persona-of-rec
 import { createMondayClient } from '../../orchestrator/src/backlog/monday-client.js'
 import { createGithubClient } from '../../orchestrator/src/github/client.js'
 import { createProjectsService } from '../../orchestrator/src/projects/service.js'
+import { getScmClient } from '../../orchestrator/src/scm/factory.js'
 import { createBoardDiscoveryService } from '../../orchestrator/src/backlog/board-discovery.js'
 import { createBoardMappingService } from '../../orchestrator/src/backlog/board-mapping.js'
 import { createBoardMappingResolver } from '../../orchestrator/src/backlog/board-mapping-resolver.js'
@@ -131,9 +132,16 @@ export async function getLambdaAppRouter(): Promise<AnyRouter> {
   // Project services
   const monday = createMondayClient()
   const github = createGithubClient()
+  // Default to CodeCommit at the construction-root. When the project row
+  // specifies github, the service-layer will reach for a different client.
+  const scmClient = getScmClient(
+    { scmProvider: 'internal' },
+    { region: process.env['AWS_REGION'] ?? 'us-east-1', githubClient: github },
+  )
   const projectsService = createProjectsService(db, events, {
     mondayClient: monday,
     githubClient: github,
+    scmClient,
   })
   const projectsR = createProjectsRouter({
     projectsService,

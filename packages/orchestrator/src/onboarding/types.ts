@@ -16,7 +16,8 @@ export const onboardingStatusOutputSchema = z.object({
   mode: onboardingModeSchema.nullable(),
   hasAnthropicToken: z.boolean(),
   hasMondayToken: z.boolean(),
-  hasSampleData: z.boolean(),
+  hasGithubToken: z.boolean(),
+  githubLogin: z.string().nullable(),
   installId: z.string(),
 })
 
@@ -66,42 +67,49 @@ export const connectMondayOutputSchema = z.object({
 export type ConnectMondayResult = z.infer<typeof connectMondayOutputSchema>
 
 // ---------------------------------------------------------------------------
-// loadSample mutation
+// connect.github mutation (round 2 — closes the existing-repo dead-end)
+// [Engineer-Principal · Opus · run-orbital-onboarding-rework]
 // ---------------------------------------------------------------------------
 
-export const loadSampleOutputSchema = z.object({
-  loaded: z.boolean(),
-  alreadyLoaded: z.boolean(),
-  visionDocumentId: z.string().nullable(),
-  sprintIds: z.array(z.string()),
-  channelIds: z.array(z.string()),
-  retroReportId: z.string().nullable(),
-  eventCount: z.number().int(),
+export const connectGithubInputSchema = z.object({
+  apiToken: z.string().min(1).max(2048),
 })
 
-// ---------------------------------------------------------------------------
-// startDemo mutation
-// ---------------------------------------------------------------------------
-
-export const startDemoInputSchema = z.object({
-  speedMultiplier: z.number().positive().max(1000).default(10),
+export const connectGithubOutputSchema = z.object({
+  ok: z.boolean(),
+  message: z.string().optional(),
+  login: z.string().optional(),
 })
 
-export const startDemoOutputSchema = z.object({
-  replayId: z.string(),
-  totalSteps: z.number().int(),
-  estimatedDurationMs: z.number().int(),
-})
+export type ConnectGithubResult = z.infer<typeof connectGithubOutputSchema>
 
 // ---------------------------------------------------------------------------
-// resetDemo mutation
+// listGithubRepos query — picker-friendly listing using the captured PAT
 // ---------------------------------------------------------------------------
 
-export const resetDemoOutputSchema = z.object({
-  cleared: z.boolean(),
-  removedSprints: z.number().int(),
-  removedChannels: z.number().int(),
+export const listGithubReposInputSchema = z
+  .object({
+    affiliation: z
+      .enum(['owner', 'collaborator', 'organization_member'])
+      .optional(),
+  })
+  .optional()
+
+export const githubRepoSummarySchema = z.object({
+  owner: z.string(),
+  name: z.string(),
+  fullName: z.string(),
+  isPrivate: z.boolean(),
+  defaultBranch: z.string(),
+  pushedAt: z.string().nullable(),
 })
+
+export const listGithubReposOutputSchema = z.object({
+  repos: z.array(githubRepoSummarySchema),
+  truncated: z.boolean(),
+})
+
+export type GithubRepoSummary = z.infer<typeof githubRepoSummarySchema>
 
 // ---------------------------------------------------------------------------
 // complete mutation
@@ -117,7 +125,7 @@ export const completeOutputSchema = z.object({
 // [Engineer-Principal · Opus · run-round9-onboarding-overhaul]
 // ---------------------------------------------------------------------------
 
-export const onboardingFlowSchema = z.enum(['new_project', 'existing_repo', 'join_hub', 'sample_data'])
+export const onboardingFlowSchema = z.enum(['new_project', 'existing_repo', 'join_hub'])
 export type OnboardingFlowKind = z.infer<typeof onboardingFlowSchema>
 
 // startSession ------------------------------------------------------
@@ -337,15 +345,3 @@ export const completeFlowInputSchema = z.object({
 })
 
 export const completeFlowOutputSchema = sessionRowSchema
-
-// loadSampleSandbox -------------------------------------------------
-
-export const loadSampleSandboxOutputSchema = z.object({
-  loaded: z.boolean(),
-  alreadyLoaded: z.boolean(),
-  projectName: z.string(),
-  conversionCta: z.string(),
-  sprintCount: z.number().int(),
-  channelCount: z.number().int(),
-  bannerText: z.string(),
-})

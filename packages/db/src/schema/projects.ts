@@ -56,6 +56,20 @@ export const projects = pgTable(
     githubRepo: text('github_repo'),
     /** Default branch; required so worktrees can branch off something. */
     githubDefaultBranch: text('github_default_branch').notNull().default('main'),
+    /**
+     * SCM provider for this project. 'internal' (Orbital-managed CodeCommit),
+     * 'codecommit' (explicit CodeCommit), or 'github'. Default 'internal'.
+     * [Engineer-Principal · Opus · run-scm-codecommit]
+     */
+    scmProvider: text('scm_provider').notNull().default('internal'),
+    /** Ticket provider — 'internal' (Orbital-managed) or 'monday'. */
+    ticketProvider: text('ticket_provider').notNull().default('internal'),
+    /** Provider-scoped repo handle. CodeCommit: repo name; GitHub: owner/repo. */
+    repoId: text('repo_id'),
+    /** Web URL for the repo (provider console). */
+    repoUrl: text('repo_url'),
+    /** HTTPS clone URL (provider-specific). */
+    repoCloneUrl: text('repo_clone_url'),
     /** Soft-delete flag. NULL = active. */
     archivedAt: timestamp('archived_at', { withTimezone: true, mode: 'date' }),
     /** Logical FK into audit.events. Helps trace creation provenance. */
