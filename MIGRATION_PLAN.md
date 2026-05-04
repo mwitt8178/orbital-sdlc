@@ -125,7 +125,7 @@ Phase 4 starts after Phase 3. The 7 stacks can be split out **in parallel** beca
 | `[x]` | **4.6** `events-stack.ts` — SNS, SQS, EventBridge, consumer/scheduled Lambdas | Phase 3, 4.2, 4.5 | **VERIFIED** 169 lines, `buildEventsResources()` |
 | `[x]` | **4.7** `web-stack.ts` — CloudFront, S3 UI bucket, WAF | Phase 3, 4.2 | **VERIFIED** 74 lines, `buildWebResources()` |
 | `[skip]` | **4.8** `observability-stack.ts` | Phase 3, all above | Out of scope per user direction (Phases 5/6 not in scope) |
-| `[x]` | **4.9** Per-stack-deploy independence | 4.1–4.8 | **VERIFIED** comment-only edit to `api-stack.ts` re-synthesized with 0 resource modifications. `cdk diff` against deployed mwitt with the full split shows zero resource changes (every CDK logical ID preserved bit-for-bit) |
+| `[x]` | **4.9** Per-stack-deploy independence | 4.1–4.8 | **VERIFIED via 20-test suite** `infra/test/phase4-stack-isolation.test.ts` + report `docs/phase4-stack-isolation-report.md`. Per-stack scope numbers: network 39 IDs, data 47, auth 13, api 95, events 70, daemon 21, web 4. Each stack's comment-only edit produces 0 cross-stack template diff. No cascading detected. `cdk diff` against deployed mwitt shows 0/0/0 resource changes |
 
 **Phase 4 gate**: 7 stacks deployed independently; no monolith stack.
 
