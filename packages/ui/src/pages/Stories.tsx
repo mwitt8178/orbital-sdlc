@@ -23,6 +23,7 @@ import { useEventsStore } from '../store/events.js'
 import { Skeleton } from '../components/ui/Skeleton.js'
 import { ErrorMessage } from '../components/ui/ErrorMessage.js'
 import { EmptyState } from '../components/ui/EmptyState.js'
+import { ProjectBreadcrumb } from '../components/layout/ProjectBreadcrumb.js'
 import { Badge } from '../components/ui/Badge.js'
 
 type StoryStatus =
@@ -136,9 +137,14 @@ export default function Stories() {
   }, [cursorIdx])
 
   return (
-    <div className="mx-auto max-w-[1400px] px-8 py-6">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Review Queue</h1>
+    <div className="mx-auto flex max-w-6xl flex-col gap-6 p-6">
+      <header>
+        <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
+          <ProjectBreadcrumb />
+          <span aria-hidden="true">›</span>
+          <span>Review queue</span>
+        </div>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Review queue</h1>
         <p className="mt-1 text-sm text-slate-500">
           Stories the agents have shipped to a PR and are waiting on a human
           decision. Use <kbd className="rounded border border-slate-300 px-1 text-xs">j</kbd>/

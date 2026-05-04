@@ -1,6 +1,7 @@
 import { ReactNode, useEffect } from 'react'
 import { TopBar } from './TopBar.js'
 import { SideNav } from './SideNav.js'
+import { ActiveProjectUrlSync } from './ActiveProjectUrlSync.js'
 import { initWebSocket } from '../../services/ws.js'
 
 interface AppShellProps {
@@ -15,6 +16,8 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
+      {/* UX-4 — keeps ?project=<id> in sync with active project store */}
+      <ActiveProjectUrlSync />
       <TopBar />
       <div className="flex flex-1 overflow-hidden" style={{ height: 'calc(100vh - 56px)' }}>
         <SideNav />

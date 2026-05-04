@@ -62,10 +62,10 @@ page.on('response', (r) => {
 })
 
 console.log('# Login')
-await page.goto(`${BASE}/login`, { waitUntil: 'load', timeout: 60000 })
-await page.waitForTimeout(1500)
-await page.getByLabel(/email/i).fill(EMAIL)
-await page.getByLabel(/password/i).fill(PASSWORD)
+await page.goto(`${BASE}/login`, { waitUntil: 'networkidle', timeout: 60000 })
+await page.waitForSelector('input#email', { timeout: 30000 })
+await page.locator('input#email').fill(EMAIL)
+await page.locator('input#password').fill(PASSWORD)
 await page.getByRole('button', { name: /sign in|log ?in/i }).click()
 await page.waitForTimeout(5000)
 

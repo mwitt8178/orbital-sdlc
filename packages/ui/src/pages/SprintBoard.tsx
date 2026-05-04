@@ -28,6 +28,7 @@ import clsx from 'clsx'
 import { trpc } from '../services/trpc.js'
 import { Skeleton } from '../components/ui/Skeleton.js'
 import { ErrorMessage } from '../components/ui/ErrorMessage.js'
+import { ProjectBreadcrumb } from '../components/layout/ProjectBreadcrumb.js'
 
 type StoryStatus =
   | 'backlog'
@@ -161,6 +162,8 @@ export default function SprintBoard() {
     <div className="mx-auto max-w-[1600px] px-8 py-6">
       <header className="mb-5">
         <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
+          <ProjectBreadcrumb />
+          <span aria-hidden="true">›</span>
           <Link to={`/projects/${projectId}/backlog`} className="hover:underline">
             Backlog
           </Link>

@@ -12,6 +12,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { trpc } from '../services/trpc.js'
+import { ProjectBreadcrumb } from '../components/layout/ProjectBreadcrumb.js'
 
 const APP_NAME = 'Orbital'
 const HOMEPAGE_URL = 'https://d2mtgpa71y9c8t.cloudfront.net'
@@ -85,6 +86,13 @@ export default function IntegrationsGitHub() {
   return (
     <main className="mx-auto max-w-3xl p-6">
       <header className="mb-6">
+        <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
+          <ProjectBreadcrumb />
+          <span aria-hidden="true">›</span>
+          <span>Settings</span>
+          <span aria-hidden="true">›</span>
+          <span>GitHub</span>
+        </div>
         <h1 className="text-2xl font-semibold text-slate-900">GitHub integration</h1>
         <p className="mt-1 text-sm text-slate-600">
           Install the Orbital GitHub App to let executors open branches, push
