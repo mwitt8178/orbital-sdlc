@@ -1,23 +1,21 @@
 /**
  * PlanningPanel — Vision UI extension for LLM-driven backlog decomposition.
  *
- * Surfaces the `planning.regenerate` / `planning.commit` / `planning.history`
- * tRPC procedures (live as of api-lambda v21). The panel renders below the
- * vision document on the Vision page and lets the user:
+ * Surfaces the `planning.generatePlan` / `planning.approvePlan` /
+ * `planning.discardPlan` / `planning.history` tRPC procedures.
  *
- *   1. Generate a draft epic + story breakdown from the locked vision via
- *      a real Claude call (server-side, $5 cap enforced upstream).
- *   2. Edit story titles / points / acceptance criteria inline.
- *   3. Regenerate a single epic with feedback (re-runs the full proposal
- *      with feedback hint — true partial regen is a backend follow-up).
- *   4. See cost (input / output tokens, USD) for the latest run.
- *   5. Commit the proposal as epics + stories + ACs and route to /backlog.
- *   6. Browse past planning_runs for this vision (history accordion).
+ * User flow:
+ *   1. Lock vision.
+ *   2. Click "Generate plan" — calls planning.generatePlan (real Claude call).
+ *   3. Review the generated epics + stories inline (editable).
+ *   4. Click "Approve" — calls planning.approvePlan → persists backlog, routes to /backlog.
+ *      OR "Discard" — calls planning.discardPlan → marks run discarded, no backlog rows written.
  *
- * Streaming-feel progress text fakes the typical Claude latency phases since
- * API Gateway HTTP API doesn't pass through SSE for tRPC mutations.
+ * If ANTHROPIC_API_KEY is missing, the error message surfaces a clear action:
+ * "set ANTHROPIC_API_KEY at /admin/integrations".
  *
  * [Engineer-Principal · Opus · run-vision-llm-ui]
+ * [Engineer-Sr · Sonnet · run-vision-decompose]
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -47,6 +45,7 @@ type ProposedDecomposition = { epics: ProposedEpic[] }
 interface PlanningPanelProps {
   visionId: string
   isLocked: boolean
+  projectId?: string
 }
 
 const PROGRESS_PHASES = [
@@ -57,7 +56,7 @@ const PROGRESS_PHASES = [
   { at: 60_000, label: 'Almost there — Claude is finishing up…' },
 ] as const
 
-export function PlanningPanel({ visionId, isLocked }: PlanningPanelProps) {
+export function PlanningPanel({ visionId, isLocked, projectId }: PlanningPanelProps) {
   const navigate = useNavigate()
   const utils = trpc.useUtils()
 
@@ -77,11 +76,11 @@ export function PlanningPanel({ visionId, isLocked }: PlanningPanelProps) {
     { enabled: !!visionId && isLocked, staleTime: 30_000 },
   )
 
-  const regenerate = trpc.planning.regenerate.useMutation({
+  // Primary flow — generatePlan writes to vision_decomposition_runs.
+  const generatePlan = trpc.planning.generatePlan.useMutation({
     onMutate: () => {
       setError(null)
       setPhaseLabel(PROGRESS_PHASES[0].label)
-      // schedule fake-streaming progress updates
       phaseTimers.current.forEach((t) => window.clearTimeout(t))
       phaseTimers.current = PROGRESS_PHASES.slice(1).map((phase) =>
         window.setTimeout(() => setPhaseLabel(phase.label), phase.at),
@@ -103,10 +102,24 @@ export function PlanningPanel({ visionId, isLocked }: PlanningPanelProps) {
     },
   })
 
-  const commit = trpc.planning.commit.useMutation({
+  // Approve — persists backlog rows and navigates to /backlog.
+  const approvePlan = trpc.planning.approvePlan.useMutation({
     onSuccess: () => {
       void utils.planning.history.invalidate({ visionId })
       navigate('/backlog')
+    },
+    onError: (err) => setError(err.message),
+  })
+
+  // Discard — stamps run as discarded; proposal state reset locally.
+  const discardPlan = trpc.planning.discardPlan.useMutation({
+    onSuccess: () => {
+      setProposal(null)
+      setRunId(null)
+      setUsage(null)
+      setUsdCents(null)
+      setError(null)
+      void utils.planning.history.invalidate({ visionId })
     },
     onError: (err) => setError(err.message),
   })
@@ -181,13 +194,26 @@ export function PlanningPanel({ visionId, isLocked }: PlanningPanelProps) {
   }
 
   const handleGenerate = (epicFeedback?: string) => {
-    regenerate.mutate({ visionId, ...(epicFeedback ? { feedback: epicFeedback } : {}) })
+    generatePlan.mutate({
+      visionId,
+      projectId,
+      ...(epicFeedback ? { feedback: epicFeedback } : {}),
+    })
   }
 
-  const handleCommit = () => {
+  const handleApprove = () => {
     if (!proposal || !runId) return
-    commit.mutate({ visionId, runId, proposal })
+    approvePlan.mutate({ visionId, runId, proposal, projectId })
   }
+
+  const handleDiscard = () => {
+    if (!runId) return
+    discardPlan.mutate({ visionId, runId })
+  }
+
+  const isPending = generatePlan.isPending
+  const isApproving = approvePlan.isPending
+  const isDiscarding = discardPlan.isPending
 
   // Empty state — vision not yet locked.
   if (!isLocked) {
@@ -225,23 +251,36 @@ export function PlanningPanel({ visionId, isLocked }: PlanningPanelProps) {
             </h2>
             <p className="mt-0.5 text-sm text-slate-600">
               Claude will draft epics, stories, and acceptance criteria from your locked vision.
-              You can edit anything before committing.
+              Review and edit anything before approving — discarding removes the run without
+              writing any backlog rows.
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {!proposal && !regenerate.isPending && (
+          {!proposal && !isPending && (
             <Button onClick={() => handleGenerate()} aria-label="Generate plan from vision">
               Generate plan from vision
             </Button>
           )}
-          {proposal && !regenerate.isPending && (
+          {proposal && !isPending && (
             <>
               <Button variant="secondary" onClick={() => handleGenerate()}>
                 Regenerate all
               </Button>
-              <Button onClick={handleCommit} disabled={commit.isPending}>
-                {commit.isPending ? 'Committing…' : 'Commit plan'}
+              <Button
+                variant="secondary"
+                onClick={handleDiscard}
+                disabled={isDiscarding || isApproving}
+                aria-label="Discard this plan"
+              >
+                {isDiscarding ? 'Discarding…' : 'Discard'}
+              </Button>
+              <Button
+                onClick={handleApprove}
+                disabled={isApproving || isDiscarding}
+                aria-label="Approve and save plan to backlog"
+              >
+                {isApproving ? 'Approving…' : 'Approve'}
               </Button>
             </>
           )}
@@ -269,20 +308,29 @@ export function PlanningPanel({ visionId, isLocked }: PlanningPanelProps) {
           </div>
         )}
 
-        {regenerate.isPending && (
+        {isPending && (
           <ProgressView label={phaseLabel} />
         )}
 
-        {!regenerate.isPending && !proposal && (
+        {!isPending && !proposal && (
           <p className="text-sm text-slate-500">
             No proposal yet. Click <strong>Generate plan from vision</strong> to invoke Claude.
-            Typical run is 30–60 seconds and costs less than $0.20.
+            Typical run is 30–60 seconds and costs less than $0.20. Review the generated plan
+            before approving — you can edit any epic, story, or AC inline.
           </p>
         )}
 
-        {proposal && !regenerate.isPending && (
+        {proposal && !isPending && (
           <>
             <CostStrip usage={usage} usdCents={usdCents} totalPoints={totalStoryPoints} />
+
+            {/* Approve/Discard inline banner */}
+            <div className="mt-3 flex items-center gap-3 rounded-md border border-amber-200 bg-amber-50/60 px-3 py-2.5">
+              <span className="text-sm text-amber-800">
+                Review and edit below, then <strong>Approve</strong> to persist to backlog, or{' '}
+                <strong>Discard</strong> to abandon this plan.
+              </span>
+            </div>
 
             <motion.ol
               initial="hidden"
@@ -472,6 +520,23 @@ export function PlanningPanel({ visionId, isLocked }: PlanningPanelProps) {
                   </li>
                 ))}
               </ul>
+            </div>
+
+            {/* Approve / Discard bottom action bar */}
+            <div className="mt-5 flex justify-end gap-3 border-t border-slate-100 pt-4">
+              <Button
+                variant="secondary"
+                onClick={handleDiscard}
+                disabled={isDiscarding || isApproving}
+              >
+                {isDiscarding ? 'Discarding…' : 'Discard'}
+              </Button>
+              <Button
+                onClick={handleApprove}
+                disabled={isApproving || isDiscarding}
+              >
+                {isApproving ? 'Approving…' : 'Approve plan'}
+              </Button>
             </div>
           </>
         )}
