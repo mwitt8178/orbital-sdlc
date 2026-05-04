@@ -188,6 +188,9 @@ export const ceremonies = pgTable(
   'ceremonies',
   {
     ceremonyId: uuid('ceremony_id').primaryKey(),
+    /** fix/multi-project-isolation — tenant + project scoping. */
+    tenantId: uuid('tenant_id').notNull().default('00000000-0000-0000-0000-000000000000'),
+    projectId: uuid('project_id'),
     ceremonyType: text('ceremony_type', { enum: CEREMONY_TYPE }).notNull(),
     specId: uuid('spec_id').notNull(),
     channelId: uuid('channel_id').notNull(),
@@ -215,6 +218,7 @@ export const ceremonies = pgTable(
   (t) => ({
     stateIdx: index('ceremonies_state_idx').on(t.state, t.scheduledAt),
     typeIdx: index('ceremonies_type_idx').on(t.ceremonyType),
+    byProject: index('ceremonies_project_idx').on(t.projectId),
   }),
 )
 

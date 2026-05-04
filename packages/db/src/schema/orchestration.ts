@@ -57,6 +57,8 @@ export const tasks = pgTable(
      * [Engineer-Sr · Sonnet · run-round7-01-extract-hub]
      */
     tenantId: uuid('tenant_id').notNull().default('00000000-0000-0000-0000-000000000000'),
+    /** fix/multi-project-isolation — multi-project scoping (mirrors migration 0015). */
+    projectId: uuid('project_id'),
     sprintId: uuid('sprint_id').notNull(),
     ticketId: text('ticket_id').notNull(),
     title: text('title').notNull(),
@@ -164,6 +166,7 @@ export const tasks = pgTable(
     byTicket: index('tasks_ticket_idx').on(t.ticketId),
     byState: index('tasks_state_idx').on(t.state),
     byStory: index('tasks_story_idx').on(t.storyId),
+    byProject: index('tasks_project_idx').on(t.projectId),
   }),
 )
 

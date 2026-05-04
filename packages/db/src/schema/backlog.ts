@@ -111,6 +111,12 @@ export const epics = pgTable(
      * [Engineer-Sr · Sonnet · run-round7-01-extract-hub]
      */
     tenantId: uuid('tenant_id').notNull().default('00000000-0000-0000-0000-000000000000'),
+    /**
+     * fix/multi-project-isolation — multi-project scoping.
+     * Mirrors migration 0015. Nullable until backfill (0045) + NOT NULL (0046).
+     * [Engineer-Principal · Opus · run-multi-project-isolation]
+     */
+    projectId: uuid('project_id'),
     visionVersionId: uuid('vision_version_id').notNull(),
     title: text('title').notNull(),
     rationale: text('rationale').notNull(),
@@ -140,6 +146,7 @@ export const epics = pgTable(
   (t) => ({
     byVision: index('epics_vision_idx').on(t.visionVersionId),
     byPriority: index('epics_priority_idx').on(t.priority),
+    byProject: index('epics_project_idx').on(t.projectId),
   }),
 )
 
@@ -162,6 +169,8 @@ export const stories = pgTable(
      * [Engineer-Sr · Sonnet · run-round7-01-extract-hub]
      */
     tenantId: uuid('tenant_id').notNull().default('00000000-0000-0000-0000-000000000000'),
+    /** fix/multi-project-isolation — see epics.projectId. */
+    projectId: uuid('project_id'),
     epicId: uuid('epic_id').notNull(),
     title: text('title').notNull(),
     description: text('description').notNull(),
@@ -207,6 +216,7 @@ export const stories = pgTable(
     byEpic: index('stories_epic_idx').on(t.epicId),
     byStatus: index('stories_status_idx').on(t.status),
     byOrigin: index('stories_origin_idx').on(t.originStoryId),
+    byProject: index('stories_project_idx').on(t.projectId),
   }),
 )
 
@@ -267,6 +277,8 @@ export const sprints = pgTable(
      * [Engineer-Sr · Sonnet · run-round7-01-extract-hub]
      */
     tenantId: uuid('tenant_id').notNull().default('00000000-0000-0000-0000-000000000000'),
+    /** fix/multi-project-isolation — see epics.projectId. */
+    projectId: uuid('project_id'),
     name: text('name').notNull(),
     sequence: integer('sequence').notNull(),
     status: text('status', { enum: SPRINT_STATUS }).notNull().default('planning'),
@@ -294,6 +306,7 @@ export const sprints = pgTable(
   (t) => ({
     byStatus: index('sprints_status_idx').on(t.status),
     bySequence: index('sprints_sequence_idx').on(t.sequence),
+    byProject: index('sprints_project_idx').on(t.projectId),
   }),
 )
 

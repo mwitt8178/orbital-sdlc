@@ -63,6 +63,14 @@ export const visionDocuments = pgTable(
   'vision_documents',
   {
     visionDocumentId: uuid('vision_document_id').primaryKey(),
+    /**
+     * fix/multi-project-isolation — tenant + project scoping.
+     * tenantId default = local-install sentinel for back-compat.
+     * projectId nullable until backfill (0045) and NOT NULL (0046).
+     * [Engineer-Principal · Opus · run-multi-project-isolation]
+     */
+    tenantId: uuid('tenant_id').notNull().default('00000000-0000-0000-0000-000000000000'),
+    projectId: uuid('project_id'),
     installId: uuid('install_id').notNull(),
     title: text('title').notNull(),
     lifecycleState: visionLifecycleEnum('lifecycle_state').notNull().default('drafting'),
@@ -76,6 +84,7 @@ export const visionDocuments = pgTable(
   (t) => ({
     installIdx: index('vd_install_idx').on(t.installId),
     titleUniqPerInstall: uniqueIndex('vd_title_uniq').on(t.installId, t.title),
+    byProject: index('vd_project_idx').on(t.projectId),
   }),
 )
 
@@ -87,6 +96,9 @@ export const visionVersions = pgTable(
   'vision_versions',
   {
     visionVersionId: uuid('vision_version_id').primaryKey(),
+    /** fix/multi-project-isolation — tenant + project scoping. */
+    tenantId: uuid('tenant_id').notNull().default('00000000-0000-0000-0000-000000000000'),
+    projectId: uuid('project_id'),
     visionDocumentId: uuid('vision_document_id').notNull(),
     versionNumber: integer('version_number').notNull(),
     content: jsonb('content').notNull(),           // VisionDocumentContent
@@ -106,6 +118,7 @@ export const visionVersions = pgTable(
     vdNumberUniq: uniqueIndex('vv_vd_version_uniq').on(t.visionDocumentId, t.versionNumber),
     contentHashIdx: index('vv_content_hash_idx').on(t.contentHash),
     lockedIdx: index('vv_locked_idx').on(t.visionDocumentId, t.isLocked),
+    byProject: index('vv_project_idx').on(t.projectId),
   }),
 )
 

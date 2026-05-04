@@ -101,6 +101,8 @@ export const retroReports = pgTable(
      * [Engineer-Sr · Sonnet · run-round7-01-extract-hub]
      */
     tenantId: uuid('tenant_id').notNull().default('00000000-0000-0000-0000-000000000000'),
+    /** fix/multi-project-isolation — multi-project scoping (mirrors migration 0015). */
+    projectId: uuid('project_id'),
     sprintId: uuid('sprint_id').notNull(),
     systemVersionId: uuid('system_version_id'),
     analysisRunSeq: integer('analysis_run_seq').notNull().default(1),
@@ -122,6 +124,7 @@ export const retroReports = pgTable(
     bySprintRun: uniqueIndex('retro_reports_sprint_run_uq').on(t.sprintId, t.analysisRunSeq),
     byVersion: index('retro_reports_version_idx').on(t.systemVersionId),
     byStatus: index('retro_reports_status_idx').on(t.status),
+    byProject: index('retro_reports_project_idx').on(t.projectId),
   }),
 )
 
