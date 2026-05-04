@@ -28,6 +28,9 @@ import { prsRouter } from '../../orchestrator/src/trpc/routers/prs.js'
 import { replayRouter } from '../../orchestrator/src/trpc/routers/replay.js'
 import { teamRouter } from '../../orchestrator/src/trpc/routers/team.js'
 import { visionRouter } from '../../orchestrator/src/trpc/routers/vision.js'
+// GitHub App integration
+// [Engineer-Principal · Opus · run-orbital-github-integration]
+import { githubRouter } from '../../orchestrator/src/trpc/routers/github.js'
 
 // Factory router imports — we control when they construct
 import {
@@ -206,6 +209,9 @@ export async function getLambdaAppRouter(): Promise<AnyRouter> {
     team: teamRouter,
     uat: uatR,
     vision: visionRouter,
+    // GitHub App integration
+    // [Engineer-Principal · Opus · run-orbital-github-integration]
+    github: githubRouter,
   }) as AnyRouter
 
   return _router

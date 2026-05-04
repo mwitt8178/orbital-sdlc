@@ -9,14 +9,12 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
-import { uuidv7 } from 'uuidv7'
 import { resetInstallCache } from '../../../src/config/install.js'
 import { resetEnvCache } from '../../../src/config/env.js'
 import {
   readInstallState,
   setMode,
   markSetupCompleted,
-  setDemoReplayId,
 } from '../../../src/onboarding/install-state.js'
 
 let tmpHome: string
@@ -47,16 +45,15 @@ describe('install-state', () => {
     expect(state.installId).toMatch(/^[0-9a-f-]{36}$/i)
     expect(state.mode).toBeNull()
     expect(state.setupCompletedAt).toBeNull()
-    expect(state.demoReplayId).toBeNull()
     expect(state.schemaVersion).toBe(1)
   })
 
   it('setMode persists the mode and round-trips', async () => {
     await readInstallState()
-    const next = await setMode('demo')
-    expect(next.mode).toBe('demo')
+    const next = await setMode('live')
+    expect(next.mode).toBe('live')
     const reread = await readInstallState()
-    expect(reread.mode).toBe('demo')
+    expect(reread.mode).toBe('live')
   })
 
   it('markSetupCompleted writes a fresh ISO timestamp', async () => {
@@ -67,14 +64,6 @@ describe('install-state', () => {
     const ts = new Date(next.setupCompletedAt!).getTime()
     expect(ts).toBeGreaterThanOrEqual(before - 1000)
     expect(ts).toBeLessThanOrEqual(Date.now() + 1000)
-  })
-
-  it('setDemoReplayId persists and round-trips', async () => {
-    await readInstallState()
-    const replayId = uuidv7()
-    await setDemoReplayId(replayId)
-    const reread = await readInstallState()
-    expect(reread.demoReplayId).toBe(replayId)
   })
 
   it('does NOT modify install.json — base file remains v1', async () => {

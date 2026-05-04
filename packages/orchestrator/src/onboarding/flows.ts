@@ -34,7 +34,7 @@ const SYSTEM_ACTOR: Actor = { type: 'system', component: 'orchestrator' }
 // Flow definitions
 // ---------------------------------------------------------------------------
 
-export type OnboardingFlow = 'new_project' | 'existing_repo' | 'join_hub' | 'sample_data'
+export type OnboardingFlow = 'new_project' | 'existing_repo' | 'join_hub'
 
 /** Time-estimate hint shown in the UI per step. Approximate, in seconds. */
 export interface StepDef {
@@ -69,10 +69,6 @@ export const FLOW_STEPS: Record<OnboardingFlow, StepDef[]> = {
     { id: 'invite_url', label: 'Paste invite URL', estSeconds: 30 },
     { id: 'register', label: 'Register laptop', estSeconds: 30 },
     { id: 'connect_anthropic', label: 'Connect Anthropic key', estSeconds: 60 },
-    { id: 'done', label: 'Done', estSeconds: 0 },
-  ],
-  sample_data: [
-    { id: 'load_sample', label: 'Load sample dataset', estSeconds: 15 },
     { id: 'done', label: 'Done', estSeconds: 0 },
   ],
 }

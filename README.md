@@ -21,7 +21,7 @@ npm run setup
 6. Writes `~/.orbital/config/install.json` with `setup_completed_at: null`
 7. Opens your browser at <http://localhost:3000>
 
-Finish the rest of setup (Anthropic + Monday tokens, mode selection, sample data) in the in-app `/welcome` wizard that appears on first visit.
+Finish the rest of setup (Anthropic + Monday tokens, mode selection) in the in-app `/welcome` wizard that appears on first visit.
 
 ## Daily commands
 
@@ -80,7 +80,7 @@ npm run restore -- --from /path/to/backup.tar.enc --passphrase 'your phrase'
 
 Add `--force` to bypass the safety guard that refuses to restore over a non-empty database.
 
-## Reset (development / demo only)
+## Reset (development only)
 
 ```bash
 RESET_PHRASE="I understand" npm run reset

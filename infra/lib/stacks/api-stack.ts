@@ -105,6 +105,9 @@ export function buildApiResources(
     { routeKey: 'ANY /trpc/{proxy+}',    fn: apiLambda.invokeTarget, authType: 'none' as const },
     { routeKey: 'ANY /public/{proxy+}',  fn: apiLambda.invokeTarget, authType: 'none' as const },
     { routeKey: 'ANY /install/{proxy+}', fn: installLambda.fn,        authType: 'install' as const },
+    // GitHub App webhook — public route, signature-verified inside the Lambda.
+    // [Engineer-Principal · Opus · run-orbital-github-integration]
+    { routeKey: 'POST /webhooks/github', fn: apiLambda.invokeTarget, authType: 'none' as const },
   ]
 
   const apiGw = new ApiGwHttpConstruct(scope, 'ApiGw', {

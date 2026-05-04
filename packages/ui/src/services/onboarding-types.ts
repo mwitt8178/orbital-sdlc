@@ -6,4 +6,4 @@
  * import-light (no runtime import on the frontend bundle path).
  */
 
-export type OnboardingMode = 'demo' | 'live' | 'readonly'
+export type OnboardingMode = 'live' | 'readonly'

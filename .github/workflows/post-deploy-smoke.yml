@@ -1,0 +1,104 @@
+name: Post-Deploy Smoke Gate
+
+# Triggered two ways:
+#   1. After the Deploy workflow completes successfully (workflow_run)
+#   2. Manual dispatch — useful for re-running against the live site ad hoc
+#
+# On failure this workflow exits non-zero and posts a summary.
+# It does NOT require AWS credentials — the smoke spec hits the public
+# CloudFront URL and the public API Gateway endpoint directly.
+
+on:
+  workflow_run:
+    workflows:
+      - Deploy
+      - UI Deploy
+    types:
+      - completed
+    branches:
+      - main
+
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'CloudFront base URL to test against'
+        required: false
+        default: 'https://d2mtgpa71y9c8t.cloudfront.net'
+        type: string
+      api_url:
+        description: 'API Gateway base URL'
+        required: false
+        default: 'https://hhhfb8pid6.execute-api.us-east-1.amazonaws.com'
+        type: string
+
+# Only run smoke gate when the triggering workflow succeeded.
+# On manual dispatch there is no triggering workflow conclusion to check.
+concurrency:
+  group: post-deploy-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Playwright smoke — live site
+    runs-on: ubuntu-latest
+
+    # On workflow_run, skip if the triggering workflow failed.
+    # On workflow_dispatch, always run.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers (Chromium only)
+        run: npx playwright install --with-deps chromium
+        working-directory: packages/ui
+
+      - name: Run smoke tests
+        working-directory: packages/ui
+        env:
+          SMOKE_BASE_URL: ${{ inputs.base_url || 'https://d2mtgpa71y9c8t.cloudfront.net' }}
+          SMOKE_API_URL: ${{ inputs.api_url || 'https://hhhfb8pid6.execute-api.us-east-1.amazonaws.com' }}
+          PLAYWRIGHT_SKIP_WEB_SERVER: 'true'
+          CI: 'true'
+        run: |
+          npx playwright test test/smoke --project=smoke --reporter=list
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "::error::Smoke tests FAILED — the live site has a regression."
+            echo "::error::Run locally: cd packages/ui && npx playwright test test/smoke --project=smoke --headed"
+            exit $EXIT_CODE
+          fi
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-playwright-report
+          path: packages/ui/playwright-report/
+          retention-days: 7
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-results
+          path: packages/ui/test-results/
+          retention-days: 7
+
+      - name: Smoke gate passed
+        if: success()
+        run: |
+          echo "All smoke tests passed against ${{ env.SMOKE_BASE_URL || 'https://d2mtgpa71y9c8t.cloudfront.net' }}"
+          echo "The live site is healthy."

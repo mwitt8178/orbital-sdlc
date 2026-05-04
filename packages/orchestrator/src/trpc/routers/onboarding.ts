@@ -1,21 +1,15 @@
-// Round 9 — onboarding domain re-imports (from '../onboarding/' tree;
-// actual relative path is '../../onboarding/' since this file is two levels
-// deeper). Annotated here so grep "from '../onboarding/" finds the binding.
 /**
  * trpc/routers/onboarding.ts — first-run wizard backend.
  *
- * Procedures (Round 1-7):
+ * Procedures:
  *   onboarding.status (query)              — install + token presence snapshot
- *   onboarding.setMode (mutation)          — persist 'demo'|'live'|'readonly'
+ *   onboarding.setMode (mutation)          — persist 'live'|'readonly'
  *   onboarding.connect.anthropic (mut)     — validate + keychain-store API key
  *   onboarding.connect.monday (mutation)   — validate + keychain-store token
- *   onboarding.loadSample (mutation)       — populate Acme demo dataset
- *   onboarding.startDemo (mutation)        — kick off replay loop
- *   onboarding.resetDemo (mutation)        — wipe demo dataset
  *   onboarding.complete (mutation)         — mark setup_completed_at
  *
- * Procedures (Round 9 — Onboarding UX Overhaul):
- *   onboarding.startSession              — open a wizard session (NEW PROJECT/EXISTING/SAMPLE/JOIN)
+ * Round 9 — Onboarding UX Overhaul procedures:
+ *   onboarding.startSession              — open a wizard session (NEW PROJECT/EXISTING/JOIN)
  *   onboarding.resume                    — find latest active session (refresh = same step)
  *   onboarding.updateSession             — advance step OR write patch to state_json
  *   onboarding.abandonSession            — explicit cancel; emits OnboardingAbandoned
@@ -27,7 +21,6 @@
  *   onboarding.seedMemoryFromAnalysis    — seed memory from analyzer report
  *   onboarding.seedMemoryFromVision      — seed memory from vision intake
  *   onboarding.configureSystem           — generate CLAUDE.md + skill bundle
- *   onboarding.loadSampleSandbox         — Flow D bootstrap
  *
  * All procedures are publicProcedure (consistent with other routers in this
  * single-tenant local install). Token validation makes real outbound calls
@@ -36,6 +29,9 @@
  *
  * Round 9 — Onboarding UX Overhaul
  * [Engineer-Principal · Opus · run-round9-onboarding-overhaul]
+ *
+ * Round 11 — sample/demo flow removal
+ * [Engineer-Principal · Opus · run-remove-sample-flow]
  */
 
 import { TRPCError } from '@trpc/server'
@@ -54,10 +50,6 @@ import {
   connectAnthropicOutputSchema,
   connectMondayInputSchema,
   connectMondayOutputSchema,
-  loadSampleOutputSchema,
-  startDemoInputSchema,
-  startDemoOutputSchema,
-  resetDemoOutputSchema,
   completeOutputSchema,
   onboardingStatusOutputSchema,
   // Round 9 schemas
@@ -83,12 +75,9 @@ import {
   configureSystemOutputSchema,
   completeFlowInputSchema,
   completeFlowOutputSchema,
-  loadSampleSandboxOutputSchema,
 } from '../../onboarding/types.js'
 import { getAnthropicValidator } from '../../onboarding/anthropic-validate.js'
 import { getMondayValidator } from '../../onboarding/monday-validate.js'
-import { createSampleLoader, type SampleLoader } from '../../onboarding/sample-loader.js'
-import { createDemoReplayService, type DemoReplayService } from '../../onboarding/demo-replay.js'
 import {
   createOnboardingFlowService,
   type OnboardingFlowService,
@@ -111,7 +100,6 @@ import {
   createSystemTeacher,
   type SystemTeacher,
 } from '../../onboarding/system-teacher.js'
-import { createSampleSandbox, type SampleSandbox } from '../../onboarding/sample-data.js'
 import { createMemoryService } from '../../memory/service.js'
 import { createMondayClient } from '../../backlog/monday-client.js'
 import { createGithubClient } from '../../github/client.js'
@@ -131,8 +119,6 @@ export const KEYCHAIN_ACCOUNT_MONDAY_BOARD = 'monday.board_id'
 // ---------------------------------------------------------------------------
 
 let _eventStore: ReturnType<typeof createEventStore> | null = null
-let _sampleLoader: SampleLoader | null = null
-let _replayService: DemoReplayService | null = null
 
 // Round 9 lazy singletons
 let _flowService: OnboardingFlowService | null = null
@@ -141,21 +127,10 @@ let _githubProvisioner: DefaultGithubProvisioner | null = null
 let _codebaseAnalyzer: CodebaseAnalyzer | null = null
 let _memorySeeder: MemorySeeder | null = null
 let _systemTeacher: SystemTeacher | null = null
-let _sampleSandbox: SampleSandbox | null = null
 
 function getEventStore(): ReturnType<typeof createEventStore> {
   if (_eventStore === null) _eventStore = createEventStore(db, sqlPool)
   return _eventStore
-}
-
-function getSampleLoader(): SampleLoader {
-  if (_sampleLoader === null) _sampleLoader = createSampleLoader(db, getEventStore())
-  return _sampleLoader
-}
-
-function getReplayService(): DemoReplayService {
-  if (_replayService === null) _replayService = createDemoReplayService(db, getEventStore())
-  return _replayService
 }
 
 function getFlowService(): OnboardingFlowService {
@@ -228,28 +203,18 @@ function getSystemTeacher(): SystemTeacher {
   return _systemTeacher
 }
 
-function getSampleSandbox(): SampleSandbox {
-  if (_sampleSandbox === null) {
-    _sampleSandbox = createSampleSandbox(db, getEventStore(), getSampleLoader())
-  }
-  return _sampleSandbox
-}
-
 /**
  * Test/integration helper — reset the lazy singletons so a re-import of the
  * router picks up env overrides. Mirrors the pattern in install-state tests.
  */
 export function resetOnboardingRouterSingletons(): void {
   _eventStore = null
-  _sampleLoader = null
-  _replayService = null
   _flowService = null
   _mondayProvisioner = null
   _githubProvisioner = null
   _codebaseAnalyzer = null
   _memorySeeder = null
   _systemTeacher = null
-  _sampleSandbox = null
 }
 
 const SYSTEM_ACTOR: Actor = { type: 'system', component: 'audit_service' }
@@ -273,13 +238,11 @@ export function createOnboardingRouter() {
             keychain.getPassword(KEYCHAIN_ACCOUNT_ANTHROPIC),
             keychain.getPassword(KEYCHAIN_ACCOUNT_MONDAY),
           ])
-          const hasSampleData = state.demoReplayId !== null
           return {
             setupCompletedAt: state.setupCompletedAt,
             mode: state.mode,
             hasAnthropicToken: anthropic !== null && anthropic.length > 0,
             hasMondayToken: monday !== null && monday.length > 0,
-            hasSampleData,
             installId: state.installId,
           }
         } catch (err) {
@@ -382,70 +345,6 @@ export function createOnboardingRouter() {
           }
         }),
     }),
-
-    // -----------------------------------------------------------------------
-    // loadSample
-    // -----------------------------------------------------------------------
-    loadSample: publicProcedure
-      .output(loadSampleOutputSchema)
-      .mutation(async () => {
-        try {
-          return await getSampleLoader().load()
-        } catch (err) {
-          logger.warn({ err }, 'onboarding.loadSample failed')
-          throw new TRPCError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: err instanceof Error ? err.message : 'Sample load failed',
-            cause: err,
-          })
-        }
-      }),
-
-    // -----------------------------------------------------------------------
-    // startDemo
-    // -----------------------------------------------------------------------
-    startDemo: publicProcedure
-      .input(startDemoInputSchema)
-      .output(startDemoOutputSchema)
-      .mutation(async ({ input }) => {
-        try {
-          const state = await readInstallState()
-          const result = await getReplayService().start({
-            installId: state.installId,
-            speedMultiplier: input.speedMultiplier,
-          })
-          return result
-        } catch (err) {
-          throw new TRPCError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: err instanceof Error ? err.message : 'Demo replay failed to start',
-            cause: err,
-          })
-        }
-      }),
-
-    // -----------------------------------------------------------------------
-    // resetDemo
-    // -----------------------------------------------------------------------
-    resetDemo: publicProcedure
-      .output(resetDemoOutputSchema)
-      .mutation(async () => {
-        try {
-          const result = await getSampleLoader().reset()
-          return {
-            cleared: true,
-            removedSprints: result.removedSprints,
-            removedChannels: result.removedChannels,
-          }
-        } catch (err) {
-          logger.warn({ err }, 'onboarding.resetDemo failed')
-          throw new TRPCError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: err instanceof Error ? err.message : 'Reset failed',
-            cause: err,
-          })
-        }
-      }),
 
     // -----------------------------------------------------------------------
     // complete
@@ -750,20 +649,6 @@ export function createOnboardingRouter() {
           })
         }
       }),
-
-    loadSampleSandbox: publicProcedure
-      .output(loadSampleSandboxOutputSchema)
-      .mutation(async () => {
-        try {
-          return await getSampleSandbox().bootstrap()
-        } catch (err) {
-          throw new TRPCError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: err instanceof Error ? err.message : 'Sample sandbox bootstrap failed',
-            cause: err,
-          })
-        }
-      }),
   })
 }
 
@@ -785,7 +670,7 @@ function rowToSessionDto(row: {
 }): {
   sessionId: string
   installId: string
-  flow: 'new_project' | 'existing_repo' | 'join_hub' | 'sample_data'
+  flow: 'new_project' | 'existing_repo' | 'join_hub'
   currentStep: string
   status: 'active' | 'completed' | 'abandoned'
   stateJson: Record<string, unknown>
@@ -797,7 +682,7 @@ function rowToSessionDto(row: {
   return {
     sessionId: row.sessionId,
     installId: row.installId,
-    flow: row.flow as 'new_project' | 'existing_repo' | 'join_hub' | 'sample_data',
+    flow: row.flow as 'new_project' | 'existing_repo' | 'join_hub',
     currentStep: row.currentStep,
     status: row.status as 'active' | 'completed' | 'abandoned',
     stateJson: (row.stateJson as Record<string, unknown>) ?? {},

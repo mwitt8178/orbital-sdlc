@@ -8,12 +8,16 @@
  * its own schema_version.
  *
  * Fields:
- *   - mode: 'demo' | 'live' | 'readonly' | null
+ *   - mode: 'live' | 'readonly' | null
  *   - setup_completed_at: ISO datetime | null
- *   - demo_replay_id: string | null
  *
  * On first read, if the overlay file is absent, we synthesize an empty
  * record. Writes are atomic (tmp-rename + chmod 0600).
+ *
+ * Forward-compat note: prior versions of this overlay carried a
+ * `demo_replay_id` field used by the now-removed sample/demo onboarding
+ * flow. Existing overlay files with that key on disk are silently ignored
+ * by zod (non-strict object parsing). No migration is required.
  */
 
 import { promises as fs } from 'node:fs'
@@ -26,7 +30,7 @@ import { loadOrCreateInstall } from '../config/install.js'
 // Types
 // ---------------------------------------------------------------------------
 
-export const onboardingModeSchema = z.enum(['demo', 'live', 'readonly'])
+export const onboardingModeSchema = z.enum(['live', 'readonly'])
 export type OnboardingMode = z.infer<typeof onboardingModeSchema>
 
 const overlaySchema = z.object({
@@ -34,7 +38,6 @@ const overlaySchema = z.object({
   schema_version: z.literal(1),
   mode: onboardingModeSchema.nullable(),
   setup_completed_at: z.string().datetime().nullable(),
-  demo_replay_id: z.string().nullable(),
 })
 
 type OverlayFile = z.infer<typeof overlaySchema>
@@ -45,7 +48,6 @@ export interface NormalizedInstallState {
   schemaVersion: number
   mode: OnboardingMode | null
   setupCompletedAt: string | null
-  demoReplayId: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -85,7 +87,6 @@ function emptyOverlay(installId: string): OverlayFile {
     schema_version: 1,
     mode: null,
     setup_completed_at: null,
-    demo_replay_id: null,
   }
 }
 
@@ -117,7 +118,6 @@ export async function readInstallState(): Promise<NormalizedInstallState> {
     schemaVersion: base.schema_version,
     mode: overlay.mode,
     setupCompletedAt: overlay.setup_completed_at,
-    demoReplayId: overlay.demo_replay_id,
   }
 }
 
@@ -136,7 +136,6 @@ export async function setMode(mode: OnboardingMode): Promise<NormalizedInstallSt
     schemaVersion: base.schema_version,
     mode,
     setupCompletedAt: overlay.setup_completed_at,
-    demoReplayId: overlay.demo_replay_id,
   }
 }
 
@@ -152,23 +151,5 @@ export async function markSetupCompleted(): Promise<NormalizedInstallState> {
     schemaVersion: base.schema_version,
     mode: overlay.mode,
     setupCompletedAt: completedAt,
-    demoReplayId: overlay.demo_replay_id,
-  }
-}
-
-export async function setDemoReplayId(
-  replayId: string | null,
-): Promise<NormalizedInstallState> {
-  const base = await loadOrCreateInstall()
-  const overlay = await readOverlay(base.install_id)
-  overlay.demo_replay_id = replayId
-  await writeOverlay(overlay)
-  return {
-    installId: base.install_id,
-    createdAt: base.created_at,
-    schemaVersion: base.schema_version,
-    mode: overlay.mode,
-    setupCompletedAt: overlay.setup_completed_at,
-    demoReplayId: replayId,
   }
 }

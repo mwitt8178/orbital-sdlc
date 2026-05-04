@@ -633,7 +633,7 @@ export interface PeerHelpRequestedPayload {
 export interface OnboardingStartedPayload {
     session_id: string;
     install_id: string;
-    flow: 'new_project' | 'existing_repo' | 'join_hub' | 'sample_data';
+    flow: 'new_project' | 'existing_repo' | 'join_hub';
     started_at: string;
 }
 /**
@@ -736,7 +736,7 @@ export interface OnboardingCompletedPayload {
     session_id: string;
     install_id: string;
     project_id: string | null;
-    flow: 'new_project' | 'existing_repo' | 'join_hub' | 'sample_data';
+    flow: 'new_project' | 'existing_repo' | 'join_hub';
     /** Map of step_id → ms-on-task. */
     step_durations: Record<string, number>;
     /** Total wall-clock duration (ms) from session start to complete. */
@@ -752,7 +752,7 @@ export interface OnboardingCompletedPayload {
 export interface OnboardingAbandonedPayload {
     session_id: string;
     install_id: string;
-    flow: 'new_project' | 'existing_repo' | 'join_hub' | 'sample_data';
+    flow: 'new_project' | 'existing_repo' | 'join_hub';
     /** Last step the user was on before abandoning. */
     last_step: string;
     /** Reason if explicitly cancelled. 'navigated_away' if implicit. */

@@ -4,6 +4,7 @@ import { httpBatchLink } from '@trpc/client'
 // exports its router types via `exports["./trpc"].types` in package.json.
 import type { AppRouter } from '@orbital/orchestrator/trpc'
 import { getActiveProjectId } from '../store/active-project.js'
+import { authHeaders, externalSignOut } from '../auth/AuthContext.js'
 
 /**
  * IMPORTANT: this file runs in the browser bundle. Do NOT import runtime
@@ -85,9 +86,16 @@ export function createTrpcClient() {
     links: [
       httpBatchLink({
         url: trpcUrl(),
-        headers: () => activeProjectHeaders(),
-        fetch(input, init) {
-          return fetch(input, { ...init, credentials: 'omit' })
+        headers: () => ({ ...activeProjectHeaders(), ...authHeaders() }),
+        async fetch(input, init) {
+          const res = await fetch(input, { ...init, credentials: 'omit' })
+          // 401 from API GW JWT authorizer means the token is invalid or
+          // expired. Force a sign-out so RequireAuth bounces the user to
+          // /login on the next render. Server is the source of truth.
+          if (res.status === 401) {
+            externalSignOut()
+          }
+          return res
         },
       }),
     ],
@@ -107,9 +115,16 @@ export function createTrpcHubClient() {
     links: [
       httpBatchLink({
         url: trpcUrl(),
-        headers: () => activeProjectHeaders(),
-        fetch(input, init) {
-          return fetch(input, { ...init, credentials: 'omit' })
+        headers: () => ({ ...activeProjectHeaders(), ...authHeaders() }),
+        async fetch(input, init) {
+          const res = await fetch(input, { ...init, credentials: 'omit' })
+          // 401 from API GW JWT authorizer means the token is invalid or
+          // expired. Force a sign-out so RequireAuth bounces the user to
+          // /login on the next render. Server is the source of truth.
+          if (res.status === 401) {
+            externalSignOut()
+          }
+          return res
         },
       }),
     ],

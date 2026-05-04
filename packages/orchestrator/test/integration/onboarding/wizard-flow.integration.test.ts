@@ -5,8 +5,7 @@
  * Covers:
  *   - status query reflects fresh state
  *   - setMode persists and emits InstallModeSet
- *   - loadSample populates sprints/channels/posts and emits events
- *   - resetDemo cleans up by name prefix
+ *   - connect.anthropic stores token in keychain on validation success
  *   - complete marks setup_completed_at and emits OnboardingCompleted
  *
  * Real Postgres via docker-compose (postgres://orbital:orbital_dev_password@localhost:5432/orbital
@@ -19,13 +18,11 @@ import path from 'node:path'
 import os from 'node:os'
 import postgres from 'postgres'
 import { drizzle } from 'drizzle-orm/postgres-js'
-import { eq, like } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { createTRPCProxyClient } from '@trpc/client'
 import { resetInstallCache } from '../../../src/config/install.js'
 import { resetEnvCache } from '../../../src/config/env.js'
 import { resetKeychainCache } from '../../../src/capabilities/keychain.js'
-import { sprints, epics, stories } from '../../../src/db/schema/backlog.js'
-import { channels, channelPosts } from '../../../src/db/schema/channels.js'
 import { events as eventsTable } from '../../../src/db/schema/events.js'
 import {
   setAnthropicValidator,
@@ -69,28 +66,6 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  // Clean any demo data this test created so reruns are deterministic.
-  const db = drizzle(sqlPool)
-  // Posts before channels.
-  const demoChans = await db
-    .select({ channelId: channels.channelId })
-    .from(channels)
-    .where(like(channels.name, '[DEMO]%'))
-  for (const c of demoChans) {
-    await db.delete(channelPosts).where(eq(channelPosts.channelId, c.channelId))
-  }
-  await db.delete(channels).where(like(channels.name, '[DEMO]%'))
-  // Stories before epics.
-  const demoEpics = await db
-    .select({ epicId: epics.epicId })
-    .from(epics)
-    .where(like(epics.title, '[DEMO]%'))
-  for (const e of demoEpics) {
-    await db.delete(stories).where(eq(stories.epicId, e.epicId))
-  }
-  await db.delete(epics).where(like(epics.title, '[DEMO]%'))
-  await db.delete(sprints).where(like(sprints.name, '[DEMO]%'))
-
   if (originalHome !== undefined) process.env['ORBITAL_HOME'] = originalHome
   else delete process.env['ORBITAL_HOME']
   if (originalDb !== undefined) process.env['DATABASE_URL'] = originalDb
@@ -117,9 +92,6 @@ afterEach(async () => {
  * helpers. We import lazily so the router picks up our env overrides.
  */
 async function createRouter() {
-  // Force module re-evaluation by jitter-busting the require cache via dynamic
-  // import. Vitest caches modules per-worker, so we instead just import once
-  // and ensure each test sets env BEFORE the router lazy-singleton wakes up.
   const { createOnboardingRouter } = await import(
     '../../../src/trpc/routers/onboarding.js'
   )
@@ -139,7 +111,6 @@ describe('onboarding router (integration)', () => {
     expect(status.mode).toBeNull()
     expect(status.hasAnthropicToken).toBe(false)
     expect(status.hasMondayToken).toBe(false)
-    expect(status.hasSampleData).toBe(false)
     expect(status.installId).toMatch(/^[0-9a-f-]{36}$/i)
   })
 
@@ -185,75 +156,10 @@ describe('onboarding router (integration)', () => {
     expect(status.hasAnthropicToken).toBe(false)
   })
 
-  it('loadSample populates sprints, epics, stories, channels, posts and emits events', async () => {
-    const router = await createRouter()
-    const caller = router.createCaller({})
-    const r = await caller.loadSample()
-    expect(r.loaded).toBe(true)
-    expect(r.alreadyLoaded).toBe(false)
-    expect(r.sprintIds.length).toBe(2)
-    expect(r.channelIds.length).toBe(4)
-    expect(r.eventCount).toBeGreaterThan(0)
-
-    const db = drizzle(sqlPool)
-    const sprintRows = await db
-      .select()
-      .from(sprints)
-      .where(like(sprints.name, '[DEMO]%'))
-    expect(sprintRows.length).toBe(2)
-
-    const channelRows = await db
-      .select()
-      .from(channels)
-      .where(like(channels.name, '[DEMO]%'))
-    expect(channelRows.length).toBe(4)
-
-    const evRows = await db
-      .select()
-      .from(eventsTable)
-      .where(eq(eventsTable.eventType, 'SampleDatasetLoaded'))
-    expect(evRows.length).toBeGreaterThanOrEqual(1)
-
-    // Status now reports hasSampleData
-    const status = await caller.status()
-    expect(status.hasSampleData).toBe(true)
-  })
-
-  it('loadSample is idempotent — second call returns alreadyLoaded', async () => {
-    const router = await createRouter()
-    const caller = router.createCaller({})
-    await caller.loadSample()
-    const r2 = await caller.loadSample()
-    expect(r2.alreadyLoaded).toBe(true)
-    expect(r2.loaded).toBe(false)
-  })
-
-  it('resetDemo removes demo sprints and channels', async () => {
-    const router = await createRouter()
-    const caller = router.createCaller({})
-    await caller.loadSample()
-    const r = await caller.resetDemo()
-    expect(r.cleared).toBe(true)
-    expect(r.removedSprints).toBe(2)
-    expect(r.removedChannels).toBe(4)
-
-    const db = drizzle(sqlPool)
-    const sprintRows = await db
-      .select()
-      .from(sprints)
-      .where(like(sprints.name, '[DEMO]%'))
-    expect(sprintRows.length).toBe(0)
-    const channelRows = await db
-      .select()
-      .from(channels)
-      .where(like(channels.name, '[DEMO]%'))
-    expect(channelRows.length).toBe(0)
-  })
-
   it('complete sets setupCompletedAt and emits OnboardingCompleted', async () => {
     const router = await createRouter()
     const caller = router.createCaller({})
-    await caller.setMode({ mode: 'demo' })
+    await caller.setMode({ mode: 'live' })
     const r = await caller.complete()
     expect(r.setupCompletedAt).toMatch(/T/)
 
@@ -266,15 +172,6 @@ describe('onboarding router (integration)', () => {
       .from(eventsTable)
       .where(eq(eventsTable.eventType, 'OnboardingCompleted'))
     expect(evRows.length).toBeGreaterThanOrEqual(1)
-  })
-
-  it('startDemo returns a replayId without waiting for the loop', async () => {
-    const router = await createRouter()
-    const caller = router.createCaller({})
-    await caller.loadSample()
-    const r = await caller.startDemo({ speedMultiplier: 100 })
-    expect(r.replayId).toMatch(/^[0-9a-f-]{36}$/i)
-    expect(r.totalSteps).toBeGreaterThan(0)
   })
 })
 

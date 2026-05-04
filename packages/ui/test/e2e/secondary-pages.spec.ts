@@ -153,7 +153,6 @@ test.describe('SetupGate-guarded routes — secondary pages', () => {
       // Outcome A: SetupGate redirected to /welcome.
       // The Welcome page renders different headings depending on session state:
       //   - "Welcome to Orbital" — fresh chooser (no prior session)
-      //   - "Loading the sandbox" — SampleDataFlow active
       //   - "Pick a mode" — mode step active
       //   - "Pick a path" — new-project path step active
       // Accepting URL === /welcome + any h1 visible covers all cases.

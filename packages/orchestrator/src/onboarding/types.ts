@@ -16,7 +16,6 @@ export const onboardingStatusOutputSchema = z.object({
   mode: onboardingModeSchema.nullable(),
   hasAnthropicToken: z.boolean(),
   hasMondayToken: z.boolean(),
-  hasSampleData: z.boolean(),
   installId: z.string(),
 })
 
@@ -66,44 +65,6 @@ export const connectMondayOutputSchema = z.object({
 export type ConnectMondayResult = z.infer<typeof connectMondayOutputSchema>
 
 // ---------------------------------------------------------------------------
-// loadSample mutation
-// ---------------------------------------------------------------------------
-
-export const loadSampleOutputSchema = z.object({
-  loaded: z.boolean(),
-  alreadyLoaded: z.boolean(),
-  visionDocumentId: z.string().nullable(),
-  sprintIds: z.array(z.string()),
-  channelIds: z.array(z.string()),
-  retroReportId: z.string().nullable(),
-  eventCount: z.number().int(),
-})
-
-// ---------------------------------------------------------------------------
-// startDemo mutation
-// ---------------------------------------------------------------------------
-
-export const startDemoInputSchema = z.object({
-  speedMultiplier: z.number().positive().max(1000).default(10),
-})
-
-export const startDemoOutputSchema = z.object({
-  replayId: z.string(),
-  totalSteps: z.number().int(),
-  estimatedDurationMs: z.number().int(),
-})
-
-// ---------------------------------------------------------------------------
-// resetDemo mutation
-// ---------------------------------------------------------------------------
-
-export const resetDemoOutputSchema = z.object({
-  cleared: z.boolean(),
-  removedSprints: z.number().int(),
-  removedChannels: z.number().int(),
-})
-
-// ---------------------------------------------------------------------------
 // complete mutation
 // ---------------------------------------------------------------------------
 
@@ -117,7 +78,7 @@ export const completeOutputSchema = z.object({
 // [Engineer-Principal · Opus · run-round9-onboarding-overhaul]
 // ---------------------------------------------------------------------------
 
-export const onboardingFlowSchema = z.enum(['new_project', 'existing_repo', 'join_hub', 'sample_data'])
+export const onboardingFlowSchema = z.enum(['new_project', 'existing_repo', 'join_hub'])
 export type OnboardingFlowKind = z.infer<typeof onboardingFlowSchema>
 
 // startSession ------------------------------------------------------
@@ -337,15 +298,3 @@ export const completeFlowInputSchema = z.object({
 })
 
 export const completeFlowOutputSchema = sessionRowSchema
-
-// loadSampleSandbox -------------------------------------------------
-
-export const loadSampleSandboxOutputSchema = z.object({
-  loaded: z.boolean(),
-  alreadyLoaded: z.boolean(),
-  projectName: z.string(),
-  conversionCta: z.string(),
-  sprintCount: z.number().int(),
-  channelCount: z.number().int(),
-  bannerText: z.string(),
-})

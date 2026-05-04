@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "-w", "@orbital/ui"],
       "port": 5173
+    },
+    {
+      "name": "live-site",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "require('http').createServer((req,res)=>{res.writeHead(302,{Location:'https://d2mtgpa71y9c8t.cloudfront.net'+req.url});res.end()}).listen(process.env.PORT||3001,()=>console.log('redirector ready on '+(process.env.PORT||3001)))"],
+      "port": 3001
     }
   ]
 }

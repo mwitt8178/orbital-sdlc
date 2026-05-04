@@ -68,6 +68,12 @@ import { teamRouter } from './team.js'
 // Round 7-06 — Offline Cache + Reconciliation: local outbox management
 // [Engineer-Sr · Sonnet · run-round7-06-offline-reconcile]
 import { outboxRouter } from './outbox.js'
+// Vision LLM-decompose: planning router (regenerate / commit / history)
+// [Engineer-Principal · Opus · run-vision-llm-decompose]
+import { planningRouter } from './planning.js'
+// GitHub App integration — installations, repo bindings, manifest exchange
+// [Engineer-Principal · Opus · run-orbital-github-integration]
+import { githubRouter } from './github.js'
 
 // ---------------------------------------------------------------------------
 // Lazy singletons / DI registry
@@ -363,6 +369,12 @@ export const appRouter = router({
   // Round 7-06 — Offline Cache + Reconciliation: local outbox management
   // [Engineer-Sr · Sonnet · run-round7-08-operator-attribution]
   outbox: outboxRouter,
+  // Vision LLM-decompose: planning history / regenerate / commit
+  // [Engineer-Principal · Opus · run-vision-llm-decompose]
+  planning: planningRouter,
+  // GitHub App integration
+  // [Engineer-Principal · Opus · run-orbital-github-integration]
+  github: githubRouter,
 })
 
 export type AppRouter = typeof appRouter

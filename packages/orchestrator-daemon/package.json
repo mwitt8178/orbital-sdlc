@@ -10,11 +10,15 @@
     "build": "tsc -p tsconfig.json",
     "start": "node --enable-source-maps dist/main.js",
     "test": "vitest run",
-    "lint": "eslint src test"
+    "lint": "eslint src test",
+    "smoke:daemon": "node scripts/smoke-e2e.mjs"
   },
   "dependencies": {
     "@orbital/db": "*",
     "@orbital/orchestrator": "*",
+    "@aws-sdk/client-cloudformation": "^3.750.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.750.0",
+    "@aws-sdk/client-ecs": "^3.750.0",
     "@aws-sdk/client-secrets-manager": "^3.750.0",
     "@aws-sdk/client-sns": "^3.1041.0",
     "@aws-sdk/client-sqs": "^3.1041.0",

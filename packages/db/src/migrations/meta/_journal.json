@@ -260,6 +260,27 @@
       "when": 1747200000000,
       "tag": "0037_onboarding_state",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1747300000000,
+      "tag": "0038_drop_sample_data_flow",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1747310000000,
+      "tag": "0039_github_app",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1747320000000,
+      "tag": "0040_planning_runs",
+      "breakpoints": true
     }
   ]
 }

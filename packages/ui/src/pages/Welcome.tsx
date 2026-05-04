@@ -4,11 +4,13 @@
  * Round 9 — Onboarding UX Overhaul
  * [Engineer-Principal · Opus · run-round9-onboarding-overhaul]
  *
- * Lands operators on a 4-card chooser:
+ * Round 11 — sample/demo flow removed
+ * [Engineer-Principal · Opus · run-remove-sample-flow]
+ *
+ * Lands operators on a 3-card chooser:
  *   - New project (Flow A — Orbital builds the SDLC)
  *   - Existing repo (Flow B — Orbital learns the SDLC)
  *   - Join a team hub (Flow C — Round 7 capability)
- *   - Sample sandbox (Flow D — no creds, no spend)
  *
  * Resumability: on mount we call onboarding.resume; if there is an active
  * session, we drop the user back into the matching flow at the same step.
@@ -23,9 +25,8 @@ import { OnboardingShell } from '../components/features/onboarding/OnboardingShe
 import { NewProjectFlow, type NewProjectStepId } from '../components/features/onboarding/NewProjectFlow.js'
 import { ExistingRepoFlow, type ExistingRepoStepId } from '../components/features/onboarding/ExistingRepoFlow.js'
 import { JoinHubFlow } from '../components/features/onboarding/JoinHubFlow.js'
-import { SampleDataFlow } from '../components/features/onboarding/SampleDataFlow.js'
 
-type FlowKind = 'new_project' | 'existing_repo' | 'join_hub' | 'sample_data'
+type FlowKind = 'new_project' | 'existing_repo' | 'join_hub'
 
 interface FlowCard {
   id: FlowKind
@@ -62,15 +63,6 @@ const FLOW_CARDS: FlowCard[] = [
     description:
       "Paste an invite URL from a teammate. Lands you on their Dashboard with their data.",
     estimate: '~2 min',
-    cost: '$0',
-  },
-  {
-    id: 'sample_data',
-    emoji: '\u{1F4E6}',
-    title: 'Try the sample sandbox',
-    description:
-      'No creds, no spend. Deterministic mock agents on a fake project. Switch to a real project anytime.',
-    estimate: '~30 sec',
     cost: '$0',
   },
 ]
@@ -160,9 +152,6 @@ export default function Welcome() {
         {activeSession.flow === 'join_hub' && (
           <JoinHubFlow onSuccess={() => void finalize()} />
         )}
-        {activeSession.flow === 'sample_data' && (
-          <SampleDataFlow sessionId={activeSession.sessionId} onComplete={() => void finalize()} />
-        )}
       </OnboardingShell>
     )
   }
@@ -199,8 +188,8 @@ export default function Welcome() {
               </div>
               <h2 className="mt-3 text-base font-semibold text-slate-900">{card.title}</h2>
               <p className="mt-1 text-sm text-slate-600">{card.description}</p>
-              {/* Reference all four flow components so static greppers see them in this file. */}
-              {/* NewProjectFlow ExistingRepoFlow JoinHubFlow SampleDataFlow */}
+              {/* Reference all flow components so static greppers see them in this file. */}
+              {/* NewProjectFlow ExistingRepoFlow JoinHubFlow */}
             </button>
           ))}
         </div>

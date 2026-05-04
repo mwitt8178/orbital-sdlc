@@ -14,6 +14,7 @@ import { HubStatusIndicator } from './HubStatusIndicator.js'
 // Round 9 — persistent Tour button in topbar
 // [Engineer-Principal · Opus · run-round9-onboarding-overhaul]
 import { TourButton } from '../ui/TourButton.js'
+import { UserMenu } from './UserMenu.js'
 
 /** Orbital logo box — indigo→violet gradient, 28×28. */
 function LogoBox() {
@@ -245,13 +246,9 @@ export function TopBar() {
           {/* [Engineer-Principal · Opus · run-round9-onboarding-overhaul] */}
           <TourButton />
 
-          {/* User avatar */}
-          <div
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 text-xs font-medium text-slate-600"
-            aria-label="Signed in as MW"
-          >
-            MW
-          </div>
+          {/* User menu — real signed-in identity + sign out */}
+          {/* [Engineer-Principal · Opus · run-auth-login-001] */}
+          <UserMenu />
         </div>
       </div>
     </header>
