@@ -163,7 +163,15 @@ async function captureRoute(
   let status: RouteEvidence['status'] = 'ok'
   let issue_summary: string | null = null
 
-  const errSnippets = ['Could not load', 'Something went wrong', 'Error:', 'Application error', '500']
+  // Strict error markers: must indicate an actual failure surface, not a
+  // generic word like "Error" that legitimately appears in UI ("Error stream").
+  const errSnippets = [
+    'Could not load',
+    'Something went wrong',
+    'Application error',
+    'STARTUP_ERROR',
+    'Internal Server Error',
+  ]
   const emptySnippets = ['No data', 'Nothing here', 'Empty', 'Coming soon']
   if (httpFails.some((f) => f.status >= 500) || consoleErrors.length > 3) {
     status = 'error'
@@ -251,7 +259,16 @@ test.describe('Post-onboarding walk', () => {
 
     // ─────────── Phase 1: sign in ───────────
     await context.clearCookies()
+    // Also clear localStorage so stale active-project-id from previous runs
+    // doesn't poison the project switcher.
     await page.goto(`${BASE_URL}/login`, { waitUntil: 'load', timeout: 30_000 })
+    await page.evaluate(() => {
+      try {
+        window.localStorage.clear()
+      } catch {
+        /* private mode — ignore */
+      }
+    })
     await page.screenshot({ path: `${SCREENSHOT_DIR}/01-login.png` }).catch(() => null)
     await page.locator('#email').fill(EMAIL!)
     await page.locator('#password').fill(PASSWORD!)
