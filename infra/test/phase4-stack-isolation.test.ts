@@ -286,21 +286,21 @@ describe('Phase 4.9 — Cross-contamination guard', () => {
     allIds = logicalIds(buildTemplate())
   })
 
-  test('every logical ID maps to exactly one namespace (no ID belongs to two stacks)', () => {
-    const assignedOnce = new Set<string>()
-    const assignedTwice: string[] = []
+  test('every logical ID maps to exactly one STACK (no ID belongs to two different stacks)', () => {
+    // Cross-contamination = a logical ID matches prefixes from two *different* stacks.
+    // Two prefixes from the same stack (e.g. WsConnect and WsConnections, both api)
+    // are fine — that is intra-stack prefix overlap, not cross-stack contamination.
+    const crossContaminated: string[] = []
 
     for (const id of allIds) {
-      let matchCount = 0
-      for (const prefix of Object.keys(NAMESPACE_TO_STACK)) {
-        if (id.startsWith(prefix)) matchCount++
+      const matchedStacks = new Set<string>()
+      for (const [prefix, stack] of Object.entries(NAMESPACE_TO_STACK)) {
+        if (id.startsWith(prefix)) matchedStacks.add(stack)
       }
-      if (matchCount > 1) assignedTwice.push(id)
-      else assignedOnce.add(id)
+      if (matchedStacks.size > 1) crossContaminated.push(id)
     }
-    // If any ID matches multiple prefixes, it means the namespace table has an
-    // ambiguous prefix — a bug in the test itself, not in the stacks.
-    expect(assignedTwice).toHaveLength(0)
+    // If non-empty, a logical ID spans multiple stack namespaces — real contamination.
+    expect(crossContaminated).toHaveLength(0)
   })
 
   test('no UNASSIGNED logical IDs (complete namespace coverage)', () => {

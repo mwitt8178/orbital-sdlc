@@ -104,6 +104,30 @@ async function callResetDemo(page: Page) {
 
 test.describe('Onboarding wizard flows', () => {
   /**
+   * Warm the APIGW + Lambda / DSQL connection before tests run.
+   *
+   * The Lambda's first DSQL write after cold-start fails with a transient IAM
+   * auth error.  Firing a read-only query via the APIRequestContext warms the
+   * Lambda without requiring a browser page.  A follow-up mutation (startSession
+   * with sample_data flow) pre-warms the DSQL write path so test 1 (which
+   * targets the new_project flow) doesn't hit a cold Lambda.
+   */
+  test.beforeAll(async ({ request }) => {
+    // Read-only warm-up — wakes the Lambda.
+    await request.get(
+      `${API_BASE}/trpc/onboarding.status?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D`,
+    )
+    // Write warm-up — forces the Lambda to establish/refresh the DSQL auth token.
+    // We ignore the result; the only goal is ensuring the DSQL IAM token is fresh
+    // before the tests start.  We use 'sample_data' to avoid leaving an incomplete
+    // 'new_project' session that would confuse the resume query.
+    await request.post(`${API_BASE}/trpc/onboarding.startSession`, {
+      headers: { 'Content-Type': 'application/json' },
+      data: { flow: 'sample_data' },
+    }).catch(() => null)
+  })
+
+  /**
    * Flow A — New project.
    *
    * Validates the first two steps (project_basics → connect_tools).
