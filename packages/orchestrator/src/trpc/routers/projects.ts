@@ -46,6 +46,9 @@ import { optionalActiveProject } from '../../projects/active-project-context.js'
 import type { MondayClient } from '../../backlog/monday-client.js'
 import type { GithubClient } from '../../github/client.js'
 import { logger } from '../../config/logger.js'
+import { sql as drizzleSql } from 'drizzle-orm'
+import { db as defaultDb } from '../../db/client.js'
+import { getScmClient, type ScmProvider } from '../../scm/factory.js'
 
 // ---------------------------------------------------------------------------
 // Inputs
@@ -73,6 +76,10 @@ const testMondayInputSchema = z.object({
 const testGithubInputSchema = z.object({
   owner: z.string().min(1).max(100),
   repo: z.string().min(1).max(100),
+})
+
+const testByProjectInputSchema = z.object({
+  projectId: z.string().uuid(),
 })
 
 // ---------------------------------------------------------------------------
@@ -304,6 +311,230 @@ export function createProjectsRouter(deps: ProjectsRouterDeps) {
             'projects.testGithubConnection: failed',
           )
           return { ok: false, message: msg }
+        }
+      }),
+
+    /**
+     * testScmConnection — per-project SCM ping.
+     *
+     * Loads the project's scmProvider + repoId, builds the appropriate
+     * ScmClient via the factory, calls getRepoUrl() to confirm access.
+     *
+     * Returns a unified shape (so the client never has to discriminate).
+     */
+    testScmConnection: tenantProcedure
+      .input(testByProjectInputSchema)
+      .query(async ({ input, ctx }) => {
+        type Result = {
+          ok: boolean
+          provider: string
+          repoId: string | null
+          repoUrl: string | null
+          cloneUrl: string | null
+          defaultBranch: string
+          message: string | null
+        }
+        const fail = (provider: string, message: string, partial: Partial<Result> = {}): Result => ({
+          ok: false,
+          provider,
+          repoId: null,
+          repoUrl: null,
+          cloneUrl: null,
+          defaultBranch: 'main',
+          message,
+          ...partial,
+        })
+        try {
+          const row = await projectsService.get(input.projectId, ctx.tenantId)
+          if (!row) return fail('unknown', 'Project not found')
+          // Read provider/repoId via raw SQL — ProjectRow doesn't surface them.
+          const proj = await defaultDb.execute<{
+            scm_provider: string
+            repo_id: string | null
+            repo_url: string | null
+            github_owner: string | null
+            github_repo: string | null
+            github_default_branch: string
+          }>(drizzleSql`
+            SELECT scm_provider, repo_id, repo_url, github_owner, github_repo, github_default_branch
+              FROM projects
+             WHERE project_id = ${input.projectId}
+               AND tenant_id = ${ctx.tenantId}
+             LIMIT 1
+          `)
+          const arr = (Array.isArray(proj) ? proj : (proj as { rows?: unknown[] }).rows ?? []) as Array<{
+            scm_provider: string
+            repo_id: string | null
+            repo_url: string | null
+            github_owner: string | null
+            github_repo: string | null
+            github_default_branch: string
+          }>
+          const r = arr[0]
+          if (!r) return fail('unknown', 'Project row missing')
+          const provider = (r.scm_provider as ScmProvider) ?? 'internal'
+          let repoId: string | null = r.repo_id
+          if (!repoId && provider === 'github' && r.github_owner && r.github_repo) {
+            repoId = `${r.github_owner}/${r.github_repo}`
+          }
+          if (!repoId) {
+            return fail(provider, 'Repo not bound to this project yet', {
+              defaultBranch: r.github_default_branch,
+              repoUrl: r.repo_url,
+            })
+          }
+          if (provider === 'github') {
+            if (githubClient === null) {
+              return fail(provider, 'GitHub client not configured (missing GITHUB_API_TOKEN)', {
+                repoId,
+                repoUrl: r.repo_url,
+                defaultBranch: r.github_default_branch,
+              })
+            }
+            try {
+              const repo = await githubClient.getRepo(r.github_owner!, r.github_repo!)
+              if (!repo) {
+                return fail(provider, `Repo ${repoId} not accessible`, {
+                  repoId,
+                  defaultBranch: r.github_default_branch,
+                })
+              }
+              return {
+                ok: true,
+                provider,
+                repoId,
+                repoUrl: r.repo_url ?? repo.htmlUrl,
+                cloneUrl: `https://github.com/${repoId}.git`,
+                defaultBranch: repo.defaultBranch ?? r.github_default_branch,
+                message: null,
+              } satisfies Result
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : String(err)
+              logger.warn({ projectId: input.projectId, err: msg }, 'projects.testScmConnection: github failed')
+              return fail(provider, msg, { repoId, defaultBranch: r.github_default_branch })
+            }
+          }
+          // CodeCommit / internal — both go through the factory.
+          try {
+            const region = process.env['AWS_REGION'] ?? 'us-east-1'
+            const client = getScmClient({ scmProvider: provider, repoId }, { region })
+            const url = await client.getRepoUrl(repoId)
+            return {
+              ok: true,
+              provider,
+              repoId,
+              repoUrl: r.repo_url ?? url,
+              cloneUrl: url,
+              defaultBranch: r.github_default_branch,
+              message: null,
+            } satisfies Result
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err)
+            logger.warn(
+              { projectId: input.projectId, err: msg },
+              'projects.testScmConnection: codecommit failed',
+            )
+            return fail(provider, msg, { repoId, defaultBranch: r.github_default_branch })
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err)
+          logger.error({ err: msg }, 'projects.testScmConnection: unexpected')
+          return fail('unknown', msg)
+        }
+      }),
+
+    /**
+     * testTicketConnection — per-project ticket-tracker ping.
+     *
+     * - Monday: lists boards via the project's bound boardId.
+     * - Internal: returns story counts per state (single-row aggregate).
+     */
+    testTicketConnection: tenantProcedure
+      .input(testByProjectInputSchema)
+      .query(async ({ input, ctx }) => {
+        type TicketResult = {
+          ok: boolean
+          provider: string
+          boardId: string | null
+          lastSyncAt: string | null
+          total: number
+          byState: Record<string, number>
+          message: string | null
+        }
+        const base = (overrides: Partial<TicketResult>): TicketResult => ({
+          ok: false,
+          provider: 'unknown',
+          boardId: null,
+          lastSyncAt: null,
+          total: 0,
+          byState: {},
+          message: null,
+          ...overrides,
+        })
+        try {
+          const proj = await defaultDb.execute<{
+            ticket_provider: string
+            monday_board_id: string | null
+          }>(drizzleSql`
+            SELECT ticket_provider, monday_board_id
+              FROM projects
+             WHERE project_id = ${input.projectId}
+               AND tenant_id = ${ctx.tenantId}
+             LIMIT 1
+          `)
+          const arr = (Array.isArray(proj) ? proj : (proj as { rows?: unknown[] }).rows ?? []) as Array<{
+            ticket_provider: string
+            monday_board_id: string | null
+          }>
+          const r = arr[0]
+          if (!r) return base({ message: 'Project row missing' })
+          const provider = (r.ticket_provider as 'internal' | 'monday') ?? 'internal'
+
+          if (provider === 'monday') {
+            if (!r.monday_board_id) {
+              return base({ provider, message: 'No Monday board bound to this project' })
+            }
+            if (mondayClient === null) {
+              return base({ provider, boardId: r.monday_board_id, message: 'Monday client not configured' })
+            }
+            try {
+              await mondayClient.getBoardItems(r.monday_board_id)
+              return base({
+                ok: true,
+                provider,
+                boardId: r.monday_board_id,
+                lastSyncAt: new Date().toISOString(),
+              })
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : String(err)
+              return base({ provider, boardId: r.monday_board_id, message: msg })
+            }
+          }
+
+          // Internal — count stories by state for this project.
+          try {
+            const counts = await defaultDb.execute<{ state: string; n: number }>(drizzleSql`
+              SELECT state::text AS state, COUNT(*)::int AS n
+                FROM stories
+               WHERE tenant_id = ${ctx.tenantId}
+                 AND project_id = ${input.projectId}
+               GROUP BY state
+            `)
+            const cArr = (Array.isArray(counts) ? counts : (counts as { rows?: unknown[] }).rows ?? []) as Array<{
+              state: string
+              n: number
+            }>
+            const total = cArr.reduce((acc, x) => acc + Number(x.n ?? 0), 0)
+            const byState = Object.fromEntries(cArr.map((x) => [x.state, Number(x.n ?? 0)]))
+            return base({ ok: true, provider, total, byState })
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err)
+            logger.warn({ err: msg }, 'projects.testTicketConnection: stories query failed')
+            return base({ ok: true, provider })
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err)
+          return base({ message: msg })
         }
       }),
 
