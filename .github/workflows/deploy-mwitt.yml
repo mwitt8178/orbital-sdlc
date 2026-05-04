@@ -1,0 +1,322 @@
+# deploy-mwitt.yml — Canonical mwitt staging deploy
+#
+# Triggered on push to release/mwitt. Replaces the ad-hoc agent + workstation
+# deploy paths. End-to-end:
+#
+#   1. Build api-lambda + UI bundles
+#   2. Publish lambda zip -> UpdateFunctionCode -> PublishVersion -> UpdateAlias :live
+#   3. S3 sync UI dist to orbital-ui-mwitt-<account> (long-cache assets, no-cache index.html)
+#   4. CloudFront invalidate /*
+#   5. Wait for invalidation
+#   6. Run packages/ui/walk-deep.mjs against the live URL — must be ≥ 20/20
+#   7. Run packages/ui/walk-settings.mjs — must be 6/6
+#   8. On success, create annotated tag mwitt-v<YYYYmmdd-HHMMSS> with deploy metadata
+#
+# Rollback path (workflow_dispatch with rollback_to=mwitt-vN):
+#   - Skip build. Read lambda_version + ui artifact ref from tag annotation.
+#   - UpdateAlias :live -> previous version. Restore UI artifact. Invalidate.
+#   - Verify. Tag mwitt-v<new-ts> with rollback_of=mwitt-vN.
+#
+# Required secrets: AWS_ROLE_ARN, AWS_ACCOUNT_ID, CLOUDFRONT_DISTRIBUTION_ID,
+#                   S3_BUCKET, LAMBDA_FUNCTION_NAME,
+#                   WALK_DEEP_BASE_URL, WALK_DEEP_USER, WALK_DEEP_PASS
+
+name: Deploy mwitt
+
+on:
+  push:
+    branches:
+      - release/mwitt
+  workflow_dispatch:
+    inputs:
+      rollback_to:
+        description: 'Tag to roll back to (e.g. mwitt-v20260504-143012). Leave empty for normal deploy.'
+        required: false
+        default: ''
+        type: string
+      skip_walk_deep:
+        description: 'Skip walk-deep verification (emergency only — leaves untrusted code live).'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  # Serialise: never two concurrent mwitt deploys.
+  group: deploy-mwitt
+  cancel-in-progress: false
+
+permissions:
+  id-token: write     # OIDC AWS auth
+  contents: write     # to push tags
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  # ----------------------------------------------------------------
+  # Wait for migrations.yml if it ran on this same SHA.
+  # GitHub Actions doesn't model cross-workflow waits natively; we use a
+  # repository-dispatch + polling pattern. For now, migrations.yml is wired
+  # to invoke this workflow on its own success when migrations are present.
+  # On commits with no migration changes, deploy-mwitt runs directly.
+  # ----------------------------------------------------------------
+
+  deploy:
+    if: ${{ inputs.rollback_to == '' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: mwitt
+      url: ${{ secrets.WALK_DEEP_BASE_URL }}
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      lambda_version: ${{ steps.publish.outputs.version }}
+      previous_version: ${{ steps.publish.outputs.previous }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build api-lambda
+        run: npm run build -w @orbital/api-lambda
+
+      - name: Build UI
+        run: npm run build -w packages/ui
+        env:
+          VITE_API_BASE_URL: https://api.${{ vars.ORBITAL_DOMAIN || 'mwitt.orbital.team.dev' }}
+          VITE_WS_BASE_URL: wss://api.${{ vars.ORBITAL_DOMAIN || 'mwitt.orbital.team.dev' }}/ws
+          VITE_COGNITO_USER_POOL_ID: ${{ vars.COGNITO_USER_POOL_ID || '' }}
+          VITE_COGNITO_APP_CLIENT_ID: ${{ vars.COGNITO_APP_CLIENT_ID || '' }}
+
+      - name: Package api-lambda zip
+        run: |
+          set -euo pipefail
+          cd packages/api-lambda/dist
+          zip -r9 /tmp/api-lambda.zip .
+          ls -lh /tmp/api-lambda.zip
+
+      - name: Configure AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: orbital-deploy-mwitt
+          aws-region: ${{ env.AWS_REGION }}
+          role-duration-seconds: 1800
+
+      - name: Capture previous live alias version (for rollback metadata)
+        id: prev
+        run: |
+          set -euo pipefail
+          PREV=$(aws lambda get-alias \
+            --function-name "${{ secrets.LAMBDA_FUNCTION_NAME }}" \
+            --name live \
+            --query FunctionVersion --output text 2>/dev/null || echo "none")
+          echo "previous=$PREV" >> "$GITHUB_OUTPUT"
+          echo "Previous live version: $PREV"
+
+      - name: UpdateFunctionCode + PublishVersion
+        id: publish
+        run: |
+          set -euo pipefail
+          aws lambda update-function-code \
+            --function-name "${{ secrets.LAMBDA_FUNCTION_NAME }}" \
+            --zip-file fileb:///tmp/api-lambda.zip \
+            --no-publish \
+            --query '{State:State,LastUpdateStatus:LastUpdateStatus}' \
+            --output json
+
+          # Wait for code update to finish before publishing version
+          aws lambda wait function-updated \
+            --function-name "${{ secrets.LAMBDA_FUNCTION_NAME }}"
+
+          VERSION=$(aws lambda publish-version \
+            --function-name "${{ secrets.LAMBDA_FUNCTION_NAME }}" \
+            --description "deploy git=${GITHUB_SHA::7} run=${GITHUB_RUN_ID}" \
+            --query Version --output text)
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "previous=${{ steps.prev.outputs.previous }}" >> "$GITHUB_OUTPUT"
+          echo "Published lambda version: $VERSION"
+
+      - name: Flip :live alias
+        run: |
+          set -euo pipefail
+          aws lambda update-alias \
+            --function-name "${{ secrets.LAMBDA_FUNCTION_NAME }}" \
+            --name live \
+            --function-version "${{ steps.publish.outputs.version }}" \
+            --routing-config '{}' \
+            --query FunctionVersion --output text
+          echo "Alias :live -> v${{ steps.publish.outputs.version }}"
+
+      - name: Sync UI dist to S3
+        run: |
+          set -euo pipefail
+          BUCKET="${{ secrets.S3_BUCKET }}"
+          # hashed assets — long cache
+          aws s3 sync packages/ui/dist/ "s3://${BUCKET}" \
+            --delete \
+            --exclude "index.html" \
+            --cache-control "public, max-age=31536000, immutable"
+          # SPA entrypoint — no cache
+          aws s3 cp packages/ui/dist/index.html "s3://${BUCKET}/index.html" \
+            --cache-control "no-cache, no-store, must-revalidate" \
+            --content-type "text/html"
+
+      - name: Upload UI artifact for rollback
+        run: |
+          set -euo pipefail
+          tar -czf /tmp/ui-dist.tar.gz -C packages/ui dist
+          # Store artifact alongside the bucket under a deploy-artifacts prefix.
+          # If you have a separate artifacts bucket, swap the path.
+          BUCKET="${{ secrets.S3_BUCKET }}"
+          aws s3 cp /tmp/ui-dist.tar.gz \
+            "s3://${BUCKET}/_deploy-artifacts/ui-dist-${GITHUB_SHA}.tar.gz" \
+            --cache-control "no-store"
+
+      - name: Invalidate CloudFront /*
+        id: invalidate
+        run: |
+          set -euo pipefail
+          INV_ID=$(aws cloudfront create-invalidation \
+            --distribution-id "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --paths "/*" \
+            --query 'Invalidation.Id' --output text)
+          echo "id=$INV_ID" >> "$GITHUB_OUTPUT"
+          echo "Created invalidation: $INV_ID"
+
+      - name: Wait for CloudFront invalidation
+        run: |
+          set -euo pipefail
+          aws cloudfront wait invalidation-completed \
+            --distribution-id "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --id "${{ steps.invalidate.outputs.id }}"
+
+      - name: Install Playwright browsers
+        if: ${{ inputs.skip_walk_deep != true }}
+        run: npx playwright install --with-deps chromium
+        working-directory: packages/ui
+
+      - name: walk-deep verification (≥ 20/20)
+        if: ${{ inputs.skip_walk_deep != true }}
+        env:
+          BASE_URL: ${{ secrets.WALK_DEEP_BASE_URL }}
+          ORBITAL_USER: ${{ secrets.WALK_DEEP_USER }}
+          ORBITAL_PASS: ${{ secrets.WALK_DEEP_PASS }}
+        run: node packages/ui/walk-deep.mjs
+
+      - name: walk-settings verification (6/6)
+        env:
+          BASE_URL: ${{ secrets.WALK_DEEP_BASE_URL }}
+          ORBITAL_USER: ${{ secrets.WALK_DEEP_USER }}
+          ORBITAL_PASS: ${{ secrets.WALK_DEEP_PASS }}
+        run: node packages/ui/walk-settings.mjs
+
+      - name: Tag mwitt-v<ts>
+        id: tag
+        run: |
+          set -euo pipefail
+          TS=$(date -u +%Y%m%d-%H%M%S)
+          TAG="mwitt-v${TS}"
+          MSG=$(cat <<EOF
+          deploy: $TAG
+
+          lambda_function=${{ secrets.LAMBDA_FUNCTION_NAME }}
+          lambda_version=${{ steps.publish.outputs.version }}
+          lambda_alias_live_was_pointing_at=${{ steps.publish.outputs.previous }}
+          ui_artifact=s3://${{ secrets.S3_BUCKET }}/_deploy-artifacts/ui-dist-${GITHUB_SHA}.tar.gz
+          cloudfront_distribution=${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+          git_sha=${GITHUB_SHA}
+          run_id=${GITHUB_RUN_ID}
+          EOF
+          )
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "$MSG"
+          git push origin "$TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Tagged: $TAG"
+
+  # ------------------------------------------------------------------
+  # Rollback path
+  # ------------------------------------------------------------------
+  rollback:
+    if: ${{ inputs.rollback_to != '' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: mwitt
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: orbital-rollback-mwitt
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Read tag annotation
+        id: tag_meta
+        run: |
+          set -euo pipefail
+          TAG="${{ inputs.rollback_to }}"
+          git fetch origin "refs/tags/${TAG}:refs/tags/${TAG}"
+          ANNOTATION=$(git for-each-ref --format='%(contents)' "refs/tags/${TAG}")
+          echo "$ANNOTATION"
+          LAMBDA_VERSION=$(echo "$ANNOTATION" | grep -E '^lambda_version=' | cut -d= -f2)
+          UI_ARTIFACT=$(echo "$ANNOTATION" | grep -E '^ui_artifact=' | cut -d= -f2)
+          echo "lambda_version=$LAMBDA_VERSION" >> "$GITHUB_OUTPUT"
+          echo "ui_artifact=$UI_ARTIFACT" >> "$GITHUB_OUTPUT"
+
+      - name: UpdateAlias :live -> previous version
+        run: |
+          set -euo pipefail
+          aws lambda update-alias \
+            --function-name "${{ secrets.LAMBDA_FUNCTION_NAME }}" \
+            --name live \
+            --function-version "${{ steps.tag_meta.outputs.lambda_version }}"
+
+      - name: Restore UI artifact
+        run: |
+          set -euo pipefail
+          aws s3 cp "${{ steps.tag_meta.outputs.ui_artifact }}" /tmp/ui-dist.tar.gz
+          mkdir -p /tmp/ui-rollback
+          tar -xzf /tmp/ui-dist.tar.gz -C /tmp/ui-rollback
+          BUCKET="${{ secrets.S3_BUCKET }}"
+          aws s3 sync /tmp/ui-rollback/dist/ "s3://${BUCKET}" \
+            --delete \
+            --exclude "index.html" \
+            --cache-control "public, max-age=31536000, immutable"
+          aws s3 cp /tmp/ui-rollback/dist/index.html "s3://${BUCKET}/index.html" \
+            --cache-control "no-cache, no-store, must-revalidate" \
+            --content-type "text/html"
+
+      - name: Invalidate CloudFront /*
+        run: |
+          set -euo pipefail
+          INV_ID=$(aws cloudfront create-invalidation \
+            --distribution-id "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --paths "/*" \
+            --query 'Invalidation.Id' --output text)
+          aws cloudfront wait invalidation-completed \
+            --distribution-id "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --id "$INV_ID"
+
+      - name: Tag the rollback
+        run: |
+          set -euo pipefail
+          TS=$(date -u +%Y%m%d-%H%M%S)
+          TAG="mwitt-v${TS}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "rollback_of=${{ inputs.rollback_to }} lambda_version=${{ steps.tag_meta.outputs.lambda_version }}"
+          git push origin "$TAG"

@@ -1,0 +1,102 @@
+# pr-check.yml — Required PR check for release/mwitt and main
+#
+# Runs on every PR targeting release/mwitt or main:
+#   install -> lint -> typecheck -> unit tests -> build all packages
+#   -> migration journal monotonicity check
+#
+# This is a REQUIRED check on release/mwitt and main. Branch protection
+# rulesets must reference the job name `quality` exactly.
+#
+# Owners: Engineer-Principal (orbital-pipeline-2026-05-04)
+
+name: PR Check
+
+on:
+  pull_request:
+    branches:
+      - release/mwitt
+      - main
+  # Allow manual re-runs without re-pushing
+  workflow_dispatch:
+
+concurrency:
+  group: pr-check-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Lint + Typecheck + Test + Build
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: orbital
+          POSTGRES_PASSWORD: orbital_dev_password
+          POSTGRES_DB: orbital
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U orbital -d orbital"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://orbital:orbital_dev_password@localhost:5432/orbital
+      ORBITAL_TEST_KEYCHAIN: '1'
+      NODE_ENV: test
+      LOG_LEVEL: silent
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Need full history so the journal-monotonic check can diff against
+          # the base branch.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Local-only leak check
+        run: npx tsx scripts/ci-leak-check.ts
+
+      - name: Build all packages
+        run: npm run build
+
+      - name: Cold-import guard — api-lambda
+        run: node scripts/lambda-cold-import-check.mjs packages/api-lambda/dist/handler.mjs
+
+      - name: TypeScript strict typecheck
+        run: npm run typecheck
+
+      - name: Migrate (local PG)
+        run: npm run migrate
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Migration journal monotonicity
+        # Fails the PR if _journal.json idx values are non-contiguous,
+        # non-monotonic, or skip the live-applied range. See
+        # scripts/check-journal-monotonic.mjs for rules.
+        run: node scripts/check-journal-monotonic.mjs
+
+      - name: Settings router structural check
+        # Cheap structural lint that fails the PR if Settings.tsx loses any
+        # of the 6 known tab routes (general/integrations/agents/sprints/team/billing).
+        # Backstops the 6-way merge that produced this branch model.
+        run: node scripts/check-settings-router.mjs
+        continue-on-error: false

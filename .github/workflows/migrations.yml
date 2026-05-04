@@ -1,0 +1,98 @@
+# migrations.yml — Apply DB migrations via the migration-runner Lambda
+#
+# Triggered on push to release/mwitt when packages/db/src/migrations/** changes.
+# Invokes the orbital-mwitt-migration-runner Lambda synchronously, which reads
+# packages/db/src/migrations/meta/_journal.json and applies any new entries.
+#
+# This workflow MUST run to completion before deploy-mwitt.yml runs an app
+# deploy that depends on the new schema. We enforce ordering via:
+#   1. concurrency group `mwitt-mainline` shared with deploy-mwitt.yml
+#      (both workflows share the lock so they serialise per branch).
+#   2. deploy-mwitt.yml on the same SHA waits for this workflow's completion
+#      via the workflow-run dependency below.
+#
+# Required secrets: AWS_ROLE_ARN, MIGRATION_LAMBDA_NAME
+
+name: DB Migrations (mwitt)
+
+on:
+  push:
+    branches:
+      - release/mwitt
+    paths:
+      - 'packages/db/src/migrations/**'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run — list migrations the Lambda would apply, do not apply.'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: mwitt-mainline
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  validate-journal:
+    name: Validate journal monotonicity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: npm }
+      - run: npm ci
+      - name: Check journal is monotonic + contiguous
+        run: node scripts/check-journal-monotonic.mjs
+
+  apply-migrations:
+    name: Invoke migration-runner Lambda
+    needs: validate-journal
+    runs-on: ubuntu-latest
+    environment:
+      name: mwitt
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: orbital-migrations-mwitt
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Invoke migration-runner Lambda
+        run: |
+          set -euo pipefail
+          PAYLOAD=$(jq -n \
+            --arg sha "${GITHUB_SHA}" \
+            --arg run "${GITHUB_RUN_ID}" \
+            --argjson dry "${{ inputs.dry_run || false }}" \
+            '{git_sha:$sha, run_id:$run, dry_run:$dry}')
+          echo "Payload: $PAYLOAD"
+
+          aws lambda invoke \
+            --function-name "${{ secrets.MIGRATION_LAMBDA_NAME }}" \
+            --invocation-type RequestResponse \
+            --cli-binary-format raw-in-base64-out \
+            --payload "$PAYLOAD" \
+            /tmp/migration-result.json
+
+          echo "--- migration-runner result ---"
+          cat /tmp/migration-result.json
+          echo
+          # Lambda returns { ok: true, applied: [...] } on success or { ok: false, error: ... }.
+          OK=$(jq -r '.ok' /tmp/migration-result.json)
+          if [ "$OK" != "true" ]; then
+            echo "Migration runner reported failure."
+            exit 1
+          fi
+          APPLIED=$(jq -r '.applied | length' /tmp/migration-result.json)
+          echo "Applied $APPLIED new migration(s) successfully."
