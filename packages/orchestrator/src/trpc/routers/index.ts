@@ -71,6 +71,9 @@ import { outboxRouter } from './outbox.js'
 // Orbital Review UI — reviewer-facing story operations
 // [Engineer-Principal · Opus · run-orbital-review-ui]
 import { storiesRouter } from './stories.js'
+// GitHub App install flow — installation management + repo listing
+// [Engineer-Sr · Sonnet · run-github-app-install]
+import { githubRouter } from './github.js'
 
 // ---------------------------------------------------------------------------
 // Lazy singletons / DI registry
@@ -369,6 +372,9 @@ export const appRouter = router({
   // Orbital Review UI — reviewer-facing story ops (list/byId/timeline/attempts/cost + accept/reject/redirect)
   // [Engineer-Principal · Opus · run-orbital-review-ui]
   stories: storiesRouter,
+  // GitHub App install flow — installation management + repo listing
+  // [Engineer-Sr · Sonnet · run-github-app-install]
+  github: githubRouter,
 })
 
 export type AppRouter = typeof appRouter

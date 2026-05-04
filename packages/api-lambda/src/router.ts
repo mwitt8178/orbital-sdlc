@@ -5,7 +5,7 @@
  * side-effect-free — verified by the cold-import CI guard.
  *
  * INCLUDED: audit, audit-export, backlog, boards, channel, code-reviews,
- *           cost, memory, onboarding, orchestration (read), outbox,
+ *           cost, github, memory, onboarding, orchestration (read), outbox,
  *           projects, providers, prs, replay, sprint, team, uat, vision.
  *
  * EXCLUDED (daemon-shaped):
@@ -16,6 +16,7 @@
 import { router } from '../../orchestrator/src/trpc/init.js'
 
 // Static router exports (already constructed, cheap, no I/O)
+import { githubRouter } from '../../orchestrator/src/trpc/routers/github.js'
 import { auditRouter } from '../../orchestrator/src/trpc/routers/audit.js'
 import { auditExportRouter } from '../../orchestrator/src/trpc/routers/audit-export.js'
 import { channelsRouter } from '../../orchestrator/src/trpc/routers/channels.js'
@@ -256,6 +257,9 @@ export async function getLambdaAppRouter(): Promise<AnyRouter> {
     channel: channelsRouter,
     code_reviews: codeReviewsRouter,
     cost: costRouter,
+    // GitHub App install flow — installation management + repo listing
+    // [Engineer-Sr · Sonnet · run-github-app-install]
+    github: githubRouter,
     memory: memoryR,
     onboarding: onboardingR,
     orchestration: orchestrationRouter,
