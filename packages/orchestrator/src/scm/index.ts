@@ -11,6 +11,9 @@ export type {
   ScmDifferenceFile,
   ScmPullRequestStatus,
   ScmMergeMethod,
+  ScmUnifiedDiffFile,
+  ScmUnifiedHunk,
+  ScmUnifiedHunkLine,
 } from './client.js'
 
 export { CodeCommitScmClient, createCodeCommitScmClient } from './codecommit-client.js'

@@ -55,7 +55,9 @@ import type {
   ScmPullRequestStatus,
   ScmDifferenceFile,
   ScmMergeMethod,
+  ScmUnifiedDiffFile,
 } from './client.js'
+import { computeUnifiedDiff } from './unified-diff.js'
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -387,9 +389,49 @@ export class CodeCommitScmClient implements ScmClient {
     return { files: collected }
   }
 
+  async getUnifiedDiff(
+    repoId: string,
+    fromRef: string,
+    toRef: string,
+  ): Promise<{ files: ScmUnifiedDiffFile[] }> {
+    const { files: rawFiles } = await this.getDifferences(repoId, fromRef, toRef)
+    const out: ScmUnifiedDiffFile[] = []
+    for (const f of rawFiles) {
+      const [oldText, newText] = await Promise.all([
+        f.oldBlob ? this.fetchBlobText(repoId, f.oldBlob) : Promise.resolve(null),
+        f.newBlob ? this.fetchBlobText(repoId, f.newBlob) : Promise.resolve(null),
+      ])
+      const diff = computeUnifiedDiff(oldText, newText)
+      out.push({
+        path: f.path,
+        oldPath: null,
+        changeType: f.changeType,
+        additions: diff.additions || f.additions,
+        deletions: diff.deletions || f.deletions,
+        binary: diff.binary,
+        hunks: diff.hunks,
+      })
+    }
+    return { files: out }
+  }
+
   // -------------------------------------------------------------------------
   // Helpers
   // -------------------------------------------------------------------------
+
+  private async fetchBlobText(repoId: string, blobId: string): Promise<string | null> {
+    try {
+      const out = await this.sdk.send(
+        new GetBlobCommand({ repositoryName: repoId, blobId }),
+      )
+      const content = out.content
+      if (!content) return null
+      return Buffer.from(content).toString('utf-8')
+    } catch (err) {
+      logger.warn({ blobId, err }, 'CodeCommitScmClient.fetchBlobText failed')
+      return null
+    }
+  }
 
   private toHandle(name: string, cloneUrlHttp: string): ScmRepoHandle {
     return {

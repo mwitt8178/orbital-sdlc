@@ -99,4 +99,50 @@ export interface ScmClient {
     fromRef: string,
     toRef: string,
   ): Promise<{ files: ScmDifferenceFile[] }>
+
+  /**
+   * Provider-agnostic unified diff between two refs. Returns per-file metadata
+   * plus parsed unified-diff hunks the UI can render directly. Used by the
+   * Review UI to show inline diffs regardless of SCM backend.
+   *
+   * `fromRef`/`toRef` may be branch names or commit SHAs. `null` `oldText`/
+   * `newText` indicate added or deleted files respectively.
+   *
+   * Returns `null` `hunks` when the file content is binary or unavailable.
+   *
+   * [Engineer-Principal · Opus · run-phase-e-review-ui-codecommit]
+   */
+  getUnifiedDiff(
+    repoId: string,
+    fromRef: string,
+    toRef: string,
+  ): Promise<{ files: ScmUnifiedDiffFile[] }>
+}
+
+export interface ScmUnifiedHunkLine {
+  /** ' ' = context, '+' = addition, '-' = deletion. */
+  origin: ' ' | '+' | '-'
+  /** Line content without the leading origin character or trailing newline. */
+  content: string
+}
+
+export interface ScmUnifiedHunk {
+  oldStart: number
+  oldLines: number
+  newStart: number
+  newLines: number
+  lines: ScmUnifiedHunkLine[]
+}
+
+export interface ScmUnifiedDiffFile {
+  path: string
+  /** Renamed-from path when changeType === 'R'. Otherwise null. */
+  oldPath: string | null
+  changeType: 'A' | 'M' | 'D' | 'R'
+  additions: number
+  deletions: number
+  /** True when the file appears binary or content could not be fetched. */
+  binary: boolean
+  /** Parsed hunks. Empty when binary or when the file is unchanged metadata. */
+  hunks: ScmUnifiedHunk[]
 }
