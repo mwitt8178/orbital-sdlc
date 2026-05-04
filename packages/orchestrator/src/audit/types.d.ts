@@ -24,20 +24,20 @@ export declare const DriftDetectedPayloadV1: z.ZodObject<{
     severity: z.ZodEnum<["info", "warning", "critical"]>;
 }, "strip", z.ZodTypeAny, {
     expected: Record<string, unknown> | null;
-    run_id: string;
-    drift_id: string;
+    severity: "info" | "critical" | "warning";
     source: "monday" | "git" | "worktree" | "internal";
+    drift_id: string;
+    run_id: string;
     drift_kind: "commit_without_event" | "event_without_commit" | "file_change_without_event" | "event_without_file_change" | "monday_status_without_event" | "event_without_monday_status" | "capability_grant_without_use";
     observed: Record<string, unknown>;
-    severity: "info" | "critical" | "warning";
 }, {
     expected: Record<string, unknown> | null;
-    run_id: string;
-    drift_id: string;
+    severity: "info" | "critical" | "warning";
     source: "monday" | "git" | "worktree" | "internal";
+    drift_id: string;
+    run_id: string;
     drift_kind: "commit_without_event" | "event_without_commit" | "file_change_without_event" | "event_without_file_change" | "monday_status_without_event" | "event_without_monday_status" | "capability_grant_without_use";
     observed: Record<string, unknown>;
-    severity: "info" | "critical" | "warning";
 }>;
 export type DriftDetectedPayload = z.infer<typeof DriftDetectedPayloadV1>;
 export declare const ReconciliationRunStartedPayloadV1: z.ZodObject<{
@@ -46,13 +46,13 @@ export declare const ReconciliationRunStartedPayloadV1: z.ZodObject<{
     window_from: z.ZodString;
     window_to: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    run_id: string;
     trigger: "scheduled" | "on_demand";
+    run_id: string;
     window_from: string;
     window_to: string;
 }, {
-    run_id: string;
     trigger: "scheduled" | "on_demand";
+    run_id: string;
     window_from: string;
     window_to: string;
 }>;
@@ -69,21 +69,21 @@ export declare const ReconciliationRunCompletedPayloadV1: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     status: "failed" | "completed";
     run_id: string;
+    duration_ms: number;
     git_commits_scanned: number;
     worktree_files_scanned: number;
     monday_items_scanned: number;
     drift_events_emitted: number;
     error_payload: Record<string, unknown> | null;
-    duration_ms: number;
 }, {
     status: "failed" | "completed";
     run_id: string;
+    duration_ms: number;
     git_commits_scanned: number;
     worktree_files_scanned: number;
     monday_items_scanned: number;
     drift_events_emitted: number;
     error_payload: Record<string, unknown> | null;
-    duration_ms: number;
 }>;
 export type ReconciliationRunCompletedPayload = z.infer<typeof ReconciliationRunCompletedPayloadV1>;
 export declare const AuditQueryExecutedPayloadV1: z.ZodObject<{
@@ -137,24 +137,24 @@ export declare const AuditQueryFilterSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     limit: number;
     trace_id?: string | undefined;
-    aggregate_id?: string | undefined;
-    aggregate_type?: "task" | "sprint" | "system" | "persona" | "retro" | "adr" | "channel_post" | "ticket" | "channel" | "epic" | "ceremony" | "defect" | "vision_document" | "capability" | "disagreement" | "install" | "verification" | "audit_export" | "cost_accounting_period" | "system_version" | "hook_invocation" | "orchestration" | "reconciliation_run" | "monday_sync" | "story" | "uat_session" | "presence" | undefined;
-    event_type?: string | undefined;
     after?: string | undefined;
+    aggregate_type?: "retro" | "task" | "adr" | "channel_post" | "persona" | "ticket" | "channel" | "sprint" | "epic" | "ceremony" | "defect" | "system" | "vision_document" | "capability" | "disagreement" | "install" | "verification" | "audit_export" | "cost_accounting_period" | "system_version" | "hook_invocation" | "orchestration" | "reconciliation_run" | "monday_sync" | "story" | "uat_session" | "presence" | undefined;
+    aggregate_id?: string | undefined;
     event_types?: string[] | undefined;
-    actor_type?: "user" | "system" | "persona" | "hook" | undefined;
+    event_type?: string | undefined;
+    actor_type?: "user" | "persona" | "system" | "hook" | undefined;
     actor_id?: string | undefined;
     occurred_from?: string | undefined;
     occurred_to?: string | undefined;
 }, {
     limit?: number | undefined;
     trace_id?: string | undefined;
-    aggregate_id?: string | undefined;
-    aggregate_type?: "task" | "sprint" | "system" | "persona" | "retro" | "adr" | "channel_post" | "ticket" | "channel" | "epic" | "ceremony" | "defect" | "vision_document" | "capability" | "disagreement" | "install" | "verification" | "audit_export" | "cost_accounting_period" | "system_version" | "hook_invocation" | "orchestration" | "reconciliation_run" | "monday_sync" | "story" | "uat_session" | "presence" | undefined;
-    event_type?: string | undefined;
     after?: string | undefined;
+    aggregate_type?: "retro" | "task" | "adr" | "channel_post" | "persona" | "ticket" | "channel" | "sprint" | "epic" | "ceremony" | "defect" | "system" | "vision_document" | "capability" | "disagreement" | "install" | "verification" | "audit_export" | "cost_accounting_period" | "system_version" | "hook_invocation" | "orchestration" | "reconciliation_run" | "monday_sync" | "story" | "uat_session" | "presence" | undefined;
+    aggregate_id?: string | undefined;
     event_types?: string[] | undefined;
-    actor_type?: "user" | "system" | "persona" | "hook" | undefined;
+    event_type?: string | undefined;
+    actor_type?: "user" | "persona" | "system" | "hook" | undefined;
     actor_id?: string | undefined;
     occurred_from?: string | undefined;
     occurred_to?: string | undefined;

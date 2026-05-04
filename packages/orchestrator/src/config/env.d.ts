@@ -190,7 +190,7 @@ declare const envSchema: z.ZodObject<{
     WS_SESSION_TOKEN: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     NODE_ENV: "development" | "test" | "production";
-    LOG_LEVEL: "trace" | "debug" | "info" | "warn" | "error" | "fatal" | "silent";
+    LOG_LEVEL: "fatal" | "error" | "warn" | "info" | "debug" | "trace" | "silent";
     DATABASE_URL: string;
     PORT: number;
     HOST: string;
@@ -226,7 +226,7 @@ declare const envSchema: z.ZodObject<{
     WS_SESSION_TOKEN?: string | undefined;
 }, {
     NODE_ENV?: "development" | "test" | "production" | undefined;
-    LOG_LEVEL?: "trace" | "debug" | "info" | "warn" | "error" | "fatal" | "silent" | undefined;
+    LOG_LEVEL?: "fatal" | "error" | "warn" | "info" | "debug" | "trace" | "silent" | undefined;
     DATABASE_URL?: string | undefined;
     PORT?: number | undefined;
     HOST?: string | undefined;
@@ -268,7 +268,7 @@ export declare function resetEnvCache(): void;
 /** Convenience accessor — typed env. */
 export declare const env: {
     NODE_ENV: "development" | "test" | "production";
-    LOG_LEVEL: "trace" | "debug" | "info" | "warn" | "error" | "fatal" | "silent";
+    LOG_LEVEL: "fatal" | "error" | "warn" | "info" | "debug" | "trace" | "silent";
     DATABASE_URL: string;
     PORT: number;
     HOST: string;

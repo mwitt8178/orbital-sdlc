@@ -8,13 +8,13 @@ declare const installSchema: z.ZodObject<{
     created_at: z.ZodString;
     schema_version: z.ZodLiteral<1>;
 }, "strip", z.ZodTypeAny, {
-    schema_version: 1;
     install_id: string;
     created_at: string;
+    schema_version: 1;
 }, {
-    schema_version: 1;
     install_id: string;
     created_at: string;
+    schema_version: 1;
 }>;
 export type InstallConfig = z.infer<typeof installSchema>;
 export declare function loadOrCreateInstall(): Promise<InstallConfig>;

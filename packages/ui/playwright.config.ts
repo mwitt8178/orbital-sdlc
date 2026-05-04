@@ -20,9 +20,13 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npx vite --port ${PORT} --strictPort`,
+    // Phase 1-4 verification runs against the PRODUCTION build (which
+    // uses .env.production with VITE_TRPC_URL pointing at the deployed
+    // mwitt API). Dev mode would proxy /trpc to localhost:3030 (no
+    // server running) and fail.
+    command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env['CI'],
-    timeout: 60_000,
+    timeout: 120_000,
   },
 })

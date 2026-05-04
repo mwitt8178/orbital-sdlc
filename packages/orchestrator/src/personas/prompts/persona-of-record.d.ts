@@ -19,12 +19,12 @@ export declare const PersonaOfRecordResponseSchema: z.ZodObject<{
     confidence_score: z.ZodNumber;
     rationale: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    persona_id: string;
     rationale: string;
+    persona_id: string;
     confidence_score: number;
 }, {
-    persona_id: string;
     rationale: string;
+    persona_id: string;
     confidence_score: number;
 }>;
 export type PersonaOfRecordResponse = z.infer<typeof PersonaOfRecordResponseSchema>;

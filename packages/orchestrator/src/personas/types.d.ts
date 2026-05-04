@@ -20,13 +20,13 @@ export declare const RoleBriefSchema: z.ZodObject<{
     nonGoals: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     styleNotes: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    bodyMd: string;
     headline: string;
+    bodyMd: string;
     nonGoals: string[];
     styleNotes: string;
 }, {
-    bodyMd: string;
     headline: string;
+    bodyMd: string;
     styleNotes: string;
     nonGoals?: string[] | undefined;
 }>;
@@ -36,13 +36,13 @@ export declare const SkillRefSchema: z.ZodObject<{
     required: z.ZodBoolean;
     ordering: z.ZodNumber;
 }, "strip", z.ZodTypeAny, {
-    ordering: number;
     slug: string;
     required: boolean;
+    ordering: number;
 }, {
-    ordering: number;
     slug: string;
     required: boolean;
+    ordering: number;
 }>;
 export type SkillRef = z.infer<typeof SkillRefSchema>;
 export declare const DefaultCapabilityProfileSchema: z.ZodObject<{
@@ -106,14 +106,14 @@ export declare const ModelAffinityEntrySchema: z.ZodObject<{
     maxTokensHint: z.ZodNullable<z.ZodNumber>;
     rationale: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    riskClass: "low" | "standard" | "high" | "critical";
     rationale: string;
+    riskClass: "critical" | "standard" | "low" | "high";
     preferredModel: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
     fallbackModel: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6" | null;
     maxTokensHint: number | null;
 }, {
-    riskClass: "low" | "standard" | "high" | "critical";
     rationale: string;
+    riskClass: "critical" | "standard" | "low" | "high";
     preferredModel: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
     fallbackModel: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6" | null;
     maxTokensHint: number | null;
@@ -205,13 +205,13 @@ export declare const PersonaDefinitionSchema: z.ZodEffects<z.ZodObject<{
         nonGoals: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
         styleNotes: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        bodyMd: string;
         headline: string;
+        bodyMd: string;
         nonGoals: string[];
         styleNotes: string;
     }, {
-        bodyMd: string;
         headline: string;
+        bodyMd: string;
         styleNotes: string;
         nonGoals?: string[] | undefined;
     }>;
@@ -220,13 +220,13 @@ export declare const PersonaDefinitionSchema: z.ZodEffects<z.ZodObject<{
         required: z.ZodBoolean;
         ordering: z.ZodNumber;
     }, "strip", z.ZodTypeAny, {
-        ordering: number;
         slug: string;
         required: boolean;
+        ordering: number;
     }, {
-        ordering: number;
         slug: string;
         required: boolean;
+        ordering: number;
     }>, "many">;
     defaultCapabilityProfile: z.ZodObject<{
         filesRead: z.ZodArray<z.ZodString, "many">;
@@ -288,26 +288,26 @@ export declare const PersonaDefinitionSchema: z.ZodEffects<z.ZodObject<{
         maxTokensHint: z.ZodNullable<z.ZodNumber>;
         rationale: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        riskClass: "low" | "standard" | "high" | "critical";
         rationale: string;
+        riskClass: "critical" | "standard" | "low" | "high";
         preferredModel: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         fallbackModel: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6" | null;
         maxTokensHint: number | null;
     }, {
-        riskClass: "low" | "standard" | "high" | "critical";
         rationale: string;
+        riskClass: "critical" | "standard" | "low" | "high";
         preferredModel: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         fallbackModel: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6" | null;
         maxTokensHint: number | null;
     }>, "many">, {
-        riskClass: "low" | "standard" | "high" | "critical";
         rationale: string;
+        riskClass: "critical" | "standard" | "low" | "high";
         preferredModel: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         fallbackModel: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6" | null;
         maxTokensHint: number | null;
     }[], {
-        riskClass: "low" | "standard" | "high" | "critical";
         rationale: string;
+        riskClass: "critical" | "standard" | "low" | "high";
         preferredModel: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         fallbackModel: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6" | null;
         maxTokensHint: number | null;
@@ -372,33 +372,19 @@ export declare const PersonaDefinitionSchema: z.ZodEffects<z.ZodObject<{
     }>;
 }, "strip", z.ZodTypeAny, {
     slug: string;
-    origin: "baseline" | "user";
-    escalationPolicy: {
-        maxRetries: number;
-        rules: {
-            trigger: "budget_exhausted" | "verifier_failed" | "capability_denied" | "timeout" | "tool_error_recurrent" | "ambiguous_input";
-            action: "spawn_resolver" | "post_blocker" | "request_human" | "fail_task";
-            resolverPersona?: string | undefined;
-            blockerChannel?: string | undefined;
-        }[];
-        defaultAction: "spawn_resolver" | "post_blocker" | "request_human" | "fail_task";
-    };
-    skills: {
-        ordering: number;
-        slug: string;
-        required: boolean;
-    }[];
     displayName: string;
-    metadata: {
-        description: string;
-        tags: string[];
-    };
+    origin: "baseline" | "user";
     roleBrief: {
-        bodyMd: string;
         headline: string;
+        bodyMd: string;
         nonGoals: string[];
         styleNotes: string;
     };
+    skills: {
+        slug: string;
+        required: boolean;
+        ordering: number;
+    }[];
     defaultCapabilityProfile: {
         secrets: string[];
         filesRead: string[];
@@ -416,15 +402,12 @@ export declare const PersonaDefinitionSchema: z.ZodEffects<z.ZodObject<{
         ceremonyRole: "chair" | "participant" | "observer" | "none";
     };
     modelAffinity: {
-        riskClass: "low" | "standard" | "high" | "critical";
         rationale: string;
+        riskClass: "critical" | "standard" | "low" | "high";
         preferredModel: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         fallbackModel: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6" | null;
         maxTokensHint: number | null;
     }[];
-}, {
-    slug: string;
-    origin: "baseline" | "user";
     escalationPolicy: {
         maxRetries: number;
         rules: {
@@ -435,22 +418,25 @@ export declare const PersonaDefinitionSchema: z.ZodEffects<z.ZodObject<{
         }[];
         defaultAction: "spawn_resolver" | "post_blocker" | "request_human" | "fail_task";
     };
-    skills: {
-        ordering: number;
-        slug: string;
-        required: boolean;
-    }[];
-    displayName: string;
     metadata: {
         description: string;
         tags: string[];
     };
+}, {
+    slug: string;
+    displayName: string;
+    origin: "baseline" | "user";
     roleBrief: {
-        bodyMd: string;
         headline: string;
+        bodyMd: string;
         styleNotes: string;
         nonGoals?: string[] | undefined;
     };
+    skills: {
+        slug: string;
+        required: boolean;
+        ordering: number;
+    }[];
     defaultCapabilityProfile: {
         secrets: string[];
         filesRead: string[];
@@ -468,41 +454,41 @@ export declare const PersonaDefinitionSchema: z.ZodEffects<z.ZodObject<{
         ceremonyRole: "chair" | "participant" | "observer" | "none";
     };
     modelAffinity: {
-        riskClass: "low" | "standard" | "high" | "critical";
         rationale: string;
+        riskClass: "critical" | "standard" | "low" | "high";
         preferredModel: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         fallbackModel: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6" | null;
         maxTokensHint: number | null;
     }[];
+    escalationPolicy: {
+        maxRetries: number;
+        rules: {
+            trigger: "budget_exhausted" | "verifier_failed" | "capability_denied" | "timeout" | "tool_error_recurrent" | "ambiguous_input";
+            action: "spawn_resolver" | "post_blocker" | "request_human" | "fail_task";
+            resolverPersona?: string | undefined;
+            blockerChannel?: string | undefined;
+        }[];
+        defaultAction: "spawn_resolver" | "post_blocker" | "request_human" | "fail_task";
+    };
+    metadata: {
+        description: string;
+        tags: string[];
+    };
 }>, {
     slug: string;
-    origin: "baseline" | "user";
-    escalationPolicy: {
-        maxRetries: number;
-        rules: {
-            trigger: "budget_exhausted" | "verifier_failed" | "capability_denied" | "timeout" | "tool_error_recurrent" | "ambiguous_input";
-            action: "spawn_resolver" | "post_blocker" | "request_human" | "fail_task";
-            resolverPersona?: string | undefined;
-            blockerChannel?: string | undefined;
-        }[];
-        defaultAction: "spawn_resolver" | "post_blocker" | "request_human" | "fail_task";
-    };
-    skills: {
-        ordering: number;
-        slug: string;
-        required: boolean;
-    }[];
     displayName: string;
-    metadata: {
-        description: string;
-        tags: string[];
-    };
+    origin: "baseline" | "user";
     roleBrief: {
-        bodyMd: string;
         headline: string;
+        bodyMd: string;
         nonGoals: string[];
         styleNotes: string;
     };
+    skills: {
+        slug: string;
+        required: boolean;
+        ordering: number;
+    }[];
     defaultCapabilityProfile: {
         secrets: string[];
         filesRead: string[];
@@ -520,15 +506,12 @@ export declare const PersonaDefinitionSchema: z.ZodEffects<z.ZodObject<{
         ceremonyRole: "chair" | "participant" | "observer" | "none";
     };
     modelAffinity: {
-        riskClass: "low" | "standard" | "high" | "critical";
         rationale: string;
+        riskClass: "critical" | "standard" | "low" | "high";
         preferredModel: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         fallbackModel: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6" | null;
         maxTokensHint: number | null;
     }[];
-}, {
-    slug: string;
-    origin: "baseline" | "user";
     escalationPolicy: {
         maxRetries: number;
         rules: {
@@ -539,22 +522,25 @@ export declare const PersonaDefinitionSchema: z.ZodEffects<z.ZodObject<{
         }[];
         defaultAction: "spawn_resolver" | "post_blocker" | "request_human" | "fail_task";
     };
-    skills: {
-        ordering: number;
-        slug: string;
-        required: boolean;
-    }[];
-    displayName: string;
     metadata: {
         description: string;
         tags: string[];
     };
+}, {
+    slug: string;
+    displayName: string;
+    origin: "baseline" | "user";
     roleBrief: {
-        bodyMd: string;
         headline: string;
+        bodyMd: string;
         styleNotes: string;
         nonGoals?: string[] | undefined;
     };
+    skills: {
+        slug: string;
+        required: boolean;
+        ordering: number;
+    }[];
     defaultCapabilityProfile: {
         secrets: string[];
         filesRead: string[];
@@ -572,12 +558,26 @@ export declare const PersonaDefinitionSchema: z.ZodEffects<z.ZodObject<{
         ceremonyRole: "chair" | "participant" | "observer" | "none";
     };
     modelAffinity: {
-        riskClass: "low" | "standard" | "high" | "critical";
         rationale: string;
+        riskClass: "critical" | "standard" | "low" | "high";
         preferredModel: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         fallbackModel: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6" | null;
         maxTokensHint: number | null;
     }[];
+    escalationPolicy: {
+        maxRetries: number;
+        rules: {
+            trigger: "budget_exhausted" | "verifier_failed" | "capability_denied" | "timeout" | "tool_error_recurrent" | "ambiguous_input";
+            action: "spawn_resolver" | "post_blocker" | "request_human" | "fail_task";
+            resolverPersona?: string | undefined;
+            blockerChannel?: string | undefined;
+        }[];
+        defaultAction: "spawn_resolver" | "post_blocker" | "request_human" | "fail_task";
+    };
+    metadata: {
+        description: string;
+        tags: string[];
+    };
 }>;
 export type PersonaDefinition = z.infer<typeof PersonaDefinitionSchema>;
 export interface Persona {

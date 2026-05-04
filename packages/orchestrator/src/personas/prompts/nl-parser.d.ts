@@ -23,23 +23,23 @@ export declare const NLParserResponseSchema: z.ZodObject<{
     rationale: z.ZodArray<z.ZodString, "many">;
 }, "strip", z.ZodTypeAny, {
     description: string;
-    kind: "epic" | "story" | "bug";
     title: string;
     rationale: string[];
     priority: number;
     story_points: number | null;
+    kind: "epic" | "story" | "bug";
     ac_titles: string[];
-    severity?: "low" | "high" | "critical" | "medium" | undefined;
+    severity?: "critical" | "low" | "medium" | "high" | undefined;
     suggested_epic_title?: string | null | undefined;
 }, {
     description: string;
-    kind: "epic" | "story" | "bug";
     title: string;
     rationale: string[];
     priority: number;
     story_points: number | null;
+    kind: "epic" | "story" | "bug";
     ac_titles: string[];
-    severity?: "low" | "high" | "critical" | "medium" | undefined;
+    severity?: "critical" | "low" | "medium" | "high" | undefined;
     suggested_epic_title?: string | null | undefined;
 }>;
 export type NLParserResponse = z.infer<typeof NLParserResponseSchema>;

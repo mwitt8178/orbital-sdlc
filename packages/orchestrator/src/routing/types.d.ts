@@ -22,7 +22,7 @@ export declare const ModelCatalogEntrySchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     model_id: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
     display_name: string;
-    capability_tier: "default" | "simple" | "complex";
+    capability_tier: "simple" | "default" | "complex";
     input_cost_micros_per_mtok: number;
     output_cost_micros_per_mtok: number;
     cache_read_cost_micros_per_mtok: number;
@@ -34,7 +34,7 @@ export declare const ModelCatalogEntrySchema: z.ZodObject<{
 }, {
     model_id: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
     display_name: string;
-    capability_tier: "default" | "simple" | "complex";
+    capability_tier: "simple" | "default" | "complex";
     input_cost_micros_per_mtok: number;
     output_cost_micros_per_mtok: number;
     cache_read_cost_micros_per_mtok: number;
@@ -65,12 +65,12 @@ export declare const PersonaAffinitySchema: z.ZodObject<{
     base_model: z.ZodEnum<["claude-haiku-4-5", "claude-sonnet-4-6", "claude-opus-4-6"]>;
     rationale: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    persona_id: string;
     rationale: string;
+    persona_id: string;
     base_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
 }, {
-    persona_id: string;
     rationale: string;
+    persona_id: string;
     base_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
 }>;
 export type PersonaAffinity = z.infer<typeof PersonaAffinitySchema>;
@@ -80,13 +80,13 @@ export declare const RiskClassRuleSchema: z.ZodObject<{
     pin_model: z.ZodOptional<z.ZodEnum<["claude-haiku-4-5", "claude-sonnet-4-6", "claude-opus-4-6"]>>;
     default_token_budget: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
-    risk_class: "low" | "standard" | "high" | "critical";
-    min_capability_tier: "default" | "simple" | "complex";
+    risk_class: "critical" | "standard" | "low" | "high";
+    min_capability_tier: "simple" | "default" | "complex";
     default_token_budget?: number | undefined;
     pin_model?: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6" | undefined;
 }, {
-    risk_class: "low" | "standard" | "high" | "critical";
-    min_capability_tier: "default" | "simple" | "complex";
+    risk_class: "critical" | "standard" | "low" | "high";
+    min_capability_tier: "simple" | "default" | "complex";
     default_token_budget?: number | undefined;
     pin_model?: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6" | undefined;
 }>;
@@ -107,10 +107,10 @@ export declare const LatencyRuleSchema: z.ZodObject<{
     prefer_tier: z.ZodEnum<["simple", "default"]>;
 }, "strip", z.ZodTypeAny, {
     if_below_ms: number;
-    prefer_tier: "default" | "simple";
+    prefer_tier: "simple" | "default";
 }, {
     if_below_ms: number;
-    prefer_tier: "default" | "simple";
+    prefer_tier: "simple" | "default";
 }>;
 export type LatencyRule = z.infer<typeof LatencyRuleSchema>;
 export declare const RoutingPolicySchema: z.ZodObject<{
@@ -121,12 +121,12 @@ export declare const RoutingPolicySchema: z.ZodObject<{
         base_model: z.ZodEnum<["claude-haiku-4-5", "claude-sonnet-4-6", "claude-opus-4-6"]>;
         rationale: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        persona_id: string;
         rationale: string;
+        persona_id: string;
         base_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
     }, {
-        persona_id: string;
         rationale: string;
+        persona_id: string;
         base_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
     }>, "many">;
     risk_class_rules: z.ZodArray<z.ZodObject<{
@@ -135,13 +135,13 @@ export declare const RoutingPolicySchema: z.ZodObject<{
         pin_model: z.ZodOptional<z.ZodEnum<["claude-haiku-4-5", "claude-sonnet-4-6", "claude-opus-4-6"]>>;
         default_token_budget: z.ZodOptional<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
-        risk_class: "low" | "standard" | "high" | "critical";
-        min_capability_tier: "default" | "simple" | "complex";
+        risk_class: "critical" | "standard" | "low" | "high";
+        min_capability_tier: "simple" | "default" | "complex";
         default_token_budget?: number | undefined;
         pin_model?: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6" | undefined;
     }, {
-        risk_class: "low" | "standard" | "high" | "critical";
-        min_capability_tier: "default" | "simple" | "complex";
+        risk_class: "critical" | "standard" | "low" | "high";
+        min_capability_tier: "simple" | "default" | "complex";
         default_token_budget?: number | undefined;
         pin_model?: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6" | undefined;
     }>, "many">;
@@ -160,10 +160,10 @@ export declare const RoutingPolicySchema: z.ZodObject<{
         prefer_tier: z.ZodEnum<["simple", "default"]>;
     }, "strip", z.ZodTypeAny, {
         if_below_ms: number;
-        prefer_tier: "default" | "simple";
+        prefer_tier: "simple" | "default";
     }, {
         if_below_ms: number;
-        prefer_tier: "default" | "simple";
+        prefer_tier: "simple" | "default";
     }>, "many">;
     default_escalation_policy: z.ZodObject<{
         on_failure: z.ZodEnum<["retry_same", "escalate_one_tier", "escalate_to_opus", "no_retry"]>;
@@ -180,16 +180,16 @@ export declare const RoutingPolicySchema: z.ZodObject<{
     }>;
     default_task_caps_usd_micros: z.ZodRecord<z.ZodEnum<["low", "standard", "high", "critical"]>, z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
-    description: string;
     schema_version: 1;
+    description: string;
     persona_affinities: {
-        persona_id: string;
         rationale: string;
+        persona_id: string;
         base_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
     }[];
     risk_class_rules: {
-        risk_class: "low" | "standard" | "high" | "critical";
-        min_capability_tier: "default" | "simple" | "complex";
+        risk_class: "critical" | "standard" | "low" | "high";
+        min_capability_tier: "simple" | "default" | "complex";
         default_token_budget?: number | undefined;
         pin_model?: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6" | undefined;
     }[];
@@ -199,25 +199,25 @@ export declare const RoutingPolicySchema: z.ZodObject<{
     }[];
     latency_rules: {
         if_below_ms: number;
-        prefer_tier: "default" | "simple";
+        prefer_tier: "simple" | "default";
     }[];
     default_escalation_policy: {
         on_failure: "retry_same" | "escalate_one_tier" | "escalate_to_opus" | "no_retry";
         max_retries: number;
         escalate_after: number;
     };
-    default_task_caps_usd_micros: Partial<Record<"low" | "standard" | "high" | "critical", number>>;
+    default_task_caps_usd_micros: Partial<Record<"critical" | "standard" | "low" | "high", number>>;
 }, {
-    description: string;
     schema_version: 1;
+    description: string;
     persona_affinities: {
-        persona_id: string;
         rationale: string;
+        persona_id: string;
         base_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
     }[];
     risk_class_rules: {
-        risk_class: "low" | "standard" | "high" | "critical";
-        min_capability_tier: "default" | "simple" | "complex";
+        risk_class: "critical" | "standard" | "low" | "high";
+        min_capability_tier: "simple" | "default" | "complex";
         default_token_budget?: number | undefined;
         pin_model?: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6" | undefined;
     }[];
@@ -227,14 +227,14 @@ export declare const RoutingPolicySchema: z.ZodObject<{
     }[];
     latency_rules: {
         if_below_ms: number;
-        prefer_tier: "default" | "simple";
+        prefer_tier: "simple" | "default";
     }[];
     default_escalation_policy: {
         on_failure: "retry_same" | "escalate_one_tier" | "escalate_to_opus" | "no_retry";
         max_retries: number;
         escalate_after: number;
     };
-    default_task_caps_usd_micros: Partial<Record<"low" | "standard" | "high" | "critical", number>>;
+    default_task_caps_usd_micros: Partial<Record<"critical" | "standard" | "low" | "high", number>>;
 }>;
 export type RoutingPolicy = z.infer<typeof RoutingPolicySchema>;
 export declare const RoutingReasonRuleSchema: z.ZodObject<{
@@ -243,13 +243,13 @@ export declare const RoutingReasonRuleSchema: z.ZodObject<{
     before_model: z.ZodEnum<["claude-haiku-4-5", "claude-sonnet-4-6", "claude-opus-4-6"]>;
     after_model: z.ZodEnum<["claude-haiku-4-5", "claude-sonnet-4-6", "claude-opus-4-6"]>;
 }, "strip", z.ZodTypeAny, {
-    detail: string;
     rule_type: "risk_class" | "pin_model" | "retry_escalation" | "latency" | "persona_affinity";
+    detail: string;
     before_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
     after_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
 }, {
-    detail: string;
     rule_type: "risk_class" | "pin_model" | "retry_escalation" | "latency" | "persona_affinity";
+    detail: string;
     before_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
     after_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
 }>;
@@ -262,29 +262,29 @@ export declare const RoutingReasonSchema: z.ZodObject<{
         before_model: z.ZodEnum<["claude-haiku-4-5", "claude-sonnet-4-6", "claude-opus-4-6"]>;
         after_model: z.ZodEnum<["claude-haiku-4-5", "claude-sonnet-4-6", "claude-opus-4-6"]>;
     }, "strip", z.ZodTypeAny, {
-        detail: string;
         rule_type: "risk_class" | "pin_model" | "retry_escalation" | "latency" | "persona_affinity";
+        detail: string;
         before_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         after_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
     }, {
-        detail: string;
         rule_type: "risk_class" | "pin_model" | "retry_escalation" | "latency" | "persona_affinity";
+        detail: string;
         before_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         after_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
     base_from_persona: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
     rules_applied: {
-        detail: string;
         rule_type: "risk_class" | "pin_model" | "retry_escalation" | "latency" | "persona_affinity";
+        detail: string;
         before_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         after_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
     }[];
 }, {
     base_from_persona: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
     rules_applied: {
-        detail: string;
         rule_type: "risk_class" | "pin_model" | "retry_escalation" | "latency" | "persona_affinity";
+        detail: string;
         before_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         after_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
     }[];
@@ -320,80 +320,80 @@ export declare const RoutingDecisionSchema: z.ZodObject<{
             before_model: z.ZodEnum<["claude-haiku-4-5", "claude-sonnet-4-6", "claude-opus-4-6"]>;
             after_model: z.ZodEnum<["claude-haiku-4-5", "claude-sonnet-4-6", "claude-opus-4-6"]>;
         }, "strip", z.ZodTypeAny, {
-            detail: string;
             rule_type: "risk_class" | "pin_model" | "retry_escalation" | "latency" | "persona_affinity";
+            detail: string;
             before_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
             after_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         }, {
-            detail: string;
             rule_type: "risk_class" | "pin_model" | "retry_escalation" | "latency" | "persona_affinity";
+            detail: string;
             before_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
             after_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         }>, "many">;
     }, "strip", z.ZodTypeAny, {
         base_from_persona: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         rules_applied: {
-            detail: string;
             rule_type: "risk_class" | "pin_model" | "retry_escalation" | "latency" | "persona_affinity";
+            detail: string;
             before_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
             after_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         }[];
     }, {
         base_from_persona: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         rules_applied: {
-            detail: string;
             rule_type: "risk_class" | "pin_model" | "retry_escalation" | "latency" | "persona_affinity";
+            detail: string;
             before_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
             after_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         }[];
     }>;
     policy_version: z.ZodNumber;
 }, "strip", z.ZodTypeAny, {
-    task_id: string;
-    persona_id: string;
     reason: {
         base_from_persona: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         rules_applied: {
-            detail: string;
             rule_type: "risk_class" | "pin_model" | "retry_escalation" | "latency" | "persona_affinity";
+            detail: string;
             before_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
             after_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         }[];
     };
-    risk_class: "low" | "standard" | "high" | "critical";
+    persona_id: string;
+    risk_class: "critical" | "standard" | "low" | "high";
+    retry_depth: number;
+    decision_id: string;
+    task_id: string;
+    model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
     token_budget: number;
     escalation_policy: {
         on_failure: "retry_same" | "escalate_one_tier" | "escalate_to_opus" | "no_retry";
         max_retries: number;
         escalate_after: number;
     };
-    model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
-    decision_id: string;
-    retry_depth: number;
     policy_version: number;
     latency_budget_ms?: number | undefined;
 }, {
-    task_id: string;
-    persona_id: string;
     reason: {
         base_from_persona: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         rules_applied: {
-            detail: string;
             rule_type: "risk_class" | "pin_model" | "retry_escalation" | "latency" | "persona_affinity";
+            detail: string;
             before_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
             after_model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
         }[];
     };
-    risk_class: "low" | "standard" | "high" | "critical";
+    persona_id: string;
+    risk_class: "critical" | "standard" | "low" | "high";
+    retry_depth: number;
+    decision_id: string;
+    task_id: string;
+    model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
     token_budget: number;
     escalation_policy: {
         on_failure: "retry_same" | "escalate_one_tier" | "escalate_to_opus" | "no_retry";
         max_retries: number;
         escalate_after: number;
     };
-    model: "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-6";
-    decision_id: string;
-    retry_depth: number;
     policy_version: number;
     latency_budget_ms?: number | undefined;
 }>;
@@ -406,17 +406,17 @@ export declare const RouterInputSchema: z.ZodObject<{
     latency_budget_ms: z.ZodOptional<z.ZodNumber>;
     trace_id: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    task_id: string;
     persona_id: string;
-    trace_id: string;
-    risk_class: "low" | "standard" | "high" | "critical";
+    risk_class: "critical" | "standard" | "low" | "high";
     retry_depth: number;
+    task_id: string;
+    trace_id: string;
     latency_budget_ms?: number | undefined;
 }, {
-    task_id: string;
     persona_id: string;
+    risk_class: "critical" | "standard" | "low" | "high";
+    task_id: string;
     trace_id: string;
-    risk_class: "low" | "standard" | "high" | "critical";
     retry_depth?: number | undefined;
     latency_budget_ms?: number | undefined;
 }>;
@@ -451,11 +451,11 @@ export declare const ModelChoiceSchema: z.ZodObject<{
     provider: z.ZodString;
     model: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    provider: string;
     model: string;
+    provider: string;
 }, {
-    provider: string;
     model: string;
+    provider: string;
 }>;
 export type ModelChoice = z.infer<typeof ModelChoiceSchema>;
 export declare const ProviderHealthSchema: z.ZodObject<{
@@ -465,14 +465,14 @@ export declare const ProviderHealthSchema: z.ZodObject<{
     lastCheckedAt: z.ZodString;
     reason: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    providerId: string;
     healthy: boolean;
+    providerId: string;
     lastCheckedAt: string;
     reason?: string | undefined;
     latencyMs?: number | undefined;
 }, {
-    providerId: string;
     healthy: boolean;
+    providerId: string;
     lastCheckedAt: string;
     reason?: string | undefined;
     latencyMs?: number | undefined;
@@ -496,15 +496,15 @@ export declare const RouteModelInputSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     persona: string;
     estimate: "S" | "M" | "L" | "XL";
-    traceId?: string | undefined;
     authorProvider?: string | undefined;
     authorModel?: string | undefined;
+    traceId?: string | undefined;
 }, {
     persona: string;
     estimate: "S" | "M" | "L" | "XL";
-    traceId?: string | undefined;
     authorProvider?: string | undefined;
     authorModel?: string | undefined;
+    traceId?: string | undefined;
 }>;
 export type RouteModelInput = z.infer<typeof RouteModelInputSchema>;
 export declare const RouteModelResultSchema: z.ZodObject<{
@@ -516,13 +516,13 @@ export declare const RouteModelResultSchema: z.ZodObject<{
     sodApplied: z.ZodBoolean;
 }, "strip", z.ZodTypeAny, {
     reason: string;
-    provider: string;
     model: string;
+    provider: string;
     sodApplied: boolean;
 }, {
     reason: string;
-    provider: string;
     model: string;
+    provider: string;
     sodApplied: boolean;
 }>;
 export type RouteModelResult = z.infer<typeof RouteModelResultSchema>;
