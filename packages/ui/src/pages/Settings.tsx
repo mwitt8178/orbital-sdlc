@@ -35,6 +35,7 @@ import { BudgetTab } from '../components/features/settings/BudgetTab.js'
 import { HubTab } from '../components/features/settings/HubTab.js'
 import { IntegrationsDashboard } from '../components/features/settings/IntegrationsDashboard.js'
 import { ComingSoonState } from '../components/features/settings/ComingSoonState.js'
+import { TeamTab } from '../components/features/settings/TeamTab.js'
 import { DURATION, EASE } from '../components/onboarding/motion.js'
 
 interface SectionDef {
@@ -314,15 +315,9 @@ function TeamPage() {
     <>
       <PageHeader
         title="Team"
-        description="Manage who has access to this hub and what role they hold."
+        description="Manage who has access to this project and what role they hold."
       />
-      <ComingSoonState
-        title="Team management is in design"
-        description="Roster + roles + per-member audit log will land in the next release. For now, members are added via hub invite URLs."
-        actionLabel="Manage hub connection"
-        actionHref="/settings/integrations/hub"
-        eta="v2 · ~2 weeks"
-      />
+      <TeamTab />
     </>
   )
 }
