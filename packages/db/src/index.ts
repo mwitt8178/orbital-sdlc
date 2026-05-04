@@ -57,3 +57,4 @@ export * from './schema/obsidian-vault-links.js'
 // sprint_tick_leases, story_pr_runs.
 // [Engineer-Sr · Sonnet · run-sprint-loop]
 export * from './schema/sprint-tick.js'
+export * from './schema/pr-reviews.js'

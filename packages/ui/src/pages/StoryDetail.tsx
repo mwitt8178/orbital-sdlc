@@ -94,6 +94,12 @@ export default function StoryDetail() {
     { story_id: storyId },
     { enabled: !!storyId },
   )
+  // PR Review Agent — latest automated review for this story
+  // [Engineer-Sr · Sonnet · run-pr-review-agent-001]
+  const prReviewQuery = trpc.pr_reviews.latest.useQuery(
+    { story_id: storyId },
+    { enabled: !!storyId },
+  )
 
   const [tab, setTab] = useState<'attempts' | 'timeline'>('attempts')
   const [compareSet, setCompareSet] = useState<Set<string>>(new Set())
@@ -120,6 +126,7 @@ export default function StoryDetail() {
       utils.stories.byId.invalidate({ story_id: storyId })
       utils.stories.timeline.invalidate({ story_id: storyId })
       utils.stories.attempts.invalidate({ story_id: storyId })
+      utils.pr_reviews.latest.invalidate({ story_id: storyId })
     }
   }, [events, storyId, utils])
 
@@ -309,6 +316,12 @@ export default function StoryDetail() {
         storyBranch={task?.githubHeadSha ? `feat/${storyId.slice(0, 8)}` : 'main'}
       />
 
+      {/* PR Review Panel — automated PASS/BLOCK review from the review agent */}
+      <ReviewPanel
+        loading={prReviewQuery.isLoading}
+        review={prReviewQuery.data?.review ?? null}
+      />
+
       {/* Tabs */}
       <div className="flex gap-2 border-b border-slate-200">
         <TabBtn active={tab === 'attempts'} onClick={() => setTab('attempts')}>
@@ -412,6 +425,103 @@ export default function StoryDetail() {
 // ---------------------------------------------------------------------------
 // Tab button
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// PR Review Panel
+// [Engineer-Sr · Sonnet · run-pr-review-agent-001]
+// ---------------------------------------------------------------------------
+
+interface ReviewFinding {
+  file: string
+  line: number | null
+  severity: 'info' | 'warning' | 'error'
+  category: 'correctness' | 'security' | 'multi-tenant' | 'observability'
+  message: string
+}
+
+interface PrReview {
+  verdict: 'PASS' | 'BLOCK'
+  prUrl: string
+  findings: ReviewFinding[]
+  reviewerPersona: string
+  createdAt: string | Date
+}
+
+function ReviewPanel({ loading, review }: { loading: boolean; review: PrReview | null }) {
+  if (loading) return <Skeleton className="h-16 w-full" />
+  if (!review) return null
+
+  const isPass = review.verdict === 'PASS'
+
+  return (
+    <section
+      className={clsx(
+        'rounded-lg border p-4',
+        isPass ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50',
+      )}
+      aria-label="Automated PR review"
+      data-testid="pr-review-panel"
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <Badge color={isPass ? 'emerald' : 'rose'} data-testid="pr-review-verdict">
+          {isPass ? 'PASS' : 'BLOCK'}
+        </Badge>
+        <span className="text-xs text-slate-600">Automated review by {review.reviewerPersona}</span>
+        {review.prUrl && (
+          <a
+            href={review.prUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="ml-auto text-xs text-brand-600 hover:underline"
+          >
+            View PR
+          </a>
+        )}
+      </div>
+
+      {review.findings.length > 0 && (
+        <ul className="mt-3 space-y-2" aria-label="Review findings" data-testid="pr-review-findings">
+          {review.findings.map((f, i) => (
+            <li key={i} className="flex flex-wrap items-start gap-2 text-xs text-slate-700">
+              <Badge color={severityColor(f.severity)}>{f.severity}</Badge>
+              <Badge color={categoryColor(f.category)}>{f.category}</Badge>
+              <span className="flex-1">
+                {f.file && (
+                  <span className="font-mono text-slate-500">
+                    {f.file}{f.line != null ? `:${f.line}` : ''}
+                    {' '}
+                  </span>
+                )}
+                {f.message}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {review.findings.length === 0 && (
+        <p className="mt-2 text-xs text-slate-500">No findings — clean review.</p>
+      )}
+    </section>
+  )
+}
+
+function severityColor(severity: ReviewFinding['severity']): 'rose' | 'amber' | 'blue' {
+  switch (severity) {
+    case 'error': return 'rose'
+    case 'warning': return 'amber'
+    default: return 'blue'
+  }
+}
+
+function categoryColor(category: ReviewFinding['category']): 'rose' | 'amber' | 'violet' | 'slate' {
+  switch (category) {
+    case 'security': return 'rose'
+    case 'multi-tenant': return 'amber'
+    case 'observability': return 'violet'
+    default: return 'slate'
+  }
+}
 
 function TabBtn({
   active,

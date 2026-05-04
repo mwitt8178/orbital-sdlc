@@ -7,6 +7,8 @@
  * INCLUDED: audit, audit-export, backlog, boards, channel, code-reviews,
  *           cost, github, memory, onboarding, orchestration (read), outbox,
  *           projects, providers, prs, replay, sprint, team, uat, vision.
+ *           cost, memory, onboarding, orchestration (read), outbox,
+ *           projects, providers, prs, pr-reviews, replay, sprint, team, uat, vision.
  *
  * EXCLUDED (daemon-shaped):
  *   retro — agent-org git, analyst persona spawn (BLOCKER #5)
@@ -22,6 +24,9 @@ import { auditExportRouter } from '../../orchestrator/src/trpc/routers/audit-exp
 import { channelsRouter } from '../../orchestrator/src/trpc/routers/channels.js'
 import { codeReviewsRouter } from '../../orchestrator/src/trpc/routers/code-reviews.js'
 import { costRouter, billingRouter } from '../../orchestrator/src/trpc/routers/cost.js'
+// Automated PR review router — [Engineer-Sr · Sonnet · run-pr-review-agent-001]
+import { prReviewsRouter } from '../../orchestrator/src/trpc/routers/pr-reviews.js'
+import { costRouter } from '../../orchestrator/src/trpc/routers/cost.js'
 import { orchestrationRouter } from '../../orchestrator/src/trpc/routers/orchestration.js'
 import { outboxRouter } from '../../orchestrator/src/trpc/routers/outbox.js'
 import { providersRouter } from '../../orchestrator/src/trpc/routers/providers.js'
@@ -297,6 +302,7 @@ export async function getLambdaAppRouter(): Promise<AnyRouter> {
     boards: boardsR,
     channel: channelsRouter,
     code_reviews: codeReviewsRouter,
+    pr_reviews: prReviewsRouter,
     cost: costRouter,
     billing: billingRouter,
     // GitHub App install flow — installation management + repo listing

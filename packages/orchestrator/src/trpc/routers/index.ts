@@ -98,6 +98,9 @@ import {
 import { createVaultLinkRepo } from '../../vault-sync/repo.js'
 import { createProjectEntitySource } from '../../vault-sync/entity-source.js'
 import { S3Client } from '@aws-sdk/client-s3'
+// Automated PR review router
+// [Engineer-Sr · Sonnet · run-pr-review-agent-001]
+import { prReviewsRouter } from './pr-reviews.js'
 
 // ---------------------------------------------------------------------------
 // Lazy singletons / DI registry
@@ -440,6 +443,9 @@ export const appRouter = router({
   // Obsidian vault sync — push aggregates to S3 markdown vault, ZIP export
   // [Engineer-Principal · Opus · run-obsidian-vault-sync]
   vault: vaultRouter(),
+  // PR Review Agent — automated PASS/BLOCK reviews on PR open
+  // [Engineer-Sr · Sonnet · run-pr-review-agent-001]
+  pr_reviews: prReviewsRouter,
 })
 
 export type AppRouter = typeof appRouter

@@ -413,6 +413,8 @@ export const storiesRouter = router({
         personaOfRecord: stories.personaOfRecord,
         updatedAt: stories.updatedAt,
         createdAt: stories.createdAt,
+        // PR review status — [Engineer-Sr · Sonnet · run-pr-review-agent-001]
+        reviewStatus: stories.reviewStatus,
       })
       .from(stories)
       .where(and(...conditions))

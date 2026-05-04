@@ -34,6 +34,7 @@ import { registerBacklogWebhook } from './backlog/webhook.js'
 import { registerGithubWebhook } from './github/webhook.js'
 import { GitHubPROrchestrator } from './github/pr-orchestrator.js'
 import { createGithubClient } from './github/client.js'
+import { createPrReviewProcessor } from './github/pr-review-processor.js'
 import { registerAuditExportRoutes } from './audit-export/rest.js'
 import { registerHubAdminRoutes } from './admin/hub-admin.js'
 import {
@@ -88,7 +89,7 @@ async function buildApp(
   _eventStore: EventStore,
   wsHub: WebSocketHub | undefined,
   mondaySyncService: MondaySyncService | null,
-  githubOpts?: { webhookSecret: string; eventStore: EventStore; db: import('./db/client.js').DB },
+  githubOpts?: { webhookSecret: string; eventStore: EventStore; db: import('./db/client.js').DB; onPROpenedForReview?: (job: import('./github/pr-review-processor.js').PrReviewJobPayload) => void },
 ) {
   const app = Fastify({
     logger: false,
@@ -271,6 +272,7 @@ async function buildApp(
       secret: githubOpts.webhookSecret,
       eventStore: githubOpts.eventStore,
       db: githubOpts.db,
+      onPROpenedForReview: githubOpts.onPROpenedForReview,
     })
     logger.info('GitHub webhook route registered at POST /api/v1/webhooks/github')
   }
@@ -345,13 +347,35 @@ async function start(): Promise<void> {
   const prOrchestrator: GitHubPROrchestrator | null = orchestration.prOrchestrator
 
   const githubWebhookSecret = env.GITHUB_WEBHOOK_SECRET
+
+  // PR Review Agent — [Engineer-Sr · Sonnet · run-pr-review-agent-001]
+  // Build a processor if the required env vars are present. The processor is
+  // called fire-and-forget from the pull_request.opened webhook path.
+  let prReviewCallback: ((job: import('./github/pr-review-processor.js').PrReviewJobPayload) => void) | undefined
+  const anthropicKey = env.ANTHROPIC_API_KEY
+  const ghToken = env.GITHUB_API_TOKEN
+  if (anthropicKey) {
+    const reviewGithubClient = createGithubClient(ghToken ? { token: ghToken } : {})
+    const prReviewProcessor = createPrReviewProcessor(db, reviewGithubClient)
+    prReviewCallback = (job) => {
+      prReviewProcessor.process(job).catch((err: unknown) => {
+        logger.error({ err, pr_number: job.pr_number }, 'PR review processor failed')
+      })
+    }
+    logger.info('PR review agent wired (createPrReviewProcessor)')
+  } else {
+    logger.warn(
+      'ANTHROPIC_API_KEY not set; PR review agent disabled. Set it in env or keychain to enable automated PR reviews.',
+    )
+  }
+
   const app = await buildApp(
     metricsRegistry,
     eventStore,
     wsHub,
     orchestration.mondaySyncService,
     githubWebhookSecret && githubWebhookSecret.length > 0
-      ? { webhookSecret: githubWebhookSecret, eventStore, db }
+      ? { webhookSecret: githubWebhookSecret, eventStore, db, onPROpenedForReview: prReviewCallback }
       : undefined,
   )
 
