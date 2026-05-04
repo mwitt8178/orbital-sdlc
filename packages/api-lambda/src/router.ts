@@ -77,6 +77,15 @@ let _router: AnyRouter | null = null
 let _sprintService: SprintService | null = null
 
 /**
+ * Reset the cached router. Called from init.ts when the DB connection
+ * needs to be refreshed (RDS Proxy IAM token > 12 min old). Without this,
+ * the router holds service instances bound to a stale postgres client.
+ */
+export function _invalidateRouter(): void {
+  _router = null
+}
+
+/**
  * Register a SprintService instance — called from a daemon-side bootstrap
  * if the api-lambda is run in-process during tests, otherwise unused.
  * In production Lambda, sprint write-paths fail with STARTUP_ERROR until

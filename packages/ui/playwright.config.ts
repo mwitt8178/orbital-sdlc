@@ -4,10 +4,10 @@ const PORT = Number(process.env['PLAYWRIGHT_VITE_PORT'] ?? 5174)
 
 export default defineConfig({
   testDir: './test/e2e',
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env['CI'],
-  retries: process.env['CI'] ? 2 : 0,
-  workers: process.env['CI'] ? 1 : undefined,
+  retries: 1,
+  workers: 1,
   reporter: 'html',
   use: {
     baseURL: `http://localhost:${PORT}`,

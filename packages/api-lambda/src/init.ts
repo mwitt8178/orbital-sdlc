@@ -18,6 +18,7 @@
 import { getDb } from '@orbital/db'
 import { getSecrets, type Secrets, type DbCreds } from '../../orchestrator/src/lambda/secrets-cache.js'
 import type { DB } from '@orbital/db'
+import { _invalidateRouter } from './router.js'
 
 import {
   SecretsManagerClient,
@@ -51,12 +52,25 @@ export interface InitResult {
 }
 
 let _initialized = false
+let _initializedAt = 0
 let _db!: DB
 let _secrets!: Secrets
 let _inflight: Promise<InitResult> | null = null
 
+/**
+ * RDS Proxy IAM tokens have a 15-minute TTL. We refresh the cached DB
+ * connection at the 12-minute mark to avoid serving requests with a
+ * stale token (which would fail with `IAM authentication failed`).
+ */
+const DB_REFRESH_MS = 12 * 60_000
+
 export async function initOnce(): Promise<InitResult> {
-  if (_initialized) return { db: _db, secrets: _secrets }
+  const stale = _initialized && Date.now() - _initializedAt > DB_REFRESH_MS
+  if (_initialized && !stale) return { db: _db, secrets: _secrets }
+  if (stale) {
+    _initialized = false // force a fresh getDb() below
+    _invalidateRouter() // drop the router so services rebind to the fresh client
+  }
   if (_inflight) return _inflight
 
   _inflight = (async (): Promise<InitResult> => {
@@ -104,6 +118,7 @@ export async function initOnce(): Promise<InitResult> {
     _db = db
     _secrets = secrets
     _initialized = true
+    _initializedAt = Date.now()
     return { db: _db, secrets: _secrets }
   })()
 
@@ -118,6 +133,7 @@ export async function initOnce(): Promise<InitResult> {
 /** Test hook — reset so tests can simulate a fresh cold start. */
 export function _resetForTests(): void {
   _initialized = false
+  _initializedAt = 0
   _inflight = null
   ;(_db as unknown) = undefined
   ;(_secrets as unknown) = undefined
