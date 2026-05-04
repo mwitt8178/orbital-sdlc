@@ -66,7 +66,8 @@
         "auroraMaxAcu": 4,
         "logRetentionDays": 30,
         "enableMfa": false,
-        "useCustomDomain": false
+        "useCustomDomain": false,
+        "anthropicApiKeySecretArn": "arn:aws:secretsmanager:us-east-1:403001214246:secret:prometheus/mwitt/global/claude-api-key-KRa6jp"
       },
       "rreed": {
         "account": "<TBD>",

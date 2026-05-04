@@ -1,16 +1,12 @@
 /**
  * Onboarding wizard flow E2E tests.
  *
- * Exercises all four flow entry points against the deployed mwitt API via the
+ * Exercises the three flow entry points against the deployed mwitt API via the
  * production Vite preview bundle (VITE_TRPC_URL points at the deployed APIGW
  * in .env.production).
  *
- * Teardown: the sample-sandbox test calls onboarding.resetDemo at the end so
- * the install returns to an uncompleted state for subsequent test runs.
- *
  * Serial execution: tests share the deployed install state so they run one at
- * a time.  The sample-sandbox test is last because it calls completeSession
- * and resets afterward.
+ * a time.
  *
  * Known-acceptable noise tolerated per the `allowSubstrings` filter:
  *   - WebSocket connection errors (no real session / $default stage)
@@ -19,6 +15,9 @@
  *
  * Run:
  *   cd packages/ui && PLAYWRIGHT_VITE_PORT=5174 npx playwright test onboarding-flows --project=chromium
+ *
+ * Round 11 — sample/demo flow removed
+ * [Engineer-Principal · Opus · run-remove-sample-flow]
  */
 
 import { test, expect, type Page, type ConsoleMessage } from '@playwright/test'
@@ -83,21 +82,6 @@ function waitForTrpc(page: Page, procedureName: string, timeoutMs = 30_000) {
   )
 }
 
-/**
- * Call onboarding.resetDemo directly against the deployed API so the install
- * returns to an uncompleted state between test runs.
- */
-async function callResetDemo(page: Page) {
-  // Attempt via the page's request context which shares CORS origin.
-  await page.evaluate(async (apiBase) => {
-    await fetch(`${apiBase}/trpc/onboarding.resetDemo`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ '0': { json: null } }),
-    })
-  }, API_BASE)
-}
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -113,18 +97,10 @@ test.describe('Onboarding wizard flows', () => {
    * targets the new_project flow) doesn't hit a cold Lambda.
    */
   test.beforeAll(async ({ request }) => {
-    // Read-only warm-up — wakes the Lambda.
+    // Read-only warm-up — wakes the Lambda and establishes the DSQL IAM token.
     await request.get(
       `${API_BASE}/trpc/onboarding.status?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D`,
     )
-    // Write warm-up — forces the Lambda to establish/refresh the DSQL auth token.
-    // We ignore the result; the only goal is ensuring the DSQL IAM token is fresh
-    // before the tests start.  We use 'sample_data' to avoid leaving an incomplete
-    // 'new_project' session that would confuse the resume query.
-    await request.post(`${API_BASE}/trpc/onboarding.startSession`, {
-      headers: { 'Content-Type': 'application/json' },
-      data: { flow: 'sample_data' },
-    }).catch(() => null)
   })
 
   /**
@@ -284,85 +260,18 @@ test.describe('Onboarding wizard flows', () => {
   })
 
   /**
-   * Flow D — Sample sandbox.
-   *
-   * Lowest risk: no credentials required. Boots a deterministic mock dataset.
-   * Run last because it completes onboarding (sets setupCompletedAt) then resets.
-   *
-   * After clicking "Open the dashboard":
-   *   1. URL transitions away from /welcome (SetupGate now permits /).
-   *   2. callResetDemo resets the install so subsequent test runs start fresh.
+   * Negative assertion — the removed sample/demo flow card must NEVER render.
    */
-  test('sample sandbox flow — walks through all steps and completes', async ({ page }) => {
-    test.setTimeout(120_000)
-    const { errors } = trackErrors(page)
-
+  test('welcome chooser — sample_data card is gone', async ({ page }) => {
+    test.setTimeout(30_000)
     await goToWelcome(page)
 
-    // --- Step 1: chooser — click the sample-sandbox card ---
-    const sandboxCard = page.getByTestId('flow-card-sample_data')
-    await expect(sandboxCard).toBeVisible()
-    await expect(sandboxCard).toContainText('Try the sample sandbox')
-
-    const sessionWait = waitForTrpc(page, 'onboarding.startSession')
-    await sandboxCard.click()
-    await sessionWait
-
-    // --- Step 2: SampleDataFlow renders ---
-    await expect(page.getByTestId('sample-data-flow')).toBeVisible({ timeout: 15_000 })
-    await expect(page.getByRole('heading', { name: /loading the sandbox/i })).toBeVisible()
-
-    // The loading list should be visible while the sandbox boots.
     await expect(
-      page.getByRole('status').filter({ hasText: /Provisioning sample sprint/ }),
-    ).toBeVisible({ timeout: 15_000 })
-
-    // --- Step 3: wait for sandbox result (success OR error) ---
-    // loadSampleSandbox either succeeds (returns mock data) or fails (e.g.
-    // missing sample-data/acme.json in the Lambda package — a known deploy
-    // gap on the mwitt install).  Either outcome is deterministic; we assert
-    // whichever arrives first.
-    const sandboxResult = await Promise.race([
-      page.getByText(/Sample sandbox ready/i).waitFor({ timeout: 90_000 }).then(() => 'ready' as const),
-      page.getByRole('alert').waitFor({ timeout: 90_000 }).then(() => 'error' as const),
-    ])
-
-    if (sandboxResult === 'ready') {
-      // Happy path — sandbox loaded successfully.
-      await expect(page.getByText(/Sprints:/i)).toBeVisible()
-      await expect(page.getByText(/Channels:/i)).toBeVisible()
-      await expect(page.getByText(/Project:/i)).toBeVisible()
-
-      // Click "Open the dashboard" and confirm navigation away from /welcome.
-      const openDashboardBtn = page.getByRole('button', { name: /open the dashboard/i })
-      await expect(openDashboardBtn).toBeVisible()
-
-      const completeWait = waitForTrpc(page, 'onboarding.completeSession', 30_000)
-      await openDashboardBtn.click()
-      await completeWait
-
-      await page.waitForURL((url) => !url.pathname.includes('welcome'), { timeout: 15_000 })
-      expect(page.url()).not.toMatch(/\/welcome/)
-    } else {
-      // Known infrastructure gap: sample-data/acme.json missing from Lambda
-      // package on the mwitt deployment. The SampleDataFlow error state renders
-      // correctly — the error alert is the reliable stopping point.
-      const alertEl = page.getByRole('alert')
-      await expect(alertEl).toBeVisible()
-      const alertText = await alertEl.textContent()
-      // Assert the error is the known ENOENT / sample-load message, not an
-      // unexpected crash.
-      expect(
-        alertText ?? '',
-        'sandbox error should be the known missing-file or sample-load error',
-      ).toMatch(/ENOENT|sample|load|not found/i)
-      // The SampleDataFlow UI correctly rendered the error state — test passes
-      // at this step.  Completion requires the backend fix (deferred).
-    }
-
-    // Teardown: reset install state regardless of sandbox outcome.
-    await callResetDemo(page)
-
-    expect(errors, `unexpected console errors:\n${errors.join('\n')}`).toEqual([])
+      page.getByTestId('flow-card-sample_data'),
+      'flow-card-sample_data must NOT exist',
+    ).toHaveCount(0)
+    await expect(page.getByTestId('flow-card-new_project')).toBeVisible()
+    await expect(page.getByTestId('flow-card-existing_repo')).toBeVisible()
+    await expect(page.getByTestId('flow-card-join_hub')).toBeVisible()
   })
 })

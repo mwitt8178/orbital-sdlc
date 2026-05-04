@@ -17,7 +17,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={clsx(
           'inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50',
           {
-            'bg-slate-900 text-white hover:bg-slate-800 active:bg-slate-950':
+            'bg-brand-600 text-white shadow-card hover:bg-brand-700 active:bg-brand-800':
               variant === 'primary',
             'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100':
               variant === 'secondary',

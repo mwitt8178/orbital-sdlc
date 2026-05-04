@@ -8,9 +8,10 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "lib": ["ES2023"],
-    "types": ["node"]
+    "types": ["node"],
+    "resolveJsonModule": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/**/*.json"],
   "exclude": ["dist", "test", "node_modules"],
   "references": [
     { "path": "../types" },

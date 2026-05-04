@@ -206,6 +206,24 @@ async function main(): Promise<void> {
       { tenant_id, kind, messageId: raw.MessageId },
       'daemon: received event',
     )
+
+    // ---- system.smoke_test handler ----
+    // Benign event used by the smoke-e2e script to verify the full
+    // SNS → SQS → daemon chain end-to-end in production. Logs a
+    // structured line containing `correlationId` so the script can
+    // grep CloudWatch Logs for it within the 60-second window.
+    if (kind === 'system.smoke_test') {
+      const correlationId =
+        typeof event === 'object' && event !== null && 'correlationId' in event
+          ? String((event as { correlationId?: unknown }).correlationId ?? 'unknown')
+          : 'unknown'
+      logger.info(
+        { tenant_id, kind, correlationId, messageId: raw.MessageId, event: 'smoke_test_handled' },
+        'daemon: smoke_test_handled',
+      )
+      return
+    }
+
     // Receipt is captured in CloudWatch + EMF metric. Real domain dispatch
     // (write an audit row + run scheduler) lands when the daemon migrates
     // its scheduler tick into this loop — Phase 2.x in the plan. The

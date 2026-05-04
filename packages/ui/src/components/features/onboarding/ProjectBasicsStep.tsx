@@ -21,6 +21,12 @@ interface Props {
 }
 
 const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/
+const RESERVED_SLUGS = new Set([
+  'admin', 'settings', 'api', 'auth', 'login', 'logout', 'signup', 'verify',
+  'welcome', 'orbital', 'dashboard', 'oauth', 'static', 'health', 'hub',
+  'hub-admin', 'memory', 'agents', 'cost', 'audit', 'channels', 'ceremonies',
+  'retro', 'uat', 'vision', 'backlog',
+])
 
 function suggestSlug(name: string): string {
   return name
@@ -44,24 +50,31 @@ export function ProjectBasicsStep({ initial, onChange }: Props) {
   }, [name, slugTouched])
 
   const valid = useMemo(() => {
-    return name.trim().length > 0 && SLUG_RE.test(slug)
+    return name.trim().length > 0 && SLUG_RE.test(slug) && !RESERVED_SLUGS.has(slug)
   }, [name, slug])
 
   useEffect(() => {
     onChange({ name, slug, description }, valid)
   }, [name, slug, description, valid, onChange])
 
+  const slugReserved = RESERVED_SLUGS.has(slug)
+  const slugError = !SLUG_RE.test(slug)
+    ? 'Slug must be 2-64 chars: lowercase letters, digits, or hyphens.'
+    : slugReserved
+      ? `"${slug}" is reserved — pick a different slug.`
+      : null
+
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">Project basics</h1>
+      <div className="mb-2 flex items-center justify-between">
+        <h1 className="text-display-md text-slate-900">Project basics</h1>
         <TimeEstimateBadge estSeconds={60} />
       </div>
-      <p className="mb-6 text-sm text-slate-500">
+      <p className="mb-6 text-sm text-slate-600">
         Tell us what you're building. The slug becomes the URL fragment.
       </p>
 
-      <div className="space-y-4">
+      <div className="space-y-5">
         <InlineValidationField
           label="Project name"
           placeholder="Apprentice"
@@ -71,21 +84,33 @@ export function ProjectBasicsStep({ initial, onChange }: Props) {
           validate={(v) => (v.trim().length === 0 ? 'Name is required.' : null)}
         />
 
-        <InlineValidationField
-          label="Slug"
-          placeholder="apprentice"
-          value={slug}
-          onValueChange={(v) => {
-            setSlug(v)
-            setSlugTouched(true)
-          }}
-          helperText="lowercase letters, digits, hyphens; 2-64 chars."
-          validate={(v) =>
-            SLUG_RE.test(v)
-              ? null
-              : 'Slug must be 2-64 chars: lowercase letters, digits, or hyphens.'
-          }
-        />
+        <div>
+          <InlineValidationField
+            label="Slug"
+            placeholder="apprentice"
+            value={slug}
+            onValueChange={(v) => {
+              setSlug(v)
+              setSlugTouched(true)
+            }}
+            helperText="lowercase letters, digits, hyphens; 2-64 chars."
+            validate={(v) =>
+              !SLUG_RE.test(v)
+                ? 'Slug must be 2-64 chars: lowercase letters, digits, or hyphens.'
+                : RESERVED_SLUGS.has(v)
+                  ? `"${v}" is reserved — pick a different slug.`
+                  : null
+            }
+          />
+          {!slugError && slug.length > 0 && (
+            <p className="mt-1.5 text-xs text-slate-500">
+              Your project URL:{' '}
+              <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-slate-700">
+                /projects/{slug}
+              </code>
+            </p>
+          )}
+        </div>
 
         <div>
           <label

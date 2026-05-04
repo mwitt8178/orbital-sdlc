@@ -216,48 +216,68 @@ export function JoinHubFlow({ onSuccess }: JoinHubFlowProps) {
 
       {status.kind === 'success' && (
         <div
-          className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm"
+          className="rounded-card border border-emerald-200 bg-emerald-50 p-4 text-sm"
           role="status"
           aria-live="polite"
         >
-          <p className="font-medium text-emerald-800">Joined hub successfully.</p>
-          <dl className="mt-2 space-y-1 text-xs text-emerald-700">
-            <div className="flex gap-2">
-              <dt className="w-28 font-medium">tenant_id:</dt>
-              <dd className="font-mono">{status.result.tenantId}</dd>
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 inline-flex h-7 w-7 flex-none items-center justify-center rounded-full bg-emerald-200 text-emerald-800">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </span>
+            <div className="flex-1">
+              <p className="text-base font-semibold text-emerald-900">You're in.</p>
+              <p className="mt-1 text-sm text-emerald-800">
+                Connected as <span className="font-medium">{status.result.role}</span> on{' '}
+                <code className="rounded bg-emerald-100 px-1 py-0.5 font-mono text-emerald-900">
+                  {new URL(status.result.hubUrl).host}
+                </code>
+                . Loading your dashboard…
+              </p>
+              <details className="mt-3 text-xs text-emerald-700">
+                <summary className="cursor-pointer font-medium hover:text-emerald-900">
+                  Connection details
+                </summary>
+                <dl className="mt-2 space-y-1">
+                  <div className="flex gap-2">
+                    <dt className="w-28 font-medium">tenant_id:</dt>
+                    <dd className="break-all font-mono">{status.result.tenantId}</dd>
+                  </div>
+                  <div className="flex gap-2">
+                    <dt className="w-28 font-medium">install_id:</dt>
+                    <dd className="break-all font-mono">{status.result.installId}</dd>
+                  </div>
+                  <div className="flex gap-2">
+                    <dt className="w-28 font-medium">hub fingerprint:</dt>
+                    <dd className="break-all font-mono">{status.result.hubPubkey}</dd>
+                  </div>
+                </dl>
+              </details>
             </div>
-            <div className="flex gap-2">
-              <dt className="w-28 font-medium">role:</dt>
-              <dd className="font-mono">{status.result.role}</dd>
-            </div>
-            <div className="flex gap-2">
-              <dt className="w-28 font-medium">hub fingerprint:</dt>
-              <dd className="break-all font-mono">{status.result.hubPubkey}</dd>
-            </div>
-          </dl>
-          <p className="mt-2 text-xs text-emerald-600">
-            Reload the page to see hub-mode UI.
-          </p>
+          </div>
         </div>
       )}
 
       {status.kind === 'error' && (
         <div
-          className="rounded-md border border-red-200 bg-red-50 p-3 text-sm"
+          className="rounded-card border border-red-200 bg-red-50 p-4 text-sm"
           role="alert"
           aria-live="assertive"
         >
-          <p className="font-medium text-red-800">
-            Join failed: {status.error.code}
-          </p>
-          <p className="mt-1 text-xs text-red-700">{status.error.message}</p>
-          <p className="mt-2 text-xs text-red-600">
-            Or run from a terminal:
-            {' '}
-            <code className="font-mono">
+          <p className="font-medium text-red-900">Couldn't join — {status.error.code}</p>
+          <p className="mt-1 text-sm text-red-800">{status.error.message}</p>
+          <details className="mt-3 text-xs text-red-700">
+            <summary className="cursor-pointer font-medium hover:text-red-900">
+              Power-user fallback
+            </summary>
+            <p className="mt-2">
+              Run this from a terminal on this laptop:
+            </p>
+            <code className="mt-1 block break-all rounded bg-red-100 px-2 py-1 font-mono text-red-900">
               npm run hub:join {parsedUrl ? inviteUrl : '<invite-url>'}
             </code>
-          </p>
+          </details>
         </div>
       )}
 

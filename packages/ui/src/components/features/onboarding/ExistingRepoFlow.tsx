@@ -1,17 +1,15 @@
 /**
  * ExistingRepoFlow — Flow B: Orbital LEARNS from an existing repo.
  *
- * Round 9 — Onboarding UX Overhaul
- * [Engineer-Principal · Opus · run-round9-onboarding-overhaul]
+ * Rebuilt for the onboarding rework: shell-aware, save-state surfaced,
+ * back-nav, abandon affordance.
  *
- * Steps: connect_repo → codebase_analysis → board_mapping → memory_seed →
- * system_teach → mode → first_sprint → done.
+ * [Engineer-Principal · Opus · run-orbital-onboarding-rework]
  */
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { trpc } from '../../../services/trpc.js'
-import { Button } from '../../ui/Button.js'
-import { TimeEstimateBadge } from '../../ui/TimeEstimateBadge.js'
+import { OnboardingShell } from './OnboardingShell.js'
 import { ConnectRepoStep, type ConnectRepoData } from './ConnectRepoStep.js'
 import { CodebaseAnalysisStep, type AnalysisReport } from './CodebaseAnalysisStep.js'
 import { BoardMappingStep } from './BoardMappingStep.js'
@@ -19,6 +17,8 @@ import { MemorySeedStep } from './MemorySeedStep.js'
 import { ModeStep } from './ModeStep.js'
 import { FirstSprintStep } from './FirstSprintStep.js'
 import { DoneStep, type DoneStepData } from './DoneStep.js'
+import { EXISTING_REPO_STEPS } from './flow-steps.js'
+import type { SaveState } from '../../onboarding/SaveIndicator.js'
 import type { OnboardingMode } from '../../../services/onboarding-types.js'
 
 export type ExistingRepoStepId =
@@ -36,15 +36,20 @@ interface Props {
   initialStep: ExistingRepoStepId
   initialState: Record<string, unknown>
   onComplete: () => void
+  onAbandon?: () => void
 }
 
-export function ExistingRepoFlow({ sessionId, initialStep, initialState, onComplete }: Props) {
+const STEPS = EXISTING_REPO_STEPS
+
+export function ExistingRepoFlow({ sessionId, initialStep, initialState, onComplete, onAbandon }: Props) {
   const update = trpc.onboarding.updateSession.useMutation()
   const seedFromAnalysis = trpc.onboarding.seedMemoryFromAnalysis.useMutation()
   const configureSystem = trpc.onboarding.configureSystem.useMutation()
   const completeSession = trpc.onboarding.completeSession.useMutation()
 
   const [step, setStep] = useState<ExistingRepoStepId>(initialStep)
+  const [saveState, setSaveState] = useState<SaveState>('idle')
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [repo, setRepo] = useState<ConnectRepoData>({
     githubOwner: (initialState['github_owner'] as string) ?? '',
     githubRepo: (initialState['github_repo'] as string) ?? '',
@@ -54,7 +59,7 @@ export function ExistingRepoFlow({ sessionId, initialStep, initialState, onCompl
   const [report, setReport] = useState<AnalysisReport | null>(null)
   const [memoryEntryIds, setMemoryEntryIds] = useState<string[]>([])
   const [mode, setMode] = useState<OnboardingMode | null>('live')
-  const [projectId, setProjectId] = useState<string>(
+  const [projectId] = useState<string>(
     (initialState['project_id'] as string | undefined) ?? crypto.randomUUID(),
   )
   const [busy, setBusy] = useState(false)
@@ -62,11 +67,22 @@ export function ExistingRepoFlow({ sessionId, initialStep, initialState, onCompl
 
   const advance = async (next: ExistingRepoStepId, patch: Record<string, unknown> = {}) => {
     setStep(next)
+    setSaveState('saving')
+    setSaveError(null)
     try {
       await update.mutateAsync({ sessionId, step: next, patch })
+      setSaveState('saved')
+      setTimeout(() => setSaveState((s) => (s === 'saved' ? 'idle' : s)), 1200)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save progress.')
+      setSaveState('error')
+      setSaveError(err instanceof Error ? err.message : 'Could not save progress.')
     }
+  }
+
+  const back = () => {
+    const idx = STEPS.findIndex((s) => s.id === step)
+    if (idx <= 0) return
+    void advance(STEPS[idx - 1]!.id as ExistingRepoStepId)
   }
 
   const goFromConnect = () => {
@@ -99,8 +115,6 @@ export function ExistingRepoFlow({ sessionId, initialStep, initialState, onCompl
         },
       })
       setMemoryEntryIds(r.entryIds)
-      // Run system-teach immediately after seeding so the project gets its
-      // CLAUDE.md + skills.json without an extra screen.
       await configureSystem.mutateAsync({
         sessionId,
         projectId,
@@ -127,101 +141,115 @@ export function ExistingRepoFlow({ sessionId, initialStep, initialState, onCompl
     try {
       await completeSession.mutateAsync({ sessionId, projectId })
     } catch {
-      // already completed — fine
+      /* already completed */
     }
   }
 
-  useEffect(() => {
-    if (step === 'memory_seed' && report && memoryEntryIds.length === 0 && !busy) {
-      // user lands here after confirming board mapping; we wait for explicit
-      // confirm in MemorySeedStep, no auto-trigger.
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step])
+  const summary = useMemo<DoneStepData>(
+    () => ({
+      projectName: `${repo.githubOwner}/${repo.githubRepo}`,
+      sections: [
+        {
+          title: 'Analyzed',
+          items: [
+            `Stack: ${report?.stack.join(', ') ?? '—'}`,
+            `Test runner: ${report?.testRunner ?? '—'}`,
+            `CI workflows: ${report?.ciWorkflowCount ?? 0}`,
+            `Commit convention: ${report?.commitConvention ?? '—'}`,
+          ],
+        },
+        {
+          title: 'Learned',
+          items: [
+            `${memoryEntryIds.length} memory entries seeded`,
+            repo.mondayBoardId
+              ? `Monday board mapped (board id ${repo.mondayBoardId})`
+              : 'No Monday board (using internal backlog)',
+          ],
+        },
+        { title: 'Policies', items: [`Mode: ${mode ?? 'semi-autonomous'}`, 'Budget: $20/sprint'] },
+      ],
+    }),
+    [repo, report, memoryEntryIds.length, mode],
+  )
 
-  const summary = useMemo<DoneStepData>(() => ({
-    projectName: `${repo.githubOwner}/${repo.githubRepo}`,
-    sections: [
-      {
-        title: 'Analyzed',
-        items: [
-          `Stack: ${report?.stack.join(', ') ?? '—'}`,
-          `Test runner: ${report?.testRunner ?? '—'}`,
-          `CI workflows: ${report?.ciWorkflowCount ?? 0}`,
-          `Commit convention: ${report?.commitConvention ?? '—'}`,
-        ],
-      },
-      {
-        title: 'Learned',
-        items: [
-          `${memoryEntryIds.length} memory entries seeded`,
-          repo.mondayBoardId
-            ? `Monday board mapped (board id ${repo.mondayBoardId})`
-            : 'No Monday board (using internal backlog)',
-        ],
-      },
-      { title: 'Policies', items: [`Mode: ${mode ?? 'semi-autonomous'}`, 'Budget: $20/sprint'] },
-    ],
-  }), [repo, report, memoryEntryIds.length, mode])
+  const stepIndex = STEPS.findIndex((s) => s.id === step)
+  const showFooter = step === 'connect_repo' || step === 'mode'
+  const continueAction =
+    step === 'connect_repo' ? goFromConnect : step === 'mode' ? () => advance('first_sprint', { mode }) : undefined
+  const canContinue = step === 'connect_repo' ? repoValid : step === 'mode' ? mode !== null : false
 
   return (
-    <div data-testid="existing-repo-flow" className="space-y-6">
-      {step === 'connect_repo' && (
-        <>
-          <ConnectRepoStep initial={repo} onChange={(r, valid) => { setRepo(r); setRepoValid(valid) }} />
-          <div className="flex justify-end pt-4">
-            <Button size="lg" onClick={goFromConnect} disabled={!repoValid}>Continue</Button>
+    <OnboardingShell
+      steps={STEPS}
+      currentIndex={stepIndex < 0 ? 0 : stepIndex}
+      hideActions={!showFooter}
+      onContinue={continueAction}
+      canContinue={canContinue}
+      onBack={back}
+      canGoBack={stepIndex > 0 && !busy}
+      saveState={saveState}
+      saveError={saveError}
+      secondaryAction={onAbandon ? { label: 'Switch path', onClick: onAbandon } : null}
+    >
+      <div data-testid="existing-repo-flow" className="space-y-6">
+        {step === 'connect_repo' && (
+          <ConnectRepoStep
+            initial={repo}
+            onChange={(r, valid) => {
+              setRepo(r)
+              setRepoValid(valid)
+            }}
+          />
+        )}
+        {step === 'codebase_analysis' && (
+          <CodebaseAnalysisStep
+            sessionId={sessionId}
+            projectId={projectId}
+            owner={repo.githubOwner}
+            repo={repo.githubRepo}
+            onComplete={onAnalysisComplete}
+          />
+        )}
+        {step === 'board_mapping' && (
+          <BoardMappingStep
+            mondayBoardId={repo.mondayBoardId}
+            onConfirm={() => advance('memory_seed')}
+            onSkip={() => advance('memory_seed')}
+          />
+        )}
+        {step === 'memory_seed' && (
+          <MemorySeedStep
+            report={report}
+            onConfirm={() => void seedMemory()}
+            onSkip={() => advance('mode')}
+            busy={busy}
+          />
+        )}
+        {step === 'mode' && (
+          <div>
+            <h1 className="text-display-md text-slate-900">Mode + budget</h1>
+            <p className="mt-2 mb-6 text-sm text-slate-600">
+              Pick how aggressive Orbital is on this codebase. Adjust later in Settings → General.
+            </p>
+            <ModeStep selected={mode} onSelect={setMode} />
           </div>
-        </>
-      )}
-      {step === 'codebase_analysis' && (
-        <CodebaseAnalysisStep
-          sessionId={sessionId}
-          projectId={projectId}
-          owner={repo.githubOwner}
-          repo={repo.githubRepo}
-          onComplete={onAnalysisComplete}
-        />
-      )}
-      {step === 'board_mapping' && (
-        <BoardMappingStep
-          mondayBoardId={repo.mondayBoardId}
-          onConfirm={() => advance('memory_seed')}
-          onSkip={() => advance('memory_seed')}
-        />
-      )}
-      {step === 'memory_seed' && (
-        <MemorySeedStep
-          report={report}
-          onConfirm={() => void seedMemory()}
-          onSkip={() => advance('mode')}
-          busy={busy}
-        />
-      )}
-      {step === 'mode' && (
-        <>
-          <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-slate-900">Mode + budget</h1>
-            <TimeEstimateBadge estSeconds={30} />
-          </div>
-          <ModeStep selected={mode} onSelect={setMode} />
-          <div className="flex justify-end pt-4">
-            <Button size="lg" onClick={() => advance('first_sprint', { mode })} disabled={!mode}>
-              Continue
-            </Button>
-          </div>
-        </>
-      )}
-      {step === 'first_sprint' && <FirstSprintStep onChoice={handleSprintChoice} />}
-      {step === 'done' && (
-        <DoneStep
-          data={summary}
-          onLaunch={onComplete}
-          onTour={() => onComplete()}
-          onWatchInspector={() => onComplete()}
-        />
-      )}
-      {error && <p className="rounded-md bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</p>}
-    </div>
+        )}
+        {step === 'first_sprint' && <FirstSprintStep onChoice={handleSprintChoice} />}
+        {step === 'done' && (
+          <DoneStep
+            data={summary}
+            onLaunch={onComplete}
+            onTour={() => onComplete()}
+            onWatchInspector={() => onComplete()}
+          />
+        )}
+        {error && (
+          <p className="rounded-md bg-red-50 p-3 text-sm text-red-700" role="alert">
+            {error}
+          </p>
+        )}
+      </div>
+    </OnboardingShell>
   )
 }

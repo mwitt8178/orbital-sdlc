@@ -24,15 +24,23 @@ import Cost from './pages/Cost.js'
 // Round 7-07 — Hub Deployment + Operations
 // [Engineer-Sr · Sonnet · run-round7-07-hub-deploy-ops]
 import HubAdmin from './pages/HubAdmin.js'
-// Orbital Review UI — reviewer queue + per-story detail
-// [Engineer-Principal · Opus · run-orbital-review-ui]
-import Stories from './pages/Stories.js'
-import StoryDetail from './pages/StoryDetail.js'
 import { ToastProvider } from './components/ui/ToastProvider.js'
 import { CommandPalette } from './components/ui/CommandPalette.js'
 // Round 7-06 — Offline Cache + Reconciliation
 // [Engineer-Sr · Sonnet · run-round7-06-offline-reconcile]
 import { PendingMutationsPanel } from './components/features/hub/PendingMutationsPanel.js'
+// run-auth-login-001 — Cognito-backed auth pages + RequireAuth gate.
+import { AuthProvider } from './auth/AuthContext.js'
+import { RequireAuth } from './auth/RequireAuth.js'
+import Login from './pages/Login.js'
+import Signup from './pages/Signup.js'
+import Verify from './pages/Verify.js'
+import ForgotPassword from './pages/ForgotPassword.js'
+import ResetPassword from './pages/ResetPassword.js'
+// GitHub App integration — settings page + OAuth-style callback
+// [Engineer-Principal · Opus · run-orbital-github-integration]
+import IntegrationsGitHub from './pages/IntegrationsGitHub.js'
+import GitHubCallback from './pages/oauth/GitHubCallback.js'
 
 export default function App() {
   const [queryClient] = useState(() => new QueryClient({
@@ -67,46 +75,87 @@ export default function App() {
      <trpcHub.Provider client={trpcHubClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <Routes>
-            <Route path="/welcome" element={<Welcome />} />
-            <Route path="/admin/*" element={<Admin />} />
-            {/* Round 7-07 — Hub Admin (owner-only, hub mode) */}
-            {/* [Engineer-Sr · Sonnet · run-round7-07-hub-deploy-ops] */}
-            <Route path="/hub-admin/*" element={<HubAdmin />} />
-            <Route
-              path="/*"
-              element={
-                <SetupGate>
-                  <AppShell>
-                    <Routes>
-                      <Route path="/" element={<Dashboard />} />
-                      <Route path="/backlog" element={<Backlog />} />
-                      <Route path="/vision" element={<Vision />} />
-                      <Route path="/channels" element={<Channels />} />
-                      <Route path="/ceremonies" element={<Ceremonies />} />
-                      <Route path="/uat" element={<UAT />} />
-                      <Route path="/retro" element={<Retro />} />
-                      <Route path="/audit" element={<Audit />} />
-                      <Route path="/memory" element={<Memory />} />
-                      <Route path="/agents" element={<AgentInspector />} />
-                      {/* Round 6 #5 — Cost Governance */}
-                      {/* [Engineer-Sr · Sonnet · run-round6-05-cost-governance] */}
-                      <Route path="/cost" element={<Cost />} />
-                      {/* Orbital Review UI */}
-                      {/* [Engineer-Principal · Opus · run-orbital-review-ui] */}
-                      <Route path="/stories" element={<Stories />} />
-                      <Route path="/stories/:storyId" element={<StoryDetail />} />
-                      <Route path="/settings" element={<Settings />} />
-                    </Routes>
-                  </AppShell>
-                </SetupGate>
-              }
-            />
-          </Routes>
-          <CommandPalette />
-          <ToastProvider />
-          {/* Round 7-06 — pending mutations panel (shown when OfflineBanner button clicked) */}
-          <PendingMutationsPanel />
+          <AuthProvider>
+            <Routes>
+              {/* Public auth routes — must NOT be wrapped in RequireAuth. */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/verify" element={<Verify />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              {/* GitHub App OAuth callback — public so GitHub's redirect lands
+                  without an existing session interfering. The page itself
+                  calls recordInstallation which is tenant-scoped, so a
+                  Cognito session is still required for the mutation. */}
+              <Route path="/oauth/github/callback" element={<GitHubCallback />} />
+
+              {/* Everything below requires a Cognito session. */}
+              <Route
+                path="/welcome"
+                element={
+                  <RequireAuth>
+                    <Welcome />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/admin/*"
+                element={
+                  <RequireAuth>
+                    <Admin />
+                  </RequireAuth>
+                }
+              />
+              {/* Round 7-07 — Hub Admin (owner-only, hub mode) */}
+              {/* [Engineer-Sr · Sonnet · run-round7-07-hub-deploy-ops] */}
+              <Route
+                path="/hub-admin/*"
+                element={
+                  <RequireAuth>
+                    <HubAdmin />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/*"
+                element={
+                  <RequireAuth>
+                    <SetupGate>
+                      <AppShell>
+                        <Routes>
+                          <Route path="/" element={<Dashboard />} />
+                          <Route path="/backlog" element={<Backlog />} />
+                          <Route path="/vision" element={<Vision />} />
+                          <Route path="/channels" element={<Channels />} />
+                          <Route path="/ceremonies" element={<Ceremonies />} />
+                          <Route path="/uat" element={<UAT />} />
+                          <Route path="/retro" element={<Retro />} />
+                          <Route path="/audit" element={<Audit />} />
+                          <Route path="/memory" element={<Memory />} />
+                          <Route path="/agents" element={<AgentInspector />} />
+                          {/* Round 6 #5 — Cost Governance */}
+                          {/* [Engineer-Sr · Sonnet · run-round6-05-cost-governance] */}
+                          <Route path="/cost" element={<Cost />} />
+                          <Route path="/settings/*" element={<Settings />} />
+                          {/* Legacy direct route preserved so old links don't 404; the
+                              new Settings sub-routing already exposes this surface
+                              under /settings/integrations/github. */}
+                          <Route
+                            path="/integrations/github/legacy"
+                            element={<IntegrationsGitHub />}
+                          />
+                        </Routes>
+                      </AppShell>
+                    </SetupGate>
+                  </RequireAuth>
+                }
+              />
+            </Routes>
+            <CommandPalette />
+            <ToastProvider />
+            {/* Round 7-06 — pending mutations panel (shown when OfflineBanner button clicked) */}
+            <PendingMutationsPanel />
+          </AuthProvider>
         </BrowserRouter>
       </QueryClientProvider>
      </trpcHub.Provider>

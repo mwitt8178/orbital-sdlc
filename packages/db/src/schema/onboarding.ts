@@ -26,7 +26,7 @@ export const onboardingSessions = pgTable(
       .default('00000000-0000-0000-0000-000000000000'),
     installId: uuid('install_id').notNull(),
     /** Which flow the user picked on the welcome screen. */
-    flow: text('flow', { enum: ['new_project', 'existing_repo', 'join_hub', 'sample_data'] }).notNull(),
+    flow: text('flow', { enum: ['new_project', 'existing_repo', 'join_hub'] }).notNull(),
     /** Step ID currently active. Owned by the flow's reducer. */
     currentStep: text('current_step').notNull(),
     status: text('status', { enum: ['active', 'completed', 'abandoned'] })

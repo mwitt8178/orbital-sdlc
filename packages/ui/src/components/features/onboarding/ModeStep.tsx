@@ -22,13 +22,6 @@ interface ModeCard {
 
 const CARDS: ModeCard[] = [
   {
-    mode: 'demo',
-    emoji: '\u{1F3AC}',
-    title: 'Demo mode',
-    description:
-      'Watch a pre-recorded sprint replay end-to-end. No tokens, no agents. Best for evaluation.',
-  },
-  {
     mode: 'live',
     emoji: '\u{1F680}',
     title: 'Live mode',
@@ -53,7 +46,7 @@ export function ModeStep({ selected, onSelect }: Props) {
         You can change this later from Settings.
       </p>
 
-      <div role="radiogroup" aria-label="Mode" className="grid gap-3 md:grid-cols-3">
+      <div role="radiogroup" aria-label="Mode" className="grid gap-3 md:grid-cols-2">
         {CARDS.map((card) => {
           const isSelected = selected === card.mode
           return (

@@ -1,5 +1,6 @@
 import * as cdk from 'aws-cdk-lib'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
+import * as iam from 'aws-cdk-lib/aws-iam'
 import { Construct } from 'constructs'
 import { CognitoConstruct } from './constructs/cognito'
 import { DnsConstruct } from './constructs/dns'
@@ -53,6 +54,13 @@ export interface EnvConfig {
    * Omitting this field is treated as true (backwards compatible).
    */
   readonly useCustomDomain?: boolean
+  /**
+   * Optional shared Anthropic API key secret ARN. When set, the api-lambda
+   * gets `secretsmanager:GetSecretValue` on this ARN and ANTHROPIC_API_KEY_SECRET_ARN
+   * is exposed as an env var so init.ts can hydrate process.env.ANTHROPIC_API_KEY.
+   * [Engineer-Principal · Opus · run-vision-llm-decompose]
+   */
+  readonly anthropicApiKeySecretArn?: string
 }
 
 export interface OrbitalHubStackProps extends cdk.StackProps {
@@ -192,6 +200,55 @@ export class OrbitalHubStack extends cdk.Stack {
     this.perTenantKms.grantOnboardingPermissions(this.apiLambda.role)
     this.perTenantKms.grantTenantDeletion(this.apiLambda.role)
 
+    // Vision LLM-decompose: grant the api-lambda read access to the shared
+    // Anthropic API key secret and expose its ARN as an env var so init.ts
+    // can populate process.env.ANTHROPIC_API_KEY on cold start.
+    // This secret is cross-environment shared (prometheus/mwitt/global),
+    // managed outside this stack — we only grant read.
+    // [Engineer-Principal · Opus · run-vision-llm-decompose]
+    const anthropicSecretArn = props.envConfig.anthropicApiKeySecretArn
+    if (anthropicSecretArn) {
+      this.apiLambda.role.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['secretsmanager:GetSecretValue'],
+          resources: [anthropicSecretArn],
+        }),
+      )
+      this.apiLambda.fn.addEnvironment('ANTHROPIC_API_KEY_SECRET_ARN', anthropicSecretArn)
+    }
+
+    // GitHub App integration — gated by ORBITAL_GITHUB_APP_ENABLED env flag
+    // at synth time. The placeholder ARNs are well-formed so IAM policies
+    // synth cleanly; deploy-time access is only attempted when the orchestrator
+    // actually calls Secrets Manager (which the gating env var prevents until
+    // the App is registered).
+    // [Engineer-Principal · Opus · run-orbital-github-integration]
+    if (process.env['ORBITAL_GITHUB_APP_ENABLED'] === '1') {
+      const ghWebhookArn =
+        process.env['ORBITAL_GITHUB_APP_WEBHOOK_SECRET_ARN'] ??
+        `arn:aws:secretsmanager:${props.envConfig.region}:${cdk.Stack.of(this).account}:secret:orbital-${props.envName}/github-app-webhook-secret-*`
+      const ghPrivateKeyArn =
+        process.env['ORBITAL_GITHUB_APP_PRIVATE_KEY_SECRET_ARN'] ??
+        `arn:aws:secretsmanager:${props.envConfig.region}:${cdk.Stack.of(this).account}:secret:orbital-${props.envName}/github-app-private-key-*`
+
+      this.apiLambda.role.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['secretsmanager:GetSecretValue'],
+          resources: [ghWebhookArn, ghPrivateKeyArn],
+        }),
+      )
+      this.apiLambda.fn.addEnvironment('ORBITAL_GITHUB_APP_ENABLED', '1')
+      this.apiLambda.fn.addEnvironment('ORBITAL_GITHUB_APP_WEBHOOK_SECRET_ARN', ghWebhookArn)
+      this.apiLambda.fn.addEnvironment(
+        'ORBITAL_GITHUB_APP_PRIVATE_KEY_SECRET_ARN',
+        ghPrivateKeyArn,
+      )
+      const ghAppId = process.env['ORBITAL_GITHUB_APP_ID']
+      if (ghAppId) this.apiLambda.fn.addEnvironment('ORBITAL_GITHUB_APP_ID', ghAppId)
+    }
+
     // ------------------------------------------------------------------
     // 4.6 Events — SNS + SQS + EventBridge + consumer/scheduled Lambdas
     // Built before daemon so the SNS topic exists when DaemonFargateConstruct
@@ -263,6 +320,10 @@ export class OrbitalHubStack extends cdk.Stack {
       wafWebAclName: `orbital-${props.envName}-acl`,
       wsFanoutDlqName: `orbital-${props.envName}-ws-fanout-dlq`,
     })
+
+    // Wire cold-path observability (metric filters + IAM alarm + dashboard)
+    // after ObservabilityConstruct so we can reuse the existing alarm topic.
+    this.apiLambda.addColdPathObservability(this.observability.alarmTopic)
 
     // ------------------------------------------------------------------
     // 4.7 Web — WAF + stack-level CloudFront/S3 outputs

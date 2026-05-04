@@ -1,17 +1,47 @@
 @import 'tailwindcss';
 
 /* ============================================================
-   Orbital design tokens — extracted from the HTML mock
+   Orbital design tokens — onboarding rework
+   [Engineer-Principal · Opus · run-orbital-onboarding-rework]
+   ============================================================
+   Type scale: display → body → micro
+   Spacing scale: integer multiples of 4px, plus semantic shells
+   Shadow scale: 4 steps from hairline to elevated
+   Motion: durations + easing tokens (consumed by framer-motion via JS)
    ============================================================ */
 @theme {
-  /* Typography */
+  /* ---------- Typography ---------- */
   --font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    sans-serif;
+  --font-display:
     'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     sans-serif;
   --font-mono:
     'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  /* Brand — indigo→violet gradient (from mock logo + active states) */
+  /* Type scale — display sizes are tighter, body sizes are loose */
+  --text-display-xl: 2.75rem; /* 44px */
+  --text-display-xl--line-height: 1.05;
+  --text-display-xl--letter-spacing: -0.025em;
+  --text-display-xl--font-weight: 700;
+
+  --text-display-lg: 2rem; /* 32px */
+  --text-display-lg--line-height: 1.15;
+  --text-display-lg--letter-spacing: -0.02em;
+  --text-display-lg--font-weight: 700;
+
+  --text-display-md: 1.5rem; /* 24px */
+  --text-display-md--line-height: 1.25;
+  --text-display-md--letter-spacing: -0.015em;
+  --text-display-md--font-weight: 600;
+
+  --text-eyebrow: 0.75rem; /* 12px */
+  --text-eyebrow--line-height: 1;
+  --text-eyebrow--letter-spacing: 0.06em;
+  --text-eyebrow--font-weight: 600;
+
+  /* ---------- Brand — indigo→violet ---------- */
   --color-brand-50: oklch(96.7% 0.014 286);
   --color-brand-100: oklch(93.5% 0.034 287);
   --color-brand-200: oklch(87% 0.065 290);
@@ -23,23 +53,51 @@
   --color-brand-800: oklch(38% 0.18 290);
   --color-brand-900: oklch(30% 0.13 290);
 
+  /* Accent — used sparingly for highlight gradients on hero copy */
+  --color-accent-400: oklch(72% 0.18 200);
+  --color-accent-500: oklch(64% 0.2 200);
+
+  /* Surface — deliberate steps from page bg to elevated card */
+  --color-surface-base: oklch(98.5% 0.005 250);
+  --color-surface-raised: oklch(100% 0 0);
+  --color-surface-sunken: oklch(96% 0.008 250);
+  --color-surface-inverse: oklch(20% 0.02 270);
+
   /* Sprint progress / agent state mapping (locked from mock) */
-  --color-state-done: oklch(70% 0.17 152); /* emerald-500 */
-  --color-state-review: oklch(60% 0.21 295); /* violet-500 */
-  --color-state-blocked: oklch(80% 0.16 80); /* amber-400 */
-  --color-state-pending: oklch(85% 0.01 250); /* slate-300 */
-  --color-state-working: oklch(58% 0.18 252); /* blue-500 */
+  --color-state-done: oklch(70% 0.17 152);
+  --color-state-review: oklch(60% 0.21 295);
+  --color-state-blocked: oklch(80% 0.16 80);
+  --color-state-pending: oklch(85% 0.01 250);
+  --color-state-working: oklch(58% 0.18 252);
 
-  /* Layout sizing */
-  --spacing-sidebar: 14rem; /* w-56 */
-  --spacing-topbar: 3.5rem; /* matches mock header height */
+  /* ---------- Spacing rhythm ---------- */
+  --spacing-sidebar: 14rem;
+  --spacing-topbar: 3.5rem;
+  --spacing-onboarding-content: 36rem; /* max readable width inside wizard */
+  --spacing-shell-pad-mobile: 1rem;
+  --spacing-shell-pad-desktop: 2.5rem;
+  --spacing-step-gap: 1.5rem;
 
-  /* Radii */
-  --radius-card: 0.5rem;
+  /* ---------- Radii ---------- */
+  --radius-card: 0.75rem;
+  --radius-card-lg: 1rem;
+  --radius-input: 0.5rem;
   --radius-pill: 9999px;
 
-  /* Shadow tokens */
-  --shadow-card: 0 1px 2px 0 oklch(0% 0 0 / 0.05);
+  /* ---------- Shadow scale ---------- */
+  --shadow-hairline: 0 0 0 1px oklch(0% 0 0 / 0.04);
+  --shadow-card: 0 1px 2px 0 oklch(0% 0 0 / 0.06), 0 1px 3px -1px oklch(0% 0 0 / 0.04);
+  --shadow-raised:
+    0 4px 6px -2px oklch(0% 0 0 / 0.05), 0 10px 15px -3px oklch(0% 0 0 / 0.07);
+  --shadow-elevated:
+    0 10px 15px -3px oklch(0% 0 0 / 0.08), 0 20px 25px -5px oklch(0% 0 0 / 0.1);
+  --shadow-glow-brand:
+    0 0 0 1px oklch(58% 0.21 290 / 0.2), 0 8px 24px -8px oklch(58% 0.21 290 / 0.45);
+
+  /* ---------- Motion tokens (consumed via JS const) ---------- */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 360ms;
 }
 
 /* ============================================================
@@ -49,10 +107,28 @@ html,
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: var(--color-surface-base);
+  color: oklch(20% 0.02 270);
+}
+
+/* Reduced-motion respect — framer-motion already honors this, but kill the
+   keyframe animations too. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ============================================================
-   Mock animations
+   Animations
    ============================================================ */
 @keyframes pulse-dot {
   0%,
@@ -77,6 +153,15 @@ body {
   }
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: 200px 0;
+  }
+}
+
 @utility animate-pulse-dot {
   animation: pulse-dot 1.4s ease-in-out infinite;
 }
@@ -85,8 +170,19 @@ body {
   animation: stream-in 0.35s ease-out;
 }
 
+@utility animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    oklch(96% 0.008 250) 0%,
+    oklch(99% 0.005 250) 50%,
+    oklch(96% 0.008 250) 100%
+  );
+  background-size: 400px 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
 /* ============================================================
-   Thin scrollbar (matches mock)
+   Thin scrollbar
    ============================================================ */
 @utility scrollbar-thin {
   &::-webkit-scrollbar {
@@ -109,3 +205,25 @@ body {
    Custom variants
    ============================================================ */
 @variant hocus (&:hover, &:focus-visible);
+
+/* ============================================================
+   Onboarding-specific utilities
+   ============================================================ */
+@utility hero-grid {
+  background-image:
+    radial-gradient(at 20% 0%, oklch(58% 0.21 290 / 0.08) 0px, transparent 50%),
+    radial-gradient(at 80% 100%, oklch(64% 0.2 200 / 0.07) 0px, transparent 50%);
+}
+
+@utility brand-gradient-text {
+  background: linear-gradient(
+    120deg,
+    oklch(46% 0.215 290) 0%,
+    oklch(58% 0.21 290) 50%,
+    oklch(64% 0.2 200) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}

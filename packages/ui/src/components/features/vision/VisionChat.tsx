@@ -10,9 +10,8 @@
  *     message is removed and an error shown.
  *   - PMThinkingIndicator: shown after the user sends a message, hidden when
  *     a PM message arrives via WS or next refetch.
- *   - Demo-mode notice: when onboarding status shows no Anthropic token or
- *     mode='demo', a small banner informs the user that PM responses are
- *     stubbed.
+ *   - Stubbed-PM notice: when onboarding status shows no Anthropic token, a
+ *     small banner informs the user that PM responses are stubbed.
  */
 
 import { useState, useRef } from 'react'
@@ -44,8 +43,7 @@ export function VisionChat() {
     staleTime: 60_000,
   })
 
-  const isDemoMode =
-    onboardingStatus.data?.mode === 'demo' || !onboardingStatus.data?.hasAnthropicToken
+  const isStubMode = !onboardingStatus.data?.hasAnthropicToken
 
   // Poll listMessages every 3 seconds while a session is active. This ensures
   // PM stub replies appear even if the WS subscription misses the event (e.g.
@@ -198,10 +196,10 @@ export function VisionChat() {
       className="flex flex-col rounded-lg border border-slate-200 bg-white"
       style={{ height: 'calc(100vh - 200px)' }}
     >
-      {/* Demo-mode notice */}
-      {sessionId && isDemoMode && (
+      {/* Stubbed-PM notice */}
+      {sessionId && isStubMode && (
         <div className="border-b border-amber-100 bg-amber-50 px-4 py-2 text-xs text-amber-700">
-          Demo mode — PM responses are stubbed. Connect an Anthropic key in{' '}
+          PM responses are stubbed. Connect an Anthropic key in{' '}
           <a href="/welcome" className="underline hover:text-amber-900">
             /welcome
           </a>{' '}
@@ -300,7 +298,7 @@ export function VisionChat() {
                 </div>
               </li>
             ))}
-            {awaitingPMReply && <PMThinkingIndicator showModeHint={isDemoMode} />}
+            {awaitingPMReply && <PMThinkingIndicator showModeHint={isStubMode} />}
           </ol>
         )}
       </div>
