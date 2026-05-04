@@ -19,9 +19,9 @@ const LAMBDA_FUNCTION_NAME = process.env['ORBITAL_TEST_LAMBDA_FUNCTION_NAME'] ||
 const ECS_CLUSTER = process.env['ORBITAL_TEST_ECS_CLUSTER'] || 'orbital-mwitt-daemon'
 const ECS_SERVICE = process.env['ORBITAL_TEST_ECS_SERVICE'] || 'orbital-mwitt-daemon'
 
-const skipIfNoAWS = SKIP_AWS ? describe.skip : describe
+const describeBlock = SKIP_AWS ? describe.skip : describe
 
-skipIfNoAWS('Phase 1-4 infrastructure performance gates', () => {
+describeBlock('Phase 1-4 infrastructure performance gates', () => {
   let lambdaClient: LambdaClient
   let ecsClient: ECS
 
@@ -39,12 +39,16 @@ skipIfNoAWS('Phase 1-4 infrastructure performance gates', () => {
     expect(configs.length).toBeGreaterThan(0)
 
     const latest = configs[configs.length - 1]
-    expect(latest.ProvisionedConcurrentExecutions).toBe(2)
+    if (!latest) {
+      throw new Error('No provisioned concurrency config found')
+    }
+
+    expect(latest.RequestedProvisionedConcurrentExecutions).toBe(2)
     expect(latest.AvailableProvisionedConcurrentExecutions).toBe(2)
     expect(latest.Status).toBe('READY')
 
     console.log(
-      `Provisioned Concurrency: allocated=${latest.ProvisionedConcurrentExecutions}, available=${latest.AvailableProvisionedConcurrentExecutions}, status=${latest.Status}`,
+      `Provisioned Concurrency: allocated=${latest.RequestedProvisionedConcurrentExecutions}, available=${latest.AvailableProvisionedConcurrentExecutions}, status=${latest.Status}`,
     )
   })
 
@@ -60,6 +64,10 @@ skipIfNoAWS('Phase 1-4 infrastructure performance gates', () => {
     expect(services.length).toBe(1)
 
     const service = services[0]
+    if (!service) {
+      throw new Error('No service found')
+    }
+
     expect(service.desiredCount).toBe(1)
     expect(service.runningCount).toBe(1)
 

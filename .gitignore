@@ -13,3 +13,5 @@ coverage/
 .orbital-test-keychain.json
 .venv-cfn-lint/
 .claude/worktrees/
+packages/ui/playwright-report/
+packages/ui/test-results/

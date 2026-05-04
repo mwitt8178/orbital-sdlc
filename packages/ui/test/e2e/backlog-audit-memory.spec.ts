@@ -115,14 +115,24 @@ test.describe('API smoke — backlog / audit / memory router init', () => {
     ).toContain(status)
   })
 
-  test('memory.list → 200 or 401 (NOT 500)', async ({ request }) => {
+  test('memory.list → 200, 400, or 401 (NOT 500)', async ({ request }) => {
+    // memory.list requires a projectId in its input schema; calling without one
+    // returns 400 BAD_REQUEST (tRPC input validation) — that is healthy. 400
+    // means the procedure was reached and its schema ran; no Lambda crash.
     const r = await request.get(trpcGet('memory.list', {}))
     const status = r.status()
 
     expect(
-      [200, 401],
-      `memory.list returned ${status} — expected 200 or 401, not a 5xx`,
+      [200, 400, 401],
+      `memory.list returned ${status} — expected 200/400/401 (not a 5xx crash)`,
     ).toContain(status)
+
+    // If 400, confirm it is a schema validation error, not a server crash.
+    if (status === 400) {
+      const body = await r.text()
+      expect(body).toContain('BAD_REQUEST')
+      expect(body).not.toContain('INTERNAL_SERVER_ERROR')
+    }
   })
 
   test('API smoke responses carry no tRPC INTERNAL_SERVER_ERROR body', async ({ request }) => {
@@ -138,14 +148,19 @@ test.describe('API smoke — backlog / audit / memory router init', () => {
       const r = await request.get(trpcGet(proc, input))
       const body = await r.text()
 
-      // If the response is 401 the body is the tRPC error JSON — that's fine.
-      // If it is 200, the body must not contain INTERNAL_SERVER_ERROR.
+      // 401 and 400 (input-validation) are fine — the router reached the
+      // procedure. Only 200 responses need the body checked for silent crashes.
       if (r.status() === 200) {
         expect(
           body,
           `${proc} returned 200 but body contains INTERNAL_SERVER_ERROR`,
         ).not.toContain('INTERNAL_SERVER_ERROR')
       }
+      // Any 5xx is a hard failure regardless of body.
+      expect(
+        r.status(),
+        `${proc} returned a 5xx — Lambda likely crashed on init`,
+      ).toBeLessThan(500)
     }
   })
 })
