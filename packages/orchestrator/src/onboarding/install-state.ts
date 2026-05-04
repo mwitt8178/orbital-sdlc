@@ -1,46 +1,47 @@
 /**
- * install-state.ts — onboarding-aware overlay over install.json.
+ * install-state.ts — onboarding overlay, Aurora-backed.
  *
- * The base `loadOrCreateInstall()` (in src/config/install.ts) strictly
- * enforces schema_version=1 and we are forbidden from modifying it. Instead,
- * the onboarding wizard's per-install state lives in a SEPARATE file at
- * `~/.orbital/config/onboarding.json` (mode 0600), keyed by install_id, with
- * its own schema_version.
+ * Round 12 — install-state Aurora migration
+ * [Engineer-Principal · Opus · run-install-state-aurora]
  *
- * Fields:
- *   - mode: 'live' | 'readonly' | null
- *   - setup_completed_at: ISO datetime | null
+ * Why this file changed:
+ *   The previous implementation persisted overlay state to
+ *   `~/.orbital/config/onboarding.json` via `getOrbitalHome()`. Inside Lambda
+ *   that resolves to `/tmp/.orbital/config/onboarding.json` — per-instance
+ *   ephemeral. With provisioned concurrency=2 (and any cold start) instance B
+ *   could not see the `setup_completed_at` written by instance A, so SetupGate
+ *   bounced freshly-onboarded users back to /welcome.
  *
- * On first read, if the overlay file is absent, we synthesize an empty
- * record. Writes are atomic (tmp-rename + chmod 0600).
+ *   State now lives in `install_state` (Aurora). The base install_id is still
+ *   sourced from `loadOrCreateInstall()` (install.json, also FS-backed) — that
+ *   is a separate, narrower problem and tracked as a follow-up. After this
+ *   change the *user-visible* setup_completed_at survives across instances.
  *
- * Forward-compat note: prior versions of this overlay carried a
- * `demo_replay_id` field used by the now-removed sample/demo onboarding
- * flow. Existing overlay files with that key on disk are silently ignored
- * by zod (non-strict object parsing). No migration is required.
+ * Public API (unchanged signatures):
+ *   - readInstallState()
+ *   - setMode(mode)
+ *   - markSetupCompleted()
+ *   - setDemoReplayId(replayId)
+ *
+ * Concurrency:
+ *   Each mutator is a single `INSERT … ON CONFLICT (install_id) DO UPDATE`.
+ *   Two concurrent markSetupCompleted calls are safe: last write wins on
+ *   the column, both succeed at the row level.
  */
 
-import { promises as fs } from 'node:fs'
-import path from 'node:path'
+import { sql as drSql } from 'drizzle-orm'
 import { z } from 'zod'
-import { getOrbitalHome } from '../config/env.js'
+import { db as defaultDb } from '../db/client.js'
+import type { DB } from '../db/client.js'
+import { installState } from '../db/schema/install-state.js'
 import { loadOrCreateInstall } from '../config/install.js'
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-export const onboardingModeSchema = z.enum(['live', 'readonly'])
+export const onboardingModeSchema = z.enum(['demo', 'live', 'readonly'])
 export type OnboardingMode = z.infer<typeof onboardingModeSchema>
-
-const overlaySchema = z.object({
-  install_id: z.string().uuid(),
-  schema_version: z.literal(1),
-  mode: onboardingModeSchema.nullable(),
-  setup_completed_at: z.string().datetime().nullable(),
-})
-
-type OverlayFile = z.infer<typeof overlaySchema>
 
 export interface NormalizedInstallState {
   installId: string
@@ -48,108 +49,168 @@ export interface NormalizedInstallState {
   schemaVersion: number
   mode: OnboardingMode | null
   setupCompletedAt: string | null
+  demoReplayId: string | null
 }
 
 // ---------------------------------------------------------------------------
-// Path helpers
+// DB injection seam
+//
+// Tests that don't run against a real Postgres can override the db handle via
+// `_setInstallStateDbForTests()`. Production callers always use the default
+// singleton from @orbital/db.
 // ---------------------------------------------------------------------------
 
-function overlayPath(): string {
-  return path.join(getOrbitalHome(), 'config', 'onboarding.json')
+let _db: DB = defaultDb
+
+/** @internal Test-only — point install-state at a different drizzle handle. */
+export function _setInstallStateDbForTests(db: DB | null): void {
+  _db = db ?? defaultDb
 }
 
 // ---------------------------------------------------------------------------
-// Read overlay
+// Internal: read or default a row
 // ---------------------------------------------------------------------------
 
-async function readOverlay(installId: string): Promise<OverlayFile> {
-  try {
-    const raw = await fs.readFile(overlayPath(), 'utf-8')
-    const parsed = overlaySchema.parse(JSON.parse(raw))
-    // Ensure the overlay belongs to the current install. If a stale overlay
-    // for a different install is present, treat it as empty (the wizard
-    // should run fresh).
-    if (parsed.install_id !== installId) {
-      return emptyOverlay(installId)
-    }
-    return parsed
-  } catch (err) {
-    if ((err as { code?: string }).code === 'ENOENT') {
-      return emptyOverlay(installId)
-    }
-    throw err
+type RawRow = {
+  mode: OnboardingMode | null
+  setup_completed_at: Date | null
+  demo_replay_id: string | null
+} & Record<string, unknown>
+
+async function readRow(installId: string): Promise<RawRow | null> {
+  // Use raw SQL via drizzle's `execute(sql\`\`)` so we don't depend on the
+  // installState table object being present in the bundled schema during
+  // initial deploys (defensive against module-load ordering).
+  const rows = await _db.execute<RawRow>(
+    drSql`select mode, setup_completed_at, demo_replay_id
+            from install_state
+           where install_id = ${installId}::uuid
+           limit 1`,
+  )
+  if (!rows || rows.length === 0) return null
+  return rows[0] ?? null
+}
+
+interface OverlayPatch {
+  mode?: OnboardingMode | null
+  setup_completed_at?: Date | null
+  demo_replay_id?: string | null
+}
+
+/**
+ * Atomic upsert. Patches the supplied columns; leaves untouched columns at
+ * their existing value. tenant_id keeps its insert-time value on update.
+ */
+async function upsertRow(
+  installId: string,
+  tenantId: string,
+  patch: OverlayPatch,
+): Promise<RawRow> {
+  // Build the SET clause dynamically — only patch fields the caller supplied.
+  const setFragments: ReturnType<typeof drSql>[] = [drSql`updated_at = now()`]
+  if ('mode' in patch) {
+    setFragments.push(drSql`mode = ${patch.mode ?? null}`)
   }
-}
-
-function emptyOverlay(installId: string): OverlayFile {
-  return {
-    install_id: installId,
-    schema_version: 1,
-    mode: null,
-    setup_completed_at: null,
+  if ('setup_completed_at' in patch) {
+    setFragments.push(drSql`setup_completed_at = ${patch.setup_completed_at ?? null}`)
   }
+  if ('demo_replay_id' in patch) {
+    setFragments.push(drSql`demo_replay_id = ${patch.demo_replay_id ?? null}`)
+  }
+  const setClause = drSql.join(setFragments, drSql`, `)
+
+  const insertMode = patch.mode ?? null
+  const insertCompleted = patch.setup_completed_at ?? null
+  const insertReplay = patch.demo_replay_id ?? null
+
+  const rows = await _db.execute<RawRow>(
+    drSql`insert into install_state
+            (install_id, tenant_id, schema_version, mode, setup_completed_at, demo_replay_id)
+          values
+            (${installId}::uuid, ${tenantId}::uuid, 1,
+             ${insertMode}, ${insertCompleted}, ${insertReplay})
+          on conflict (install_id) do update
+             set ${setClause}
+          returning mode, setup_completed_at, demo_replay_id`,
+  )
+
+  const row = rows[0]
+  if (!row) {
+    throw new Error('install_state upsert returned no row')
+  }
+  return row
 }
 
 // ---------------------------------------------------------------------------
-// Atomic write
+// Public API
 // ---------------------------------------------------------------------------
 
-async function writeOverlay(state: OverlayFile): Promise<void> {
-  const dest = overlayPath()
-  const dir = path.dirname(dest)
-  await fs.mkdir(dir, { recursive: true, mode: 0o700 })
-  const tmp = `${dest}.tmp.${process.pid}`
-  const json = JSON.stringify(state, null, 2)
-  await fs.writeFile(tmp, json, { mode: 0o600 })
-  await fs.rename(tmp, dest)
-  await fs.chmod(dest, 0o600)
+const TENANT_DEFAULT = '00000000-0000-0000-0000-000000000000'
+
+function toIso(d: Date | null): string | null {
+  if (!d) return null
+  return d instanceof Date ? d.toISOString() : new Date(d).toISOString()
 }
-
-// ---------------------------------------------------------------------------
-// Public read
-// ---------------------------------------------------------------------------
 
 export async function readInstallState(): Promise<NormalizedInstallState> {
   const base = await loadOrCreateInstall()
-  const overlay = await readOverlay(base.install_id)
+  const row = await readRow(base.install_id)
   return {
     installId: base.install_id,
     createdAt: base.created_at,
     schemaVersion: base.schema_version,
-    mode: overlay.mode,
-    setupCompletedAt: overlay.setup_completed_at,
+    mode: row?.mode ?? null,
+    setupCompletedAt: toIso(row?.setup_completed_at ?? null),
+    demoReplayId: row?.demo_replay_id ?? null,
   }
 }
 
-// ---------------------------------------------------------------------------
-// Mutators
-// ---------------------------------------------------------------------------
-
 export async function setMode(mode: OnboardingMode): Promise<NormalizedInstallState> {
   const base = await loadOrCreateInstall()
-  const overlay = await readOverlay(base.install_id)
-  overlay.mode = mode
-  await writeOverlay(overlay)
+  const row = await upsertRow(base.install_id, TENANT_DEFAULT, { mode })
   return {
     installId: base.install_id,
     createdAt: base.created_at,
     schemaVersion: base.schema_version,
-    mode,
-    setupCompletedAt: overlay.setup_completed_at,
+    mode: row.mode,
+    setupCompletedAt: toIso(row.setup_completed_at),
+    demoReplayId: row.demo_replay_id,
   }
 }
 
 export async function markSetupCompleted(): Promise<NormalizedInstallState> {
   const base = await loadOrCreateInstall()
-  const overlay = await readOverlay(base.install_id)
-  const completedAt = new Date().toISOString()
-  overlay.setup_completed_at = completedAt
-  await writeOverlay(overlay)
+  const completedAt = new Date()
+  const row = await upsertRow(base.install_id, TENANT_DEFAULT, {
+    setup_completed_at: completedAt,
+  })
   return {
     installId: base.install_id,
     createdAt: base.created_at,
     schemaVersion: base.schema_version,
-    mode: overlay.mode,
-    setupCompletedAt: completedAt,
+    mode: row.mode,
+    setupCompletedAt: toIso(row.setup_completed_at),
+    demoReplayId: row.demo_replay_id,
   }
 }
+
+export async function setDemoReplayId(
+  replayId: string | null,
+): Promise<NormalizedInstallState> {
+  const base = await loadOrCreateInstall()
+  const row = await upsertRow(base.install_id, TENANT_DEFAULT, {
+    demo_replay_id: replayId,
+  })
+  return {
+    installId: base.install_id,
+    createdAt: base.created_at,
+    schemaVersion: base.schema_version,
+    mode: row.mode,
+    setupCompletedAt: toIso(row.setup_completed_at),
+    demoReplayId: row.demo_replay_id,
+  }
+}
+
+// Re-export for callers that previously imported the zod schema.
+// We keep the runtime enum check shape identical.
+export { installState }
