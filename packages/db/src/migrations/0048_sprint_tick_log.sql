@@ -93,33 +93,19 @@ CREATE TABLE IF NOT EXISTS sprint_tick_leases (
 );
 
 -- ============================================================================
--- story_pr_runs
+-- story_pr_runs (sprint-loop additions)
 -- ============================================================================
 --
--- One row per daemon-spawned story execution attempt (different from
--- worker_runs which is owned by the story-executor JS package). The daemon
--- inserts a row here when it picks up a story and transitions it to in_progress;
--- it updates status when the run completes or fails. If the story-pr-pipeline
--- Lambda is wired, lambda_invocation_id tracks the async invocation.
+-- The story-pr-pipeline branch already created story_pr_runs with the canonical
+-- schema. Sprint-loop adds the columns + indexes it needs additively.
 
-CREATE TABLE IF NOT EXISTS story_pr_runs (
-  run_id                uuid        PRIMARY KEY,
-  tenant_id             uuid        NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
-  sprint_id             uuid        NOT NULL,
-  story_id              uuid        NOT NULL,
-  attempt               integer     NOT NULL DEFAULT 1,
-  status                text        NOT NULL DEFAULT 'pending'
-                        CHECK (status IN (
-                          'pending','spawning','in_progress','in_review',
-                          'done','failed','cancelled'
-                        )),
-  lambda_invocation_id  text,
-  worker_run_id         uuid,
-  error_message         text,
-  started_at            timestamptz NOT NULL DEFAULT clock_timestamp(),
-  ended_at              timestamptz,
-  schema_version        integer     NOT NULL DEFAULT 1
-);
+ALTER TABLE story_pr_runs ADD COLUMN IF NOT EXISTS sprint_id            uuid;
+ALTER TABLE story_pr_runs ADD COLUMN IF NOT EXISTS attempt              integer NOT NULL DEFAULT 1;
+ALTER TABLE story_pr_runs ADD COLUMN IF NOT EXISTS lambda_invocation_id text;
+ALTER TABLE story_pr_runs ADD COLUMN IF NOT EXISTS worker_run_id        uuid;
+ALTER TABLE story_pr_runs ADD COLUMN IF NOT EXISTS error_message        text;
+ALTER TABLE story_pr_runs ADD COLUMN IF NOT EXISTS ended_at             timestamptz;
+ALTER TABLE story_pr_runs ADD COLUMN IF NOT EXISTS schema_version       integer NOT NULL DEFAULT 1;
 
 CREATE INDEX IF NOT EXISTS story_pr_runs_sprint_idx
   ON story_pr_runs (tenant_id, sprint_id, started_at DESC);

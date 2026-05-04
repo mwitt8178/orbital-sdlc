@@ -8,7 +8,11 @@
 --
 -- Prerequisites: 0028_cost_budgets.sql (cost_budgets, cost_ledger)
 
-CREATE TYPE IF NOT EXISTS cost_enforcement_decision AS ENUM ('allow', 'block', 'throttle');
+DO $$ BEGIN
+  CREATE TYPE cost_enforcement_decision AS ENUM ('allow', 'block', 'throttle');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS cost_enforcement_log (
   id                          uuid          PRIMARY KEY,
