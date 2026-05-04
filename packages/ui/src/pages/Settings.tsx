@@ -34,6 +34,7 @@ import { BoardTab } from '../components/features/settings/BoardTab.js'
 import { ModelsTab } from '../components/features/settings/ModelsTab.js'
 import { GitHubTab } from '../components/features/settings/GitHubTab.js'
 import { BudgetTab } from '../components/features/settings/BudgetTab.js'
+import { SprintPolicyTab } from '../components/features/settings/SprintPolicyTab.js'
 import { HubTab } from '../components/features/settings/HubTab.js'
 import { IntegrationsDashboard } from '../components/features/settings/IntegrationsDashboard.js'
 // Per-project integration bindings (distinct from /admin/integrations install-wide tools).
@@ -317,15 +318,18 @@ function SprintsPage() {
     <>
       <PageHeader
         title="Sprints"
-        description="Ceremony cadence, board mapping, and per-sprint budget enforcement."
+        description="Cadence, capacity, budget caps, and ceremony rules — applied per project."
       />
-      <PageSection title="Ceremonies">
+      <PageSection title="Sprint policy">
+        <SprintPolicyTab />
+      </PageSection>
+      <PageSection title="Ceremonies (legacy schedule view)">
         <CeremoniesTab />
       </PageSection>
-      <PageSection title="Board">
+      <PageSection title="Board mapping">
         <BoardTab />
       </PageSection>
-      <PageSection title="Budget">
+      <PageSection title="Install-wide cost enforcement">
         <BudgetTab />
       </PageSection>
     </>

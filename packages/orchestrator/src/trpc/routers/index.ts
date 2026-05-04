@@ -77,6 +77,9 @@ import { webhooksRouter } from './webhooks.js'
 // Settings → Agents — per-project persona configuration
 // [Engineer-Principal · Opus · run-settings-agents]
 import { projectPersonasRouter } from './project-personas.js'
+// Settings → Sprints — per-project sprint policy (cadence, capacity, budget, ceremony rules)
+// [Engineer-Principal · Opus · run-settings-sprints]
+import { sprintPolicyRouter } from './sprint-policy.js'
 
 // ---------------------------------------------------------------------------
 // Lazy singletons / DI registry
@@ -384,6 +387,9 @@ export const appRouter = router({
   // Settings → Agents — per-project persona configuration
   // [Engineer-Principal · Opus · run-settings-agents]
   projectPersonas: projectPersonasRouter,
+  // Settings → Sprints — per-project sprint policy (cadence, capacity, budget, ceremony rules)
+  // [Engineer-Principal · Opus · run-settings-sprints]
+  sprintPolicy: sprintPolicyRouter,
 })
 
 export type AppRouter = typeof appRouter
