@@ -363,19 +363,56 @@
       "idx": 51,
       "version": "7",
       "when": 1747800005000,
+      "tag": "0051_memory_relevance",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1747800006000,
       "tag": "0052_cost_enforcement_log",
-      "idx": 46,
-      "version": "7",
-      "when": 1746503000000,
-      "tag": "0047_vision_decomposition_runs",
-      "idx": 49,
-      "version": "7",
-      "when": 1746403200000,
-      "tag": "0050_story_test_artifacts",
+      "breakpoints": true
+    },
+    {
       "idx": 53,
       "version": "7",
       "when": 1762214400000,
       "tag": "0053_obsidian_vault_links",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1762214401000,
+      "tag": "0054_tenant_id_vision_ceremonies",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1762214402000,
+      "tag": "0055_backfill_project_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1762214403000,
+      "tag": "0056_project_id_not_null",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1762214404000,
+      "tag": "0057_vision_decomposition_runs",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1762214405000,
+      "tag": "0058_story_test_artifacts",
       "breakpoints": true
     }
   ]
