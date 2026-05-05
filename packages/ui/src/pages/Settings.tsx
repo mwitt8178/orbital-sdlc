@@ -148,7 +148,7 @@ function SettingsShell() {
             {SECTIONS.map((section) => (
               <li key={section.id}>
                 <NavLink
-                  to={section.id}
+                  to={`/settings/${section.id}`}
                   className={({ isActive }) =>
                     `flex items-start gap-3 rounded-card border px-3 py-2.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
                       isActive
