@@ -46,3 +46,7 @@ export * from './schema/worker-tables.js'
 export * from './schema/github-app.js'
 export * from './schema/planning.js'
 export * from './schema/tenant-credentials.js'
+// Sprint tick infrastructure — sprint_tick_log, project_sprint_policy,
+// sprint_tick_leases, story_pr_runs.
+// [Engineer-Sr · Sonnet · run-sprint-loop]
+export * from './schema/sprint-tick.js'
