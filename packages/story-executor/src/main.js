@@ -32,6 +32,7 @@ import {
   closePool,
   writeAuditLine,
   ulidToUuid,
+  checkProjectBudget,
 } from './db.js'
 import { ulid } from 'ulid'
 import {
@@ -215,11 +216,61 @@ function getOrCreateBudget(storyId) {
 // ---------------------------------------------------------------------------
 
 export async function executeStory(story, opts = {}) {
-  const { mode = 'fake', fakeBehaviour = {}, wallClockMs, repoOwner, repoName, base = 'main' } = opts
+  const {
+    mode = 'fake',
+    fakeBehaviour = {},
+    wallClockMs,
+    repoOwner,
+    repoName,
+    base = 'main',
+    // Budget enforcement context — optional for backward-compat.
+    // [Engineer-Sr · Sonnet · run-cost-guardrails-2026-05-04]
+    tenantId = '00000000-0000-0000-0000-000000000000',
+    projectId,
+  } = opts
 
   if (story.status !== 'ready') {
     throw new Error(`story ${story.storyId} must be 'ready' to execute, got ${story.status}`)
   }
+
+  // Pre-flight budget check — block if monthly hard cap would be exceeded.
+  // Conservative estimate: claude-sonnet-4-6 at 100k input + 20k output.
+  // 100000/1M * $3.00 + 20000/1M * $15.00 = $0.30 + $0.30 = $0.60 per attempt.
+  // [Engineer-Sr · Sonnet · run-cost-guardrails-2026-05-04]
+  if (projectId) {
+    const budgetCheck = await checkProjectBudget({
+      tenantId,
+      projectId,
+      persona: 'story-executor',
+      estimatedCostUsd: 0.60,
+    })
+    if (!budgetCheck.allow) {
+      void writeAuditLine('budget.blocked', {
+        storyId: story.storyId,
+        projectId,
+        reason: budgetCheck.reason,
+        budgetCapUsd: budgetCheck.budgetCapUsd,
+        mtdSpendUsd: budgetCheck.mtdSpendUsd,
+      })
+      return {
+        storyStatus: 'cancelled',
+        reason: 'budget_exceeded',
+        lastRunId: null,
+        budgetBlocked: true,
+        budgetReason: budgetCheck.reason,
+      }
+    }
+    if (budgetCheck.reason) {
+      // Soft threshold warning — log but continue.
+      void writeAuditLine('budget.warning', {
+        storyId: story.storyId,
+        projectId,
+        reason: budgetCheck.reason,
+        mtdSpendUsd: budgetCheck.mtdSpendUsd,
+      })
+    }
+  }
+
   transitionStory(story.storyId, 'ready', 'in_progress', 'story-executor pickup')
   postChannelEvent('orb-engineering', 'system_event', {
     kind: 'worker.spawned',

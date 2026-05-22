@@ -31,6 +31,7 @@
     "@aws-sdk/client-kms": "^3.750.0",
     "@aws-sdk/client-s3": "^3.750.0",
     "@aws-sdk/client-secrets-manager": "^3.750.0",
+    "@aws-sdk/client-ses": "^3.750.0",
     "@aws-sdk/client-sns": "^3.1041.0",
     "@aws-sdk/rds-signer": "^3.750.0",
     "@fastify/cors": "^10.0.0",

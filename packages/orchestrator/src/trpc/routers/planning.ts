@@ -32,6 +32,12 @@ import {
   type ProposedDecomposition,
 } from '../../vision/llm-decomposer.js'
 import { logger } from '../../config/logger.js'
+// Round cost-guardrails — pre-flight budget check before each Claude call.
+// [Engineer-Sr · Sonnet · run-cost-guardrails-2026-05-04]
+import { assertBudget, BudgetExceededError } from '@orbital/domain/cost/assert-budget.js'
+// Estimated cost: claude-sonnet-4-6 at 10k input + 4k output (conservative for planning call).
+// 10000/1M * $3.00 + 4000/1M * $15.00 = $0.030 + $0.060 = $0.090
+const PLANNING_ESTIMATED_COST_USD = 0.090
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -97,8 +103,10 @@ async function withOccRetry<T>(fn: () => Promise<T>, max = 3): Promise<T> {
 const HistoryInput = z.object({ visionId: z.string().uuid() })
 
 const RegenerateInput = z.object({
-  visionId: z.string().uuid(),
-  feedback: z.string().max(2000).optional(),
+  visionId:  z.string().uuid(),
+  feedback:  z.string().max(2000).optional(),
+  /** Active project ID — used for pre-flight budget enforcement. Optional for back-compat. */
+  projectId: z.string().uuid().optional(),
 })
 
 const CommitInput = z.object({
@@ -150,6 +158,28 @@ export const planningRouter = router({
     const vision = await loadVisionContent(input.visionId)
     if (!vision) {
       throw new TRPCError({ code: 'NOT_FOUND', message: 'vision document or version not found' })
+    }
+
+    // Pre-flight budget check — block if monthly hard cap would be exceeded.
+    // [Engineer-Sr · Sonnet · run-cost-guardrails-2026-05-04]
+    if (input.projectId) {
+      try {
+        await assertBudget({
+          tenantId:          tid,
+          projectId:         input.projectId,
+          persona:           'planner',
+          estimatedCostUsd:  PLANNING_ESTIMATED_COST_USD,
+          db,
+        })
+      } catch (budgetErr) {
+        if (budgetErr instanceof BudgetExceededError) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: `Monthly budget exceeded: ${budgetErr.message}`,
+          })
+        }
+        throw budgetErr
+      }
     }
 
     // Pre-insert audit row so we capture aborted runs too.
@@ -214,6 +244,7 @@ export const planningRouter = router({
           message: err.message,
         })
       }
+      if (err instanceof TRPCError) throw err
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: err instanceof Error ? err.message : 'llm_decompose_failed',

@@ -35,6 +35,7 @@ import { BudgetTab } from '../components/features/settings/BudgetTab.js'
 import { HubTab } from '../components/features/settings/HubTab.js'
 import { IntegrationsDashboard } from '../components/features/settings/IntegrationsDashboard.js'
 import { ComingSoonState } from '../components/features/settings/ComingSoonState.js'
+import { EnforcementLogTable } from '../components/features/cost/EnforcementLogTable.js'
 import { DURATION, EASE } from '../components/onboarding/motion.js'
 
 interface SectionDef {
@@ -332,15 +333,27 @@ function BillingPage() {
     <>
       <PageHeader
         title="Billing"
-        description="Plan, invoices, and usage caps."
+        description="Budget caps, enforcement decisions, and usage by project."
       />
-      <ComingSoonState
-        title="Billing is wired up via Stripe — UI is coming"
-        description="Live mode is metered today via the Anthropic key you supplied; per-org Stripe-backed billing arrives once we onboard our first paid team."
-        actionLabel="Review per-sprint budget"
-        actionHref="/settings/sprints"
-        eta="v2"
-      />
+      <PageSection title="Recent enforcement decisions">
+        <p className="mb-4 text-sm text-slate-600">
+          Every time an agent run is checked against your monthly budget cap, a decision is
+          recorded here. Blocked runs indicate the monthly cap was reached.{' '}
+          <a href="/settings/sprints" className="font-medium text-brand-700 hover:underline">
+            Adjust the cap in Sprints / Budget.
+          </a>
+        </p>
+        <EnforcementLogTable />
+      </PageSection>
+      <PageSection title="Stripe billing">
+        <ComingSoonState
+          title="Stripe-backed invoicing is coming"
+          description="Live mode is metered today via the Anthropic key you supplied; per-org Stripe-backed billing arrives once we onboard our first paid team."
+          actionLabel="Review per-sprint budget"
+          actionHref="/settings/sprints"
+          eta="v2"
+        />
+      </PageSection>
     </>
   )
 }
