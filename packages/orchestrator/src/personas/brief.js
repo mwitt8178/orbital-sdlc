@@ -37,13 +37,14 @@ import { injectMemoryIntoBrief, } from '../memory/brief-injector.js';
  */
 export async function buildBrief(persona, task, capability, extensions = {}) {
     // Memory injection (async — runs before building sections)
+    // [Engineer-Sr · Sonnet · run-memory-prompt-assembly]
     let memoryInjection = null;
     if (extensions.memoryContext) {
-        const { db, eventStore, projectId, k = 8 } = extensions.memoryContext;
+        const { db, eventStore, projectId, k = 8, tenantId, personaSlug } = extensions.memoryContext;
         memoryInjection = await injectMemoryIntoBrief(db, eventStore, projectId, task.task_id, {
             title: task.title,
             description: task.description,
-        }, k);
+        }, k, { tenantId, personaSlug });
     }
     // Round 6 #8 — routeModel: resolve provider+model badge for this spawn.
     let modelBadge = '';

@@ -79,6 +79,8 @@ export class DefaultMemoryService implements MemoryService {
       status: 'active',
       supersededBy: null,
       embedding: null,
+      pinned: false,
+      personaScope: null,
       createdAt: now,
       updatedAt: now,
     })
@@ -129,7 +131,7 @@ export class DefaultMemoryService implements MemoryService {
       'memory: entry recorded',
     )
 
-    return this.get(entryId)
+    return this.get(entryId, tenantId)
   }
 
   async update(input: UpdateMemoryEntryInput, actorId: string, tenantId: string = SENTINEL_TENANT): Promise<MemoryEntry> {
@@ -157,6 +159,16 @@ export class DefaultMemoryService implements MemoryService {
     if (input.scopeValue !== undefined && input.scopeValue !== existing.scopeValue) {
       changes.push({ field: 'scope_value', oldVal: existing.scopeValue, newVal: input.scopeValue })
       updates['scopeValue'] = input.scopeValue
+    }
+    // Migration 0051: pinned + personaScope
+    // [Engineer-Sr · Sonnet · run-memory-prompt-assembly]
+    if (input.pinned !== undefined && input.pinned !== (existing.pinned ?? false)) {
+      changes.push({ field: 'pinned', oldVal: existing.pinned ?? false, newVal: input.pinned })
+      updates['pinned'] = input.pinned
+    }
+    if (input.personaScope !== undefined && input.personaScope !== (existing.personaScope ?? null)) {
+      changes.push({ field: 'persona_scope', oldVal: existing.personaScope ?? null, newVal: input.personaScope })
+      updates['personaScope'] = input.personaScope
     }
 
     if (Object.keys(updates).length > 1) {
@@ -201,7 +213,7 @@ export class DefaultMemoryService implements MemoryService {
     }
 
     logger.info({ entryId: input.entryId, changes: changes.length }, 'memory: entry curated')
-    return this.get(input.entryId)
+    return this.get(input.entryId, tenantId)
   }
 
   async archive(entryId: string, actorId: string, tenantId: string = SENTINEL_TENANT): Promise<void> {
@@ -309,6 +321,9 @@ export class DefaultMemoryService implements MemoryService {
         linkValue: l.linkValue,
         createdAt: l.createdAt.toISOString(),
       })),
+      relevanceScore: (row as unknown as { relevance_score?: number | null }).relevance_score ?? row.relevanceScore ?? null,
+      pinned: (row as unknown as { pinned?: boolean }).pinned ?? false,
+      personaScope: (row as unknown as { persona_scope?: string | null }).persona_scope ?? row.personaScope ?? null,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
     }
@@ -431,6 +446,9 @@ export class DefaultMemoryService implements MemoryService {
         linkValue: l.linkValue,
         createdAt: l.createdAt.toISOString(),
       })),
+      relevanceScore: row.relevanceScore ?? null,
+      pinned: row.pinned ?? false,
+      personaScope: row.personaScope ?? null,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
     }))

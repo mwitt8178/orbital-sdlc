@@ -140,15 +140,14 @@ export function createMemoryRouter(deps: MemoryRouterDeps) {
       .input(SearchMemoryInputSchema)
       .query(async ({ input, ctx }) => {
         try {
-          // retrieveTopN queries by projectId; projectIds are themselves tenant-scoped
-          // so bleed is prevented at the project ownership level. tenantId is forwarded
-          // for future explicit filter if retrieveTopN gains tenant param.
-          void ctx.tenantId
+          // Pass tenantId for explicit multi-tenant isolation in retrieveTopN.
+          // [Engineer-Sr · Sonnet · run-memory-prompt-assembly]
           const result = await retrieveTopN(
             db,
             input.projectId,
             { title: input.query, description: input.query },
             input.k,
+            { tenantId: ctx.tenantId },
           )
           return { entries: result.entries, method: result.method }
         } catch (err) {
